@@ -1,6 +1,7 @@
 import { Detail } from "@raycast/api";
 import { useEffect, useMemo, useState } from "react";
 import { getForecast, type TimeseriesEntry } from "./weather-client";
+import { precipitationAmount, symbolCode } from "./utils-forecast";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
 import { formatPrecip, formatTemperatureCelsius, getUnits } from "./units";
 
@@ -68,7 +69,7 @@ export function buildGraphMarkdown(
   name: string,
   series: TimeseriesEntry[],
   hours: number,
-  opts?: { sunByDate?: Record<string, SunTimes> },
+  opts?: { sunByDate?: Record<string, SunTimes>; title?: string },
 ): { markdown: string } {
   const subset = series.slice(0, hours);
   const width = 800;
@@ -83,10 +84,10 @@ export function buildGraphMarkdown(
   const tempsDisplay = tempsC.map((c) =>
     units === "imperial" && Number.isFinite(c) ? (c as number) * (9 / 5) + 32 : c,
   );
-  const precsMm = subset.map((s) => s.data?.next_1_hours?.details?.precipitation_amount ?? 0);
+  const precsMm = subset.map((s) => precipitationAmount(s) ?? 0);
   const precsDisplay = precsMm.map((mm) => (units === "imperial" ? mm / 25.4 : mm));
   const dirs = subset.map((s) => s.data?.instant?.details?.wind_from_direction);
-  const symbols = subset.map((s) => s.data?.next_1_hours?.summary?.symbol_code ?? "");
+  const symbols = subset.map((s) => symbolCode(s) ?? "");
 
   const xMin = times[0] ?? 0;
   const xMax = times[times.length - 1] ?? 1;
@@ -238,7 +239,8 @@ export function buildGraphMarkdown(
   const tMinText = formatTemperatureCelsius(tMinC);
   const tMaxText = formatTemperatureCelsius(tMaxC);
   const pMaxText = formatPrecip(pMaxMm);
-  const md = `# ${name} – ${hours}h forecast\n\n![forecast](data:image/svg+xml;utf8,${svgToDataUri(svg)})\n\nMin ${tMinText ?? "N/A"} • Max ${tMaxText ?? "N/A"} • Max precip ${pMaxText ?? "N/A"}`;
+  const titleLabel = opts?.title ?? `${hours}h forecast`;
+  const md = `# ${name} – ${titleLabel}\n\n![forecast](data:image/svg+xml;utf8,${svgToDataUri(svg)})\n\nMin ${tMinText ?? "N/A"} • Max ${tMaxText ?? "N/A"} • Max precip ${pMaxText ?? "N/A"}`;
   return { markdown: md };
 }
 

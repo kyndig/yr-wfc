@@ -1,17 +1,29 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "yr-new",
-  "title": "Yr-new",
-  "description": "Weather from MET",
+  "name": "yr-weather-forecast",
+  "title": "Weather Forecast",
+  "description": "Weather forecast using the Norwegian Meteorological Institute's API",
   "icon": "extension-icon.png",
   "author": "kakaoduft",
   "owner": "kynd",
+  "access": "public",
   "license": "MIT",
+  "keywords": [
+    "weather",
+    "forecast",
+    "yr",
+    "norwegian meteorological institute",
+    "met.no",
+    "met"
+  ],
+  "categories": [
+    "Productivity"
+  ],
   "commands": [
     {
       "name": "yr",
       "title": "Yr",
-      "description": "Search for a location and show current weather",
+      "description": "Search for a location and show current weather forecast",
       "mode": "view",
       "preferences": [
         {

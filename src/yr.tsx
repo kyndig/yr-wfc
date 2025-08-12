@@ -5,6 +5,7 @@ import ForecastView from "./forecast";
 import GraphView from "./graph";
 import { searchLocations, type LocationResult } from "./location-search";
 import { getWeather, type TimeseriesEntry } from "./weather-client";
+import { precipitationAmount, symbolCode } from "./utils-forecast";
 import { addFavorite, isFavorite, removeFavorite, type FavoriteLocation, getFavorites } from "./storage";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
 
@@ -261,7 +262,7 @@ function formatWeatherToast(ts: TimeseriesEntry): string {
           return `${d.arrow} ${d.name}`;
         })()
       : undefined;
-  const precip = ts?.data?.next_1_hours?.details?.precipitation_amount;
+  const precip = precipitationAmount(ts);
   const precipText = formatPrecip(precip);
   return [temp, windSpeed && `wind ${windSpeed}`, windDir && `from ${windDir}`, precipText && `precip ${precipText}`]
     .filter(Boolean)
@@ -287,7 +288,7 @@ function formatAccessories(
     const dir = directionFromDegrees(details.wind_from_direction);
     acc.push({ tag: `🧭 ${dir.arrow} ${dir.name}`, tooltip: `Direction ${Math.round(details.wind_from_direction)}°` });
   }
-  const precip = ts?.data?.next_1_hours?.details?.precipitation_amount;
+  const precip = precipitationAmount(ts);
   const p = formatPrecip(precip, units);
   if (p) acc.push({ tag: `☔ ${p}`, tooltip: "Precipitation" });
   if (flags.showSunTimes) {
@@ -308,7 +309,7 @@ function formatAccessories(
 }
 
 function iconForSymbol(ts: TimeseriesEntry | undefined): Image.ImageLike | undefined {
-  const symbol = ts?.data?.next_1_hours?.summary?.symbol_code;
+  const symbol = symbolCode(ts);
   if (!symbol) return undefined;
   const s = symbol.toLowerCase();
   if (s.includes("thunder")) return "⛈️";
