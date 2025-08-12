@@ -10,9 +10,42 @@
   "commands": [
     {
       "name": "yr",
-      "title": "yr",
-      "description": "",
-      "mode": "no-view"
+      "title": "Yr",
+      "description": "Search for a location and show current weather",
+      "mode": "view",
+      "preferences": [
+        {
+          "name": "units",
+          "title": "Units",
+          "description": "Choose metric or imperial units",
+          "type": "dropdown",
+          "default": "metric",
+          "data": [
+            {
+              "title": "Metric (°C, m/s, mm)",
+              "value": "metric"
+            },
+            {
+              "title": "Imperial (°F, mph, in)",
+              "value": "imperial"
+            }
+          ]
+        },
+        {
+          "name": "showWindDirection",
+          "title": "Show Wind Direction",
+          "description": "Display wind direction arrows in the main view",
+          "type": "checkbox",
+          "default": true
+        },
+        {
+          "name": "showSunTimes",
+          "title": "Show Sunrise/Sunset",
+          "description": "Display sunrise and sunset times in the main view",
+          "type": "checkbox",
+          "default": true
+        }
+      ]
     }
   ],
   "dependencies": {
