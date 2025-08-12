@@ -143,7 +143,7 @@ export function buildGraphMarkdown(
   const sunLines = (() => {
     const map = opts?.sunByDate ?? {};
     const parts: string[] = [];
-    for (const [date, st] of Object.entries(map)) {
+    for (const [, st] of Object.entries(map)) {
       const sr = st.sunrise ? new Date(st.sunrise).getTime() : undefined;
       const ss = st.sunset ? new Date(st.sunset).getTime() : undefined;
       if (sr && sr >= xMin && sr <= xMax) {
@@ -175,7 +175,7 @@ export function buildGraphMarkdown(
       if (typeof d !== "number") return "";
       const x = xScale(t);
       const y = height - margin.bottom + 20;
-      const { arrow, name } = directionFromDegrees(d);
+      const { arrow } = directionFromDegrees(d);
       return `<text x="${x.toFixed(1)}" y="${y}" font-size="12" text-anchor="middle" fill="#666">${arrow}</text>`;
     })
     .join("");
@@ -260,9 +260,7 @@ function maxFinite(values: number[]): number | undefined {
   return max;
 }
 
-function formatMaybe<T>(v: T | undefined, f: (v: T) => string): string {
-  return v === undefined ? "N/A" : f(v);
-}
+// (unused helper removed)
 
 function pathFromPoints(points: Array<[number, number]>): string {
   if (points.length === 0) return "";

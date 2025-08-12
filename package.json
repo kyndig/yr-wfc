@@ -12,7 +12,7 @@
     "weather",
     "forecast",
     "yr",
-    "norwegian meteorological institute",
+    "institute of meteorology",
     "met.no",
     "met"
   ],
@@ -23,14 +23,16 @@
     {
       "name": "yr",
       "title": "Yr",
-      "description": "Search for a location and show current weather forecast",
+      "description": "Search and show weather",
       "mode": "view",
       "preferences": [
         {
           "name": "units",
+          "label": "Units",
           "title": "Units",
           "description": "Choose metric or imperial units",
           "type": "dropdown",
+          "required": false,
           "default": "metric",
           "data": [
             {
@@ -45,16 +47,20 @@
         },
         {
           "name": "showWindDirection",
+          "label": "Show Wind Direction",
           "title": "Show Wind Direction",
           "description": "Display wind direction arrows in the main view",
           "type": "checkbox",
+          "required": false,
           "default": true
         },
         {
           "name": "showSunTimes",
+          "label": "Show Sunrise/Sunset",
           "title": "Show Sunrise/Sunset",
           "description": "Display sunrise and sunset times in the main view",
           "type": "checkbox",
+          "required": false,
           "default": true
         }
       ]
