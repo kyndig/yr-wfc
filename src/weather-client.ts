@@ -2,7 +2,7 @@ import { getCached, setCached } from "./cache";
 
 const THIRTY_MIN_MS = 30 * 60 * 1000;
 const headers = {
-  "User-Agent": "raycast-yr-extension/1.0 (github.com/holene; contact: axel@kynd.no)",
+  "User-Agent": "raycast-yr-extension/1.0 (https://github.com/kyndig/raycast-yr; contact: raycast@kynd.no)",
 };
 
 export type TimeseriesEntry = {
