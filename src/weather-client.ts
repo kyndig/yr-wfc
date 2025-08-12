@@ -30,6 +30,12 @@ export type TimeseriesEntry = {
   };
 };
 
+type LocationForecastResponse = {
+  properties?: {
+    timeseries?: unknown[];
+  };
+};
+
 export async function getWeather(lat: number, lon: number): Promise<TimeseriesEntry> {
   const cacheKey = `weather:${lat.toFixed(3)},${lon.toFixed(3)}`;
   const cached = await getCached<TimeseriesEntry>(cacheKey, THIRTY_MIN_MS);
@@ -39,8 +45,8 @@ export async function getWeather(lat: number, lon: number): Promise<TimeseriesEn
   if (!res.ok) {
     throw new Error(`met.no responded ${res.status} ${res.statusText}`);
   }
-  const data = await res.json();
-  const first = data?.properties?.timeseries?.[0];
+  const data = (await res.json()) as LocationForecastResponse;
+  const first = data.properties?.timeseries?.[0] as unknown;
   if (!first) {
     throw new Error("Unexpected response shape: missing timeseries[0]");
   }
@@ -58,8 +64,8 @@ export async function getForecast(lat: number, lon: number): Promise<TimeseriesE
   if (!res.ok) {
     throw new Error(`met.no responded ${res.status} ${res.statusText}`);
   }
-  const data = await res.json();
-  const series = data?.properties?.timeseries;
+  const data = (await res.json()) as LocationForecastResponse;
+  const series = data.properties?.timeseries as unknown;
   if (!Array.isArray(series)) {
     throw new Error("Unexpected response shape: missing timeseries array");
   }
