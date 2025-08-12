@@ -6,6 +6,18 @@ This is a [Raycast](https://www.raycast.com) extension for displaying weather fo
 **Contact:** weather@kynd.no  
 **Issues & Feedback:** [GitHub Issues](https://github.com/kynd/yr-weather-raycast/issues)
 
+### API Compliance
+
+This extension follows [MET API usage guidelines](https://developer.yr.no/doc/TermsOfService) including:
+
+- Using a descriptive `User-Agent` with version, repository link, and contact email.
+- Respecting caching rules to avoid unnecessary load on MET servers.
+- Displaying MET as the data source in all relevant views.
+
+### Privacy
+
+This extension does not send any user data to our servers. All API requests are made directly from your device to MET and OpenStreetMap services.
+
 ### Features
 
 - **Search locations**: Type a city/place to find coordinates (via OpenStreetMap Nominatim).
