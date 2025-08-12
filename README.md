@@ -1,8 +1,13 @@
-## Yr (new)
+## Yr Powered Weather Forecast
 
-Weather from MET with fast search, favorites, detailed forecast, and a compact graph.
+This is a [Raycast](https://www.raycast.com) extension for displaying weather forecasts from The Norwegian Institute of Meteorology (MET), with search, favorites, and detailed forecast views.
+
+**Maintainer:** Kynd  
+**Contact:** weather@kynd.no  
+**Issues & Feedback:** [GitHub Issues](https://github.com/kynd/yr-weather-raycast/issues)
 
 ### Features
+
 - **Search locations**: Type a city/place to find coordinates (via OpenStreetMap Nominatim).
 - **Favorites in main view**: Your saved places show:
   - Temperature and colored emoji weather icon
@@ -20,6 +25,7 @@ Weather from MET with fast search, favorites, detailed forecast, and a compact g
 - **Caching**: Reduces API calls (MET: 30 minutes, Sunrise/Sunset: 6 hours).
 
 ### How to use
+
 1. Open Raycast and run the command `Yr`.
 2. Start typing to search for a location.
 3. In search results:
@@ -30,6 +36,7 @@ Weather from MET with fast search, favorites, detailed forecast, and a compact g
    - Use actions to open the Graph directly or remove from favorites
 
 ### Command preferences
+
 - **Units**: Metric (°C, m/s, mm) or Imperial (°F, mph, in)
 - **Show Wind Direction**: Toggle arrow + cardinal display in main view
 - **Show Sunrise/Sunset**: Toggle sunrise/sunset accessories in main view
@@ -37,6 +44,7 @@ Weather from MET with fast search, favorites, detailed forecast, and a compact g
 To change: open the `Yr` command → Cmd+K (or right arrow) → Configure Command.
 
 ### Graph details
+
 - Temperature: solid red line; values and axis in °C/°F per preference
 - Precipitation: dotted blue line; axis in mm/in per preference
 - Weather: colored emoji above temperature points (e.g., ☀️, 🌧️, ⛈️, 🌨️, 🌫️, ☁️)
@@ -44,6 +52,7 @@ To change: open the `Yr` command → Cmd+K (or right arrow) → Configure Comman
 - Time labels: 24‑hour clock
 
 ### Data sources
+
 - **Weather & forecast**: MET Locationforecast 2.0 (`https://api.met.no/weatherapi/locationforecast/2.0/compact`)
 - **Sunrise/Sunset**: MET Sunrise 3.0 (`https://api.met.no/weatherapi/sunrise/3.0/sun`)
 - **Geocoding**: OpenStreetMap Nominatim (`https://nominatim.openstreetmap.org`)
@@ -51,19 +60,23 @@ To change: open the `Yr` command → Cmd+K (or right arrow) → Configure Comman
 The extension sends a compliant User-Agent when calling external APIs.
 
 ### Caching
+
 - Forecast and current weather: cached for 30 minutes per location
 - Sunrise/Sunset: cached for 6 hours per location/day
 
 ### Develop
+
 ```bash
 npm install
 npm run dev
 ```
 
 ### Build
+
 ```bash
 npm run build
 ```
 
 ### License
+
 MIT
