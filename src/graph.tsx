@@ -279,14 +279,7 @@ function maxFinite(values: number[]): number | undefined {
 
 // (unused helper removed)
 
-function pathFromPoints(points: Array<[number, number]>): string {
-  if (points.length === 0) return "";
-  const cmds = [`M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`];
-  for (let i = 1; i < points.length; i++) {
-    cmds.push(`L ${points[i][0].toFixed(1)} ${points[i][1].toFixed(1)}`);
-  }
-  return cmds.join(" ");
-}
+// removed old pathFromPoints helper (replaced by d3-shape line)
 
 function svgToDataUri(svg: string): string {
   // Encode minimally to keep it readable while safe for data URI
