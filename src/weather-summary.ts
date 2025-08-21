@@ -82,7 +82,6 @@ const symbolToCondition: Record<string, string> = {
 };
 
 function getConditionFromSymbol(symbol: string): string {
-  const normalized = symbol.toLowerCase();
   return symbolToCondition[symbol] || symbolToCondition.default;
 }
 

@@ -96,16 +96,6 @@ function startOfLocalDay(date: Date): Date {
   return d;
 }
 
-function nextOccurrence(weekday: number, now = new Date()): Date {
-  const base = startOfLocalDay(now);
-  const current = base.getDay();
-  let delta = (weekday - current + 7) % 7;
-  if (delta === 0) delta = 7; // strictly upcoming
-  const target = new Date(base);
-  target.setDate(base.getDate() + delta);
-  return target;
-}
-
 function thisOrNextOccurrence(weekday: number, now = new Date()): Date {
   const base = startOfLocalDay(now);
   const current = base.getDay();
