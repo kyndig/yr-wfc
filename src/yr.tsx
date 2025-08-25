@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Action, ActionPanel, List, showToast, Toast, Icon, Image } from "@raycast/api";
 import { formatPrecip, formatTemperatureCelsius, formatWindSpeed, getUnits, getFeatureFlags } from "./units";
 import ForecastView from "./forecast";
 import GraphView from "./graph";
-import { searchLocations } from "./location-search";
+import { searchLocations, type LocationResult } from "./location-search";
 import { getWeather, type TimeseriesEntry } from "./weather-client";
 import { precipitationAmount } from "./utils-forecast";
 import { addFavorite, isFavorite, removeFavorite, type FavoriteLocation, getFavorites } from "./storage";
@@ -17,22 +17,35 @@ import { directionFromDegrees, filterToDate, formatTemp } from "./weather-utils"
 import { useDelayedError } from "./hooks/useDelayedError";
 import { useNetworkTest } from "./hooks/useNetworkTest";
 import { formatDate, formatTime } from "./utils/date-utils";
-import { useAsyncSearch } from "./hooks/useAsyncState";
+
 
 export default function Command() {
   const [searchText, setSearchText] = useState("");
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
 
-  // Use centralized async search hook for location search
-  const {
-    data: locations,
-    loading: isLoading,
-    search: performSearch,
-  } = useAsyncSearch(searchLocations, {
-    debounceMs: 300,
-    minQueryLength: 0,
-    clearOnEmpty: true,
-  });
+  // Simple search state management to avoid infinite loops
+  const [locations, setLocations] = useState<LocationResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Simple search function with debouncing
+  const performSearch = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setLocations([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const results = await searchLocations(trimmed);
+      setLocations(results);
+    } catch (error) {
+      console.error("Search failed:", error);
+      setLocations([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Ensure locations is always an array
   const safeLocations = locations || [];
@@ -110,13 +123,19 @@ export default function Command() {
     };
   }, [favorites]);
 
-  // Trigger search when search text changes
+  // Trigger search when search text changes with debouncing
   useEffect(() => {
-    const parsed = parseQueryIntent(searchText);
-    const q = (parsed.locationQuery ?? searchText).trim();
-    if (q) {
-      performSearch(q);
-    }
+    const timeoutId = setTimeout(() => {
+      const parsed = parseQueryIntent(searchText);
+      const q = (parsed.locationQuery ?? searchText).trim();
+      if (q) {
+        performSearch(q);
+      } else {
+        setLocations([]);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
   }, [searchText, performSearch]);
 
   // Update favorite flags when search results change
@@ -214,10 +233,36 @@ export default function Command() {
     return quickTarget && showQuickViewError;
   }, [quickTarget, showQuickViewError]);
 
-  // Debug: Log network test results
+  // Debug: Log network test results and show user-friendly notifications
   useEffect(() => {
     if (networkTest.error) {
       console.error("Network test results:", networkTest);
+      
+      // Show user-friendly notifications for critical API failures
+      if (!networkTest.metApi) {
+        showToast({
+          style: Toast.Style.Failure,
+          title: "Weather API Unavailable",
+          message: "Unable to connect to weather service. Some features may not work properly.",
+        });
+      }
+      
+      if (!networkTest.nominatim) {
+        showToast({
+          style: Toast.Style.Failure,
+          title: "Location Search Unavailable",
+          message: "Unable to connect to location service. You may not be able to search for new locations.",
+        });
+      }
+      
+      // Only show general connectivity warning if both critical services fail
+      if (!networkTest.metApi && !networkTest.nominatim) {
+        showToast({
+          style: Toast.Style.Failure,
+          title: "Network Connectivity Issues",
+          message: "Multiple services are unavailable. Please check your internet connection.",
+        });
+      }
     }
   }, [networkTest]);
 
@@ -331,6 +376,49 @@ export default function Command() {
                     <Action.Push
                       title="Open Full Forecast"
                       target={<ForecastView name={quickTarget.name} lat={quickTarget.lat} lon={quickTarget.lon} />}
+                    />
+                  </ActionPanel>
+                }
+              />
+            </List.Section>
+          )}
+
+          {/* Network Status Section - Show when there are connectivity issues */}
+          {networkTest.error && (
+            <List.Section title="⚠️ Network Status">
+              <List.Item
+                title="Service Connectivity Issues Detected"
+                subtitle="Some features may not work properly"
+                icon="⚠️"
+                accessories={[
+                  { text: networkTest.metApi ? "✅" : "❌", tooltip: networkTest.metApi ? "Weather API: Connected" : "Weather API: Failed" },
+                  { text: networkTest.nominatim ? "✅" : "❌", tooltip: networkTest.nominatim ? "Location API: Connected" : "Location API: Failed" },
+                ]}
+                actions={
+                  <ActionPanel>
+                    <Action
+                      title="Retry Network Tests"
+                      icon={Icon.ArrowClockwise}
+                      onAction={() => {
+                        // Note: Network tests will re-run when the component re-mounts
+                        // For now, just show a toast message
+                        showToast({
+                          style: Toast.Style.Success,
+                          title: "Network Tests",
+                          message: "Tests will re-run when you restart the extension",
+                        });
+                      }}
+                    />
+                    <Action
+                      title="Show Error Details"
+                      icon={Icon.Info}
+                      onAction={async () => {
+                        await showToast({
+                          style: Toast.Style.Failure,
+                          title: "Network Test Errors",
+                          message: networkTest.error || "Unknown network connectivity issues",
+                        });
+                      }}
                     />
                   </ActionPanel>
                 }
