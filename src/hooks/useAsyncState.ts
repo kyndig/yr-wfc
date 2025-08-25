@@ -70,6 +70,11 @@ export function useAsyncState<T>(options: UseAsyncStateOptions<T> = {}): [
   const cancelledRef = useRef(false);
   const currentOperationRef = useRef<Promise<T | null> | null>(null);
 
+  // Use refs to store the latest state setters to avoid dependency issues
+  const setDataRef = useRef<(data: T | null) => void>();
+  const setErrorRef = useRef<(error: string | null) => void>();
+  const setLoadingRef = useRef<(loading: boolean) => void>();
+
   const setData = useCallback((data: T | null) => {
     setState((prev) => ({ ...prev, data, error: null }));
   }, []);
@@ -81,6 +86,13 @@ export function useAsyncState<T>(options: UseAsyncStateOptions<T> = {}): [
   const setLoading = useCallback((loading: boolean) => {
     setState((prev) => ({ ...prev, loading }));
   }, []);
+
+  // Update refs when setters change
+  useEffect(() => {
+    setDataRef.current = setData;
+    setErrorRef.current = setError;
+    setLoadingRef.current = setLoading;
+  });
 
   const reset = useCallback(() => {
     setState({
@@ -108,20 +120,20 @@ export function useAsyncState<T>(options: UseAsyncStateOptions<T> = {}): [
       cancelledRef.current = false;
 
       if (clearErrorOnStart) {
-        setError(null);
+        setErrorRef.current?.(null);
       }
 
       if (!preserveData) {
-        setData(null);
+        setDataRef.current?.(null);
       }
 
-      setLoading(true);
+      setLoadingRef.current?.(true);
 
       const operation = asyncFn()
         .then((result) => {
           if (!cancelledRef.current) {
-            setData(result);
-            setLoading(false);
+            setDataRef.current?.(result);
+            setLoadingRef.current?.(false);
             return result;
           }
           return null;
@@ -129,8 +141,8 @@ export function useAsyncState<T>(options: UseAsyncStateOptions<T> = {}): [
         .catch((error) => {
           if (!cancelledRef.current) {
             const errorMessage = formatError(error);
-            setError(errorMessage);
-            setLoading(false);
+            setErrorRef.current?.(errorMessage);
+            setLoadingRef.current?.(false);
           }
           throw error;
         });
@@ -138,7 +150,7 @@ export function useAsyncState<T>(options: UseAsyncStateOptions<T> = {}): [
       currentOperationRef.current = operation;
       return operation;
     },
-    [clearErrorOnStart, preserveData, setData, setError, setLoading, formatError],
+    [clearErrorOnStart, preserveData, formatError],
   );
 
   // Cleanup on unmount
