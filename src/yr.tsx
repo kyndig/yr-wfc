@@ -3,7 +3,7 @@ import { Action, ActionPanel, List, showToast, Toast, Icon, Image } from "@rayca
 import { formatPrecip, formatTemperatureCelsius, formatWindSpeed, getUnits, getFeatureFlags } from "./units";
 import ForecastView from "./forecast";
 import GraphView from "./graph";
-import { searchLocations, type LocationResult } from "./location-search";
+import { searchLocations } from "./location-search";
 import { getWeather, type TimeseriesEntry } from "./weather-client";
 import { precipitationAmount } from "./utils-forecast";
 import { addFavorite, isFavorite, removeFavorite, type FavoriteLocation, getFavorites } from "./storage";
@@ -14,19 +14,36 @@ import { generateDaySummary, formatSummary } from "./weather-summary";
 import { getForecast } from "./weather-client";
 import { iconForSymbol } from "./weather-emoji";
 import { directionFromDegrees, filterToDate, formatTemp } from "./weather-utils";
+import { useDelayedError } from "./hooks/useDelayedError";
+import { useNetworkTest } from "./hooks/useNetworkTest";
+import { formatDate, formatTime } from "./utils/date-utils";
+import { useAsyncSearch } from "./hooks/useAsyncState";
 
 export default function Command() {
   const [searchText, setSearchText] = useState("");
-  const [locations, setLocations] = useState<LocationResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
+
+  // Use centralized async search hook for location search
+  const {
+    data: locations,
+    loading: isLoading,
+    search: performSearch,
+  } = useAsyncSearch(searchLocations, {
+    debounceMs: 300,
+    minQueryLength: 0,
+    clearOnEmpty: true,
+  });
+
+  // Ensure locations is always an array
+  const safeLocations = locations || [];
   const [favoriteIds, setFavoriteIds] = useState<Record<string, boolean>>({});
   const [favoriteWeather, setFavoriteWeather] = useState<Record<string, TimeseriesEntry | undefined>>({});
   const [sunTimes, setSunTimes] = useState<Record<string, SunTimes>>({});
   const [quickWeather, setQuickWeather] = useState<TimeseriesEntry | undefined>(undefined);
   const [quickDayForecast, setQuickDayForecast] = useState<TimeseriesEntry[]>([]);
   const [favoriteErrors, setFavoriteErrors] = useState<Record<string, boolean>>({});
-  const [quickViewError, setQuickViewError] = useState(false);
+  const { showError: showQuickViewError, setErrorWithDelay: setQuickViewErrorWithDelay } = useDelayedError();
+  const networkTest = useNetworkTest();
 
   useEffect(() => {
     (async () => setFavorites(await getFavorites()))();
@@ -93,45 +110,30 @@ export default function Command() {
     };
   }, [favorites]);
 
+  // Trigger search when search text changes
   useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      const parsed = parseQueryIntent(searchText);
-      const q = (parsed.locationQuery ?? searchText).trim();
-      if (!q) {
-        setLocations([]);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const results = await searchLocations(q);
-        if (!cancelled) {
-          setLocations(results);
-          // refresh favorite flags for shown results
-          const map: Record<string, boolean> = {};
-          for (const r of results) {
-            const favLike: FavoriteLocation = { id: r.id, name: r.displayName, lat: r.lat, lon: r.lon };
-            map[r.id] = await isFavorite(favLike);
-          }
-          setFavoriteIds(map);
-        }
-      } catch (error) {
-        await showToast({
-          style: Toast.Style.Failure,
-          title: "Search failed",
-          message: String((error as Error)?.message ?? error),
-        });
-        if (!cancelled) setLocations([]);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
+    const parsed = parseQueryIntent(searchText);
+    const q = (parsed.locationQuery ?? searchText).trim();
+    if (q) {
+      performSearch(q);
     }
-    const handle = setTimeout(run, 300);
-    return () => {
-      cancelled = true;
-      clearTimeout(handle);
-    };
-  }, [searchText]);
+  }, [searchText, performSearch]);
+
+  // Update favorite flags when search results change
+  useEffect(() => {
+    if (safeLocations.length > 0) {
+      (async () => {
+        const map: Record<string, boolean> = {};
+        for (const r of safeLocations) {
+          const favLike: FavoriteLocation = { id: r.id, name: r.displayName, lat: r.lat, lon: r.lon };
+          map[r.id] = await isFavorite(favLike);
+        }
+        setFavoriteIds(map);
+      })();
+    } else {
+      setFavoriteIds({});
+    }
+  }, [safeLocations]);
 
   const intent = useMemo(() => parseQueryIntent(searchText), [searchText]);
 
@@ -143,7 +145,7 @@ export default function Command() {
     const fav = favorites.find((f) => f.name.toLowerCase().includes(q));
     if (fav) return { name: fav.name, lat: fav.lat, lon: fav.lon, date } as const;
     // Fall back to first matching search result
-    const loc = locations.find((l) => l.displayName.toLowerCase().includes(q));
+    const loc = safeLocations.find((l) => l.displayName.toLowerCase().includes(q));
     if (loc) return { name: loc.displayName, lat: loc.lat, lon: loc.lon, date } as const;
     return undefined;
   }, [favorites, locations, intent]);
@@ -151,17 +153,15 @@ export default function Command() {
   // Fetch current weather for Quick View to display icon and accessories like Favorites
   useEffect(() => {
     let cancelled = false;
-    let errorTimeout: NodeJS.Timeout;
-
     (async () => {
       if (!quickTarget) {
         setQuickWeather(undefined);
         setQuickDayForecast([]);
-        setQuickViewError(false);
+        setQuickViewErrorWithDelay(null);
         return;
       }
 
-      setQuickViewError(false);
+      setQuickViewErrorWithDelay(null);
 
       try {
         const [ts, forecast] = await Promise.all([
@@ -171,7 +171,7 @@ export default function Command() {
         if (!cancelled) {
           setQuickWeather(ts);
           setQuickDayForecast(forecast);
-          setQuickViewError(false);
+          setQuickViewErrorWithDelay(null);
         }
       } catch (err) {
         if (!cancelled) {
@@ -180,18 +180,13 @@ export default function Command() {
           setQuickDayForecast([]);
           console.warn(`Failed to fetch weather for Quick View (${quickTarget.name}):`, err);
 
-          // Delay showing error by 150ms to give API time to catch up
-          errorTimeout = setTimeout(() => {
-            if (!cancelled) {
-              setQuickViewError(true);
-            }
-          }, 150);
+          // Use the delayed error hook
+          setQuickViewErrorWithDelay("Failed to fetch weather data");
         }
       }
     })();
     return () => {
       cancelled = true;
-      if (errorTimeout) clearTimeout(errorTimeout);
     };
   }, [quickTarget?.lat, quickTarget?.lon]);
 
@@ -216,23 +211,85 @@ export default function Command() {
 
   // Check if there was an error fetching weather data
   const hasWeatherError = useMemo(() => {
-    return quickTarget && quickViewError;
-  }, [quickTarget, quickViewError]);
+    return quickTarget && showQuickViewError;
+  }, [quickTarget, showQuickViewError]);
 
-  const showEmpty = favorites.length === 0 && locations.length === 0;
+  // Debug: Log network test results
+  useEffect(() => {
+    if (networkTest.error) {
+      console.error("Network test results:", networkTest);
+    }
+  }, [networkTest]);
+
+  const showEmpty = favorites.length === 0 && safeLocations.length === 0;
 
   // Only show favorites when not actively searching or when search is empty
-  const shouldShowFavorites = favorites.length > 0 && (!searchText.trim() || locations.length === 0);
+  const shouldShowFavorites = favorites.length > 0 && (!searchText.trim() || safeLocations.length === 0);
 
   // Limit search results to improve performance and user experience
-  const limitedLocations = locations.slice(0, 4);
-  const hasMoreResults = locations.length > 4;
+  const limitedLocations = safeLocations.slice(0, 4);
+  const hasMoreResults = safeLocations.length > 4;
   const [showAllResults, setShowAllResults] = useState(false);
 
   // Reset show all results when search changes
   useEffect(() => {
     setShowAllResults(false);
   }, [searchText]);
+
+  // Reusable function to create location actions
+  const createLocationActions = (
+    name: string,
+    lat: number,
+    lon: number,
+    isFavorite: boolean,
+    onFavoriteToggle: () => void,
+    showAllResultsAction?: React.ReactNode,
+  ) => (
+    <ActionPanel>
+      <Action.Push title="Open Forecast" target={<ForecastView name={name} lat={lat} lon={lon} />} />
+      <Action
+        title="Show Current Weather"
+        onAction={async () => {
+          try {
+            const ts: TimeseriesEntry = await getWeather(lat, lon);
+            await showToast({
+              style: Toast.Style.Success,
+              title: `Now at ${name}`,
+              message: formatWeatherToast(ts),
+            });
+          } catch (error) {
+            await showToast({
+              style: Toast.Style.Failure,
+              title: "Failed to load weather",
+              message: String((error as Error)?.message ?? error),
+            });
+          }
+        }}
+      />
+      <Action.Push
+        title="Open Graph"
+        icon={Icon.BarChart}
+        shortcut={{ modifiers: ["cmd"], key: "g" }}
+        target={<GraphView name={name} lat={lat} lon={lon} />}
+      />
+      {isFavorite ? (
+        <Action
+          title="Remove from Favorites"
+          icon={Icon.StarDisabled}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
+          onAction={onFavoriteToggle}
+        />
+      ) : (
+        <Action
+          title="Add to Favorites"
+          icon={Icon.Star}
+          shortcut={{ modifiers: ["cmd"], key: "f" }}
+          onAction={onFavoriteToggle}
+        />
+      )}
+      {showAllResultsAction}
+    </ActionPanel>
+  );
 
   return (
     <List
@@ -252,8 +309,8 @@ export default function Command() {
             <List.Section title="Quick View">
               <List.Item
                 key={`qv:${quickTarget.name}:${quickTarget.date.toISOString().slice(0, 10)}`}
-                title={`${quickTarget.name} — ${quickTarget.date.toLocaleDateString(undefined, { weekday: "long" })}`}
-                subtitle={`${quickTarget.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })} • ${hasWeatherError ? "⚠️ Data fetch failed" : hasForecastData ? (daySummary ? formatSummary(daySummary) : "Loading...") : "⚠️ No forecast data available"}`}
+                title={`${quickTarget.name} — ${formatDate(quickTarget.date, "WEEKDAY_ONLY")}`}
+                subtitle={`${formatDate(quickTarget.date, "MONTH_DAY")} • ${hasWeatherError ? "⚠️ Data fetch failed" : hasForecastData ? (daySummary ? formatSummary(daySummary) : "Loading...") : "⚠️ No forecast data available"}`}
                 icon={hasWeatherError ? "⚠️" : hasForecastData ? iconForSymbol(quickWeather) : "🤷"}
                 accessories={
                   hasWeatherError ? undefined : hasForecastData ? formatAccessories(quickWeather) : undefined
@@ -282,99 +339,60 @@ export default function Command() {
           )}
 
           {/* Show search results first when actively searching */}
-          {locations.length > 0 && (
+          {safeLocations.length > 0 && (
             <List.Section title="Search Results">
-              {(showAllResults ? locations : limitedLocations).map((loc) => (
+              {(showAllResults ? safeLocations : limitedLocations).map((loc) => (
                 <List.Item
                   key={loc.id}
                   title={loc.displayName}
                   accessories={[{ text: `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}` }]}
-                  actions={
-                    <ActionPanel>
-                      <Action.Push
-                        title="Open Forecast"
-                        target={<ForecastView name={loc.displayName} lat={loc.lat} lon={loc.lon} />}
-                      />
+                  actions={createLocationActions(
+                    loc.displayName,
+                    loc.lat,
+                    loc.lon,
+                    favoriteIds[loc.id],
+                    async () => {
+                      if (favoriteIds[loc.id]) {
+                        const fav: FavoriteLocation = {
+                          id: loc.id,
+                          name: loc.displayName,
+                          lat: loc.lat,
+                          lon: loc.lon,
+                        };
+                        await removeFavorite(fav);
+                        setFavoriteIds((m) => ({ ...m, [loc.id]: false }));
+                        setFavorites(await getFavorites());
+                        await showToast({
+                          style: Toast.Style.Success,
+                          title: "Removed from Favorites",
+                          message: `${loc.displayName} has been removed from your favorites`,
+                        });
+                      } else {
+                        const fav: FavoriteLocation = {
+                          id: loc.id,
+                          name: loc.displayName,
+                          lat: loc.lat,
+                          lon: loc.lon,
+                        };
+                        await addFavorite(fav);
+                        setFavoriteIds((m) => ({ ...m, [loc.id]: true }));
+                        setFavorites(await getFavorites());
+                        await showToast({
+                          style: Toast.Style.Success,
+                          title: "Added to Favorites",
+                          message: `${loc.displayName} has been added to your favorites`,
+                        });
+                      }
+                    },
+                    hasMoreResults ? (
                       <Action
-                        title="Show Current Weather"
-                        onAction={async () => {
-                          try {
-                            const ts: TimeseriesEntry = await getWeather(loc.lat, loc.lon);
-                            await showToast({
-                              style: Toast.Style.Success,
-                              title: `Now at ${loc.displayName}`,
-                              message: formatWeatherToast(ts),
-                            });
-                          } catch (error) {
-                            await showToast({
-                              style: Toast.Style.Failure,
-                              title: "Failed to load weather",
-                              message: String((error as Error)?.message ?? error),
-                            });
-                          }
-                        }}
+                        title={showAllResults ? "Show Less Results" : "Show All Results"}
+                        icon={showAllResults ? Icon.ChevronUp : Icon.ChevronDown}
+                        shortcut={{ modifiers: ["cmd", "shift"], key: "enter" }}
+                        onAction={() => setShowAllResults(!showAllResults)}
                       />
-                      <Action.Push
-                        title="Open Graph"
-                        target={<GraphView name={loc.displayName} lat={loc.lat} lon={loc.lon} />}
-                      />
-                      {favoriteIds[loc.id] ? (
-                        <Action
-                          title="Remove from Favorites"
-                          icon={Icon.StarDisabled}
-                          shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
-                          onAction={async () => {
-                            const fav: FavoriteLocation = {
-                              id: loc.id,
-                              name: loc.displayName,
-                              lat: loc.lat,
-                              lon: loc.lon,
-                            };
-                            await removeFavorite(fav);
-                            setFavoriteIds((m) => ({ ...m, [loc.id]: false }));
-                            setFavorites(await getFavorites());
-                            await showToast({
-                              style: Toast.Style.Success,
-                              title: "Removed from Favorites",
-                              message: `${loc.displayName} has been removed from your favorites`,
-                            });
-                          }}
-                        />
-                      ) : (
-                        <Action
-                          title="Add to Favorites"
-                          icon={Icon.Star}
-                          shortcut={{ modifiers: ["cmd"], key: "f" }}
-                          onAction={async () => {
-                            const fav: FavoriteLocation = {
-                              id: loc.id,
-                              name: loc.displayName,
-                              lat: loc.lat,
-                              lon: loc.lon,
-                            };
-                            await addFavorite(fav);
-                            setFavoriteIds((m) => ({ ...m, [loc.id]: true }));
-                            setFavorites(await getFavorites());
-                            await showToast({
-                              style: Toast.Style.Success,
-                              title: "Added to Favorites",
-                              message: `${loc.displayName} has been added to your favorites`,
-                            });
-                          }}
-                        />
-                      )}
-
-                      {/* Show All Results action when available */}
-                      {hasMoreResults && (
-                        <Action
-                          title={showAllResults ? "Show Less Results" : "Show All Results"}
-                          icon={showAllResults ? Icon.ChevronUp : Icon.ChevronDown}
-                          shortcut={{ modifiers: ["cmd", "shift"], key: "enter" }}
-                          onAction={() => setShowAllResults(!showAllResults)}
-                        />
-                      )}
-                    </ActionPanel>
-                  }
+                    ) : undefined,
+                  )}
                 />
               ))}
 
@@ -382,11 +400,11 @@ export default function Command() {
               {hasMoreResults && (
                 <List.Item
                   key="show-all-results"
-                  title={showAllResults ? "Show Less Results" : `Show All ${locations.length} Results`}
+                  title={showAllResults ? "Show Less Results" : `Show All ${safeLocations.length} Results`}
                   subtitle={
                     showAllResults
                       ? "Collapse to show only top 4 results"
-                      : `${locations.length - 4} more results available`
+                      : `${safeLocations.length - 4} more results available`
                   }
                   accessories={[{ text: "⌘⇧↵", tooltip: "Cmd+Shift+Enter" }]}
                   icon={showAllResults ? Icon.ChevronUp : Icon.ChevronDown}
@@ -434,52 +452,16 @@ export default function Command() {
                         )
                       : undefined
                   }
-                  actions={
-                    <ActionPanel>
-                      <Action.Push
-                        title="Open Forecast"
-                        target={<ForecastView name={fav.name} lat={fav.lat} lon={fav.lon} />}
-                      />
-                      <Action
-                        title="Show Current Weather"
-                        onAction={async () => {
-                          try {
-                            const ts: TimeseriesEntry = await getWeather(fav.lat, fav.lon);
-                            await showToast({
-                              style: Toast.Style.Success,
-                              title: `Now at ${fav.name}`,
-                              message: formatWeatherToast(ts),
-                            });
-                          } catch (error) {
-                            await showToast({
-                              style: Toast.Style.Failure,
-                              title: "Failed to load weather",
-                              message: String((error as Error)?.message ?? error),
-                            });
-                          }
-                        }}
-                      />
-                      <Action.Push
-                        title="Open Graph"
-                        target={<GraphView name={fav.name} lat={fav.lat} lon={fav.lon} />}
-                      />
-                      <Action
-                        title="Remove from Favorites"
-                        icon={Icon.StarDisabled}
-                        shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
-                        onAction={async () => {
-                          await removeFavorite(fav);
-                          setFavorites(await getFavorites());
-                          if (fav.id) setFavoriteIds((m) => ({ ...m, [fav.id as string]: false }));
-                          await showToast({
-                            style: Toast.Style.Success,
-                            title: "Removed from Favorites",
-                            message: `${fav.name} has been removed from your favorites`,
-                          });
-                        }}
-                      />
-                    </ActionPanel>
-                  }
+                  actions={createLocationActions(fav.name, fav.lat, fav.lon, true, async () => {
+                    await removeFavorite(fav);
+                    setFavorites(await getFavorites());
+                    if (fav.id) setFavoriteIds((m) => ({ ...m, [fav.id as string]: false }));
+                    await showToast({
+                      style: Toast.Style.Success,
+                      title: "Removed from Favorites",
+                      message: `${fav.name} has been removed from your favorites`,
+                    });
+                  })}
                 />
               ))}
             </List.Section>
@@ -530,12 +512,12 @@ function formatAccessories(
     const ss = sun?.sunset ? new Date(sun.sunset) : undefined;
     if (sr)
       acc.push({
-        tag: `🌅 ${sr.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false })}`,
+        tag: `🌅 ${formatTime(sr, "MILITARY")}`,
         tooltip: "Sunrise",
       });
     if (ss)
       acc.push({
-        tag: `🌇 ${ss.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false })}`,
+        tag: `🌇 ${formatTime(ss, "MILITARY")}`,
         tooltip: "Sunset",
       });
   }
