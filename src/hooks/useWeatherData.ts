@@ -3,10 +3,12 @@ import { getForecast, type TimeseriesEntry } from "../weather-client";
 
 // Type declaration for navigator to handle browser environment
 declare global {
-  const navigator: {
-    userAgent?: string;
-    onLine?: boolean;
-  } | undefined;
+  const navigator:
+    | {
+        userAgent?: string;
+        onLine?: boolean;
+      }
+    | undefined;
 }
 
 /**
@@ -48,7 +50,8 @@ export function useWeatherData(lat: number, lon: number) {
             stack: err instanceof Error ? err.stack : undefined,
             timestamp: new Date().toISOString(),
             coordinates: { lat, lon },
-            userAgent: typeof navigator !== "undefined" ? navigator.userAgent || "Raycast Extension" : "Raycast Extension",
+            userAgent:
+              typeof navigator !== "undefined" ? navigator.userAgent || "Raycast Extension" : "Raycast Extension",
           };
 
           console.error("Weather API fetch failed:", errorDetails);
