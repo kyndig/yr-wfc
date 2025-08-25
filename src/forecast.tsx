@@ -1,15 +1,27 @@
-import { Action, ActionPanel, Detail } from "@raycast/api";
-import { useMemo, useState } from "react";
+import { Action, ActionPanel, Detail, showToast, Toast, Icon } from "@raycast/api";
+import { useMemo, useState, useEffect } from "react";
 import { type TimeseriesEntry } from "./weather-client";
 import { buildGraphMarkdown } from "./graph";
 import { groupByDay, reduceToDayPeriods, buildWeatherTable } from "./weather-utils";
 import { useWeatherData } from "./hooks/useWeatherData";
 import { generateNoForecastDataMessage } from "./utils/error-messages";
+import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
 
 export default function ForecastView(props: { name: string; lat: number; lon: number }) {
   const { name, lat, lon } = props;
   const [mode, setMode] = useState<"detailed" | "summary">("detailed");
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const { series: items, loading, showNoData } = useWeatherData(lat, lon);
+
+  // Check if current location is in favorites
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      const favLocation: FavoriteLocation = { name, lat, lon };
+      const favorite = await checkIsFavorite(favLocation);
+      setIsFavorite(favorite);
+    };
+    checkFavoriteStatus();
+  }, [name, lat, lon]);
 
   const byDay = useMemo(() => groupByDay(items), [items]);
   const reduced = useMemo(() => reduceToDayPeriods(items, 9), [items]);
@@ -32,6 +44,36 @@ export default function ForecastView(props: { name: string; lat: number; lon: nu
 
   const markdown = [graph, "\n---\n", listMarkdown].join("\n");
 
+  const handleFavoriteToggle = async () => {
+    const favLocation: FavoriteLocation = { name, lat, lon };
+    
+    try {
+      if (isFavorite) {
+        await removeFavorite(favLocation);
+        setIsFavorite(false);
+        await showToast({
+          style: Toast.Style.Success,
+          title: "Removed from Favorites",
+          message: `${name} has been removed from your favorites`,
+        });
+      } else {
+        await addFavorite(favLocation);
+        setIsFavorite(true);
+        await showToast({
+          style: Toast.Style.Success,
+          title: "Added to Favorites",
+          message: `${name} has been added to your favorites`,
+        });
+      }
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Failed to update favorites",
+        message: String(error),
+      });
+    }
+  };
+
   return (
     <Detail
       isLoading={loading}
@@ -42,6 +84,21 @@ export default function ForecastView(props: { name: string; lat: number; lon: nu
             <Action title="Show 9-Day Summary" onAction={() => setMode("summary")} />
           ) : (
             <Action title="Show 2-Day Detailed" onAction={() => setMode("detailed")} />
+          )}
+          {isFavorite ? (
+            <Action
+              title="Remove from Favorites"
+              icon={Icon.StarDisabled}
+              shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
+              onAction={handleFavoriteToggle}
+            />
+          ) : (
+            <Action
+              title="Add to Favorites"
+              icon={Icon.Star}
+              shortcut={{ modifiers: ["cmd"], key: "f" }}
+              onAction={handleFavoriteToggle}
+            />
           )}
         </ActionPanel>
       }
