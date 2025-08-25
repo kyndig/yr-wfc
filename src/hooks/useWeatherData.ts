@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { getForecast, type TimeseriesEntry } from "../weather-client";
 
+// Type declaration for navigator to handle browser environment
+declare global {
+  const navigator: {
+    userAgent?: string;
+    onLine?: boolean;
+  } | undefined;
+}
+
 /**
  * Custom hook for managing weather data fetching
  * This centralizes the pattern used across multiple components for fetching
@@ -40,7 +48,7 @@ export function useWeatherData(lat: number, lon: number) {
             stack: err instanceof Error ? err.stack : undefined,
             timestamp: new Date().toISOString(),
             coordinates: { lat, lon },
-            userAgent: navigator.userAgent || "Raycast Extension",
+            userAgent: typeof navigator !== "undefined" ? navigator.userAgent || "Raycast Extension" : "Raycast Extension",
           };
 
           console.error("Weather API fetch failed:", errorDetails);
