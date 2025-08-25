@@ -1,4 +1,4 @@
-import { Detail } from "@raycast/api";
+import { Detail, Action, ActionPanel, showToast, Toast, Icon } from "@raycast/api";
 import { useEffect, useMemo, useState } from "react";
 import { type TimeseriesEntry } from "./weather-client";
 import { precipitationAmount, symbolCode } from "./utils-forecast";
@@ -12,11 +12,23 @@ import { minFinite, maxFinite, svgToDataUri } from "./graph-utils";
 import { useWeatherData } from "./hooks/useWeatherData";
 import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { formatDate, formatTime } from "./utils/date-utils";
+import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
 
 export default function GraphView(props: { name: string; lat: number; lon: number; hours?: number }) {
   const { name, lat, lon, hours = 48 } = props;
   const [sunByDate, setSunByDate] = useState<Record<string, SunTimes>>({});
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const { series, loading, showNoData } = useWeatherData(lat, lon);
+
+  // Check if current location is in favorites
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      const favLocation: FavoriteLocation = { name, lat, lon };
+      const favorite = await checkIsFavorite(favLocation);
+      setIsFavorite(favorite);
+    };
+    checkFavoriteStatus();
+  }, [name, lat, lon]);
 
   // Fetch sunrise/sunset for visible dates once forecast is loaded
   useEffect(() => {
@@ -31,13 +43,16 @@ export default function GraphView(props: { name: string; lat: number; lon: numbe
             const v = await getSunTimes(lat, lon, date);
             return [date, v] as const;
           } catch {
-            return [date, {} as SunTimes] as const;
+            return [date, {} as SunTimes];
           }
         }),
       );
       if (!cancelled) {
         const map: Record<string, SunTimes> = {};
-        for (const [k, v] of entries) map[k] = v;
+        for (const entry of entries) {
+          const [date, sunTimes] = entry as [string, SunTimes];
+          map[date] = sunTimes;
+        }
         setSunByDate(map);
       }
     }
@@ -57,7 +72,61 @@ export default function GraphView(props: { name: string; lat: number; lon: numbe
     return buildGraphMarkdown(name, series, hours, { sunByDate });
   }, [name, series, hours, sunByDate, showNoData]);
 
-  return <Detail isLoading={loading} markdown={markdown} />;
+  const handleFavoriteToggle = async () => {
+    const favLocation: FavoriteLocation = { name, lat, lon };
+    
+    try {
+      if (isFavorite) {
+        await removeFavorite(favLocation);
+        setIsFavorite(false);
+        await showToast({
+          style: Toast.Style.Success,
+          title: "Removed from Favorites",
+          message: `${name} has been removed from your favorites`,
+        });
+      } else {
+        await addFavorite(favLocation);
+        setIsFavorite(true);
+        await showToast({
+          style: Toast.Style.Success,
+          title: "Added to Favorites",
+          message: `${name} has been added to your favorites`,
+        });
+      }
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Failed to update favorites",
+        message: String(error),
+      });
+    }
+  };
+
+  return (
+    <Detail 
+      isLoading={loading} 
+      markdown={markdown}
+      actions={
+        <ActionPanel>
+          {isFavorite ? (
+            <Action
+              title="Remove from Favorites"
+              icon={Icon.StarDisabled}
+              shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
+              onAction={handleFavoriteToggle}
+            />
+          ) : (
+            <Action
+              title="Add to Favorites"
+              icon={Icon.Star}
+              shortcut={{ modifiers: ["cmd"], key: "f" }}
+              onAction={handleFavoriteToggle}
+            />
+          )}
+        </ActionPanel>
+      }
+    />
+  );
 }
 
 export function buildGraphMarkdown(
