@@ -15,7 +15,6 @@ export async function searchLocations(query: string): Promise<LocationResult[]> 
   const url = buildApiUrl(API_ENDPOINTS.NOMINATIM.SEARCH, {
     format: "json",
     q: trimmed,
-    limit: API_CONFIG.NOMINATIM.SEARCH_LIMIT,
     addressdetails: API_CONFIG.NOMINATIM.ADDRESS_DETAILS,
   });
 

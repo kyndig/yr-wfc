@@ -32,7 +32,6 @@ export const API_ENDPOINTS = {
 export const API_CONFIG = {
   // Request limits and timeouts
   NOMINATIM: {
-    SEARCH_LIMIT: 10,
     ADDRESS_DETAILS: 0,
   },
   // Cache TTL values (in milliseconds)

@@ -35,6 +35,12 @@ export default function Command() {
       return;
     }
 
+    // Require minimum 3 characters before searching
+    if (trimmed.length < 3) {
+      setLocations([]);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const results = await searchLocations(trimmed);
@@ -128,10 +134,15 @@ export default function Command() {
     const timeoutId = setTimeout(() => {
       const parsed = parseQueryIntent(searchText);
       const q = (parsed.locationQuery ?? searchText).trim();
-      if (q) {
+      if (q && q.length >= 3) {
         performSearch(q);
+      } else if (q && q.length > 0 && q.length < 3) {
+        // Clear locations but don't show toast feedback
+        setLocations([]);
+        setIsLoading(false);
       } else {
         setLocations([]);
+        setIsLoading(false);
       }
     }, 300); // 300ms debounce
 
@@ -271,16 +282,6 @@ export default function Command() {
   // Only show favorites when not actively searching or when search is empty
   const shouldShowFavorites = favorites.length > 0 && (!searchText.trim() || safeLocations.length === 0);
 
-  // Limit search results to improve performance and user experience
-  const limitedLocations = safeLocations.slice(0, 4);
-  const hasMoreResults = safeLocations.length > 4;
-  const [showAllResults, setShowAllResults] = useState(false);
-
-  // Reset show all results when search changes
-  useEffect(() => {
-    setShowAllResults(false);
-  }, [searchText]);
-
   // Reusable function to create location actions
   const createLocationActions = (
     name: string,
@@ -288,7 +289,6 @@ export default function Command() {
     lon: number,
     isFavorite: boolean,
     onFavoriteToggle: () => void,
-    showAllResultsAction?: React.ReactNode,
   ) => (
     <ActionPanel>
       <Action.Push title="Open Forecast" target={<ForecastView name={name} lat={lat} lon={lon} />} />
@@ -332,7 +332,6 @@ export default function Command() {
           onAction={onFavoriteToggle}
         />
       )}
-      {showAllResultsAction}
     </ActionPanel>
   );
 
@@ -340,16 +339,30 @@ export default function Command() {
     <List
       isLoading={isLoading}
       onSearchTextChange={setSearchText}
-      searchBarPlaceholder="Search for a location..."
+      searchBarPlaceholder="Search for a location (min. 3 characters)..."
       throttle
     >
       {showEmpty ? (
         <List.EmptyView
-          title={searchText ? `Searching for "${searchText}"` : "Search for a location"}
-          description="Enter a city name or coordinates to get weather information"
+          title={searchText && searchText.trim().length >= 3 ? `Searching for "${searchText}"` : searchText ? `"${searchText}"` : "Search for a location"}
+          description={searchText && searchText.trim().length < 3 ? "Enter at least 3 characters to search" : "Enter a city name or coordinates to get weather information"}
         />
       ) : (
         <>
+          {/* Show feedback when no results and insufficient characters */}
+          {safeLocations.length === 0 && searchText && searchText.trim().length > 0 && searchText.trim().length < 3 && (
+            <List.Item
+              key="min-chars-feedback"
+              title={`"${searchText}" - More characters needed`}
+              subtitle={`Type ${3 - searchText.trim().length} more character${3 - searchText.trim().length === 1 ? '' : 's'} to search`}
+              icon="💡"
+              accessories={[
+                { text: `${searchText.trim().length}/3`, tooltip: "Characters entered" },
+                { text: `${3 - searchText.trim().length} more`, tooltip: "Characters needed" }
+              ]}
+            />
+          )}
+
           {quickTarget && (
             <List.Section title="Quick View">
               <List.Item
@@ -428,8 +441,8 @@ export default function Command() {
 
           {/* Show search results first when actively searching */}
           {safeLocations.length > 0 && (
-            <List.Section title="Search Results">
-              {(showAllResults ? safeLocations : limitedLocations).map((loc) => (
+            <List.Section title={`Search Results (${safeLocations.length})`}>
+              {safeLocations.map((loc) => (
                 <List.Item
                   key={loc.id}
                   title={loc.displayName}
@@ -472,42 +485,9 @@ export default function Command() {
                         });
                       }
                     },
-                    hasMoreResults ? (
-                      <Action
-                        title={showAllResults ? "Show Less Results" : "Show All Results"}
-                        icon={showAllResults ? Icon.ChevronUp : Icon.ChevronDown}
-                        shortcut={{ modifiers: ["cmd", "shift"], key: "enter" }}
-                        onAction={() => setShowAllResults(!showAllResults)}
-                      />
-                    ) : undefined,
                   )}
                 />
               ))}
-
-              {/* Show "Show All Results" or "Show Less" option */}
-              {hasMoreResults && (
-                <List.Item
-                  key="show-all-results"
-                  title={showAllResults ? "Show Less Results" : `Show All ${safeLocations.length} Results`}
-                  subtitle={
-                    showAllResults
-                      ? "Collapse to show only top 4 results"
-                      : `${safeLocations.length - 4} more results available`
-                  }
-                  accessories={[{ text: "⌘⇧↵", tooltip: "Cmd+Shift+Enter" }]}
-                  icon={showAllResults ? Icon.ChevronUp : Icon.ChevronDown}
-                  actions={
-                    <ActionPanel>
-                      <Action
-                        title={showAllResults ? "Show Less Results" : "Show All Results"}
-                        icon={showAllResults ? Icon.ChevronUp : Icon.ChevronDown}
-                        shortcut={{ modifiers: ["cmd", "shift"], key: "enter" }}
-                        onAction={() => setShowAllResults(!showAllResults)}
-                      />
-                    </ActionPanel>
-                  }
-                />
-              )}
             </List.Section>
           )}
 
