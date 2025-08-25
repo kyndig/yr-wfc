@@ -12,11 +12,11 @@ export function useNetworkTest() {
   }>({ httpbin: false, metApi: false, nominatim: false, error: undefined });
 
   const runTests = useCallback(async () => {
-    const results: { httpbin: boolean; metApi: boolean; nominatim: boolean; error: string | undefined } = { 
-      httpbin: false, 
-      metApi: false, 
+    const results: { httpbin: boolean; metApi: boolean; nominatim: boolean; error: string | undefined } = {
+      httpbin: false,
+      metApi: false,
       nominatim: false,
-      error: undefined 
+      error: undefined,
     };
 
     try {
@@ -48,14 +48,11 @@ export function useNetworkTest() {
     try {
       // Test 3: Nominatim location search API request
       console.log("Testing Nominatim API...");
-      const nominatimResponse = await fetch(
-        "https://nominatim.openstreetmap.org/search?format=json&q=test&limit=1",
-        {
-          headers: {
-            "User-Agent": "raycast-yr-extension/1.0 (https://github.com/kyndig/raycast-yr; contact: raycast@kynd.no)",
-          },
-        }
-      );
+      const nominatimResponse = await fetch("https://nominatim.openstreetmap.org/search?format=json&q=test&limit=1", {
+        headers: {
+          "User-Agent": "raycast-yr-extension/1.0 (https://github.com/kyndig/raycast-yr; contact: raycast@kynd.no)",
+        },
+      });
       results.nominatim = nominatimResponse.ok;
       console.log("Nominatim API test result:", results.nominatim);
     } catch (err) {

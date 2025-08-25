@@ -46,7 +46,7 @@ export default function ForecastView(props: { name: string; lat: number; lon: nu
 
   const handleFavoriteToggle = async () => {
     const favLocation: FavoriteLocation = { name, lat, lon };
-    
+
     try {
       if (isFavorite) {
         await removeFavorite(favLocation);

@@ -55,7 +55,7 @@ export default function DayQuickView(props: { name: string; lat: number; lon: nu
 
   const handleFavoriteToggle = async () => {
     const favLocation: FavoriteLocation = { name, lat, lon };
-    
+
     try {
       if (isFavorite) {
         await removeFavorite(favLocation);
@@ -84,8 +84,8 @@ export default function DayQuickView(props: { name: string; lat: number; lon: nu
   };
 
   return (
-    <Detail 
-      isLoading={loading} 
+    <Detail
+      isLoading={loading}
       markdown={markdown}
       actions={
         <ActionPanel>

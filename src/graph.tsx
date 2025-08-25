@@ -74,7 +74,7 @@ export default function GraphView(props: { name: string; lat: number; lon: numbe
 
   const handleFavoriteToggle = async () => {
     const favLocation: FavoriteLocation = { name, lat, lon };
-    
+
     try {
       if (isFavorite) {
         await removeFavorite(favLocation);
@@ -103,8 +103,8 @@ export default function GraphView(props: { name: string; lat: number; lon: numbe
   };
 
   return (
-    <Detail 
-      isLoading={loading} 
+    <Detail
+      isLoading={loading}
       markdown={markdown}
       actions={
         <ActionPanel>

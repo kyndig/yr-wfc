@@ -18,7 +18,6 @@ import { useDelayedError } from "./hooks/useDelayedError";
 import { useNetworkTest } from "./hooks/useNetworkTest";
 import { formatDate, formatTime } from "./utils/date-utils";
 
-
 export default function Command() {
   const [searchText, setSearchText] = useState("");
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
@@ -248,7 +247,7 @@ export default function Command() {
   useEffect(() => {
     if (networkTest.error) {
       console.error("Network test results:", networkTest);
-      
+
       // Show user-friendly notifications for critical API failures
       if (!networkTest.metApi) {
         showToast({
@@ -257,7 +256,7 @@ export default function Command() {
           message: "Unable to connect to weather service. Some features may not work properly.",
         });
       }
-      
+
       if (!networkTest.nominatim) {
         showToast({
           style: Toast.Style.Failure,
@@ -265,7 +264,7 @@ export default function Command() {
           message: "Unable to connect to location service. You may not be able to search for new locations.",
         });
       }
-      
+
       // Only show general connectivity warning if both critical services fail
       if (!networkTest.metApi && !networkTest.nominatim) {
         showToast({
@@ -344,8 +343,18 @@ export default function Command() {
     >
       {showEmpty ? (
         <List.EmptyView
-          title={searchText && searchText.trim().length >= 3 ? `Searching for "${searchText}"` : searchText ? `"${searchText}"` : "Search for a location"}
-          description={searchText && searchText.trim().length < 3 ? "Enter at least 3 characters to search" : "Enter a city name or coordinates to get weather information"}
+          title={
+            searchText && searchText.trim().length >= 3
+              ? `Searching for "${searchText}"`
+              : searchText
+                ? `"${searchText}"`
+                : "Search for a location"
+          }
+          description={
+            searchText && searchText.trim().length < 3
+              ? "Enter at least 3 characters to search"
+              : "Enter a city name or coordinates to get weather information"
+          }
         />
       ) : (
         <>
@@ -354,11 +363,11 @@ export default function Command() {
             <List.Item
               key="min-chars-feedback"
               title={`"${searchText}" - More characters needed`}
-              subtitle={`Type ${3 - searchText.trim().length} more character${3 - searchText.trim().length === 1 ? '' : 's'} to search`}
+              subtitle={`Type ${3 - searchText.trim().length} more character${3 - searchText.trim().length === 1 ? "" : "s"} to search`}
               icon="💡"
               accessories={[
                 { text: `${searchText.trim().length}/3`, tooltip: "Characters entered" },
-                { text: `${3 - searchText.trim().length} more`, tooltip: "Characters needed" }
+                { text: `${3 - searchText.trim().length} more`, tooltip: "Characters needed" },
               ]}
             />
           )}
@@ -404,8 +413,14 @@ export default function Command() {
                 subtitle="Some features may not work properly"
                 icon="⚠️"
                 accessories={[
-                  { text: networkTest.metApi ? "✅" : "❌", tooltip: networkTest.metApi ? "Weather API: Connected" : "Weather API: Failed" },
-                  { text: networkTest.nominatim ? "✅" : "❌", tooltip: networkTest.nominatim ? "Location API: Connected" : "Location API: Failed" },
+                  {
+                    text: networkTest.metApi ? "✅" : "❌",
+                    tooltip: networkTest.metApi ? "Weather API: Connected" : "Weather API: Failed",
+                  },
+                  {
+                    text: networkTest.nominatim ? "✅" : "❌",
+                    tooltip: networkTest.nominatim ? "Location API: Connected" : "Location API: Failed",
+                  },
                 ]}
                 actions={
                   <ActionPanel>
@@ -447,45 +462,39 @@ export default function Command() {
                   key={loc.id}
                   title={loc.displayName}
                   accessories={[{ text: `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}` }]}
-                  actions={createLocationActions(
-                    loc.displayName,
-                    loc.lat,
-                    loc.lon,
-                    favoriteIds[loc.id],
-                    async () => {
-                      if (favoriteIds[loc.id]) {
-                        const fav: FavoriteLocation = {
-                          id: loc.id,
-                          name: loc.displayName,
-                          lat: loc.lat,
-                          lon: loc.lon,
-                        };
-                        await removeFavorite(fav);
-                        setFavoriteIds((m) => ({ ...m, [loc.id]: false }));
-                        setFavorites(await getFavorites());
-                        await showToast({
-                          style: Toast.Style.Success,
-                          title: "Removed from Favorites",
-                          message: `${loc.displayName} has been removed from your favorites`,
-                        });
-                      } else {
-                        const fav: FavoriteLocation = {
-                          id: loc.id,
-                          name: loc.displayName,
-                          lat: loc.lat,
-                          lon: loc.lon,
-                        };
-                        await addFavorite(fav);
-                        setFavoriteIds((m) => ({ ...m, [loc.id]: true }));
-                        setFavorites(await getFavorites());
-                        await showToast({
-                          style: Toast.Style.Success,
-                          title: "Added to Favorites",
-                          message: `${loc.displayName} has been added to your favorites`,
-                        });
-                      }
-                    },
-                  )}
+                  actions={createLocationActions(loc.displayName, loc.lat, loc.lon, favoriteIds[loc.id], async () => {
+                    if (favoriteIds[loc.id]) {
+                      const fav: FavoriteLocation = {
+                        id: loc.id,
+                        name: loc.displayName,
+                        lat: loc.lat,
+                        lon: loc.lon,
+                      };
+                      await removeFavorite(fav);
+                      setFavoriteIds((m) => ({ ...m, [loc.id]: false }));
+                      setFavorites(await getFavorites());
+                      await showToast({
+                        style: Toast.Style.Success,
+                        title: "Removed from Favorites",
+                        message: `${loc.displayName} has been removed from your favorites`,
+                      });
+                    } else {
+                      const fav: FavoriteLocation = {
+                        id: loc.id,
+                        name: loc.displayName,
+                        lat: loc.lat,
+                        lon: loc.lon,
+                      };
+                      await addFavorite(fav);
+                      setFavoriteIds((m) => ({ ...m, [loc.id]: true }));
+                      setFavorites(await getFavorites());
+                      await showToast({
+                        style: Toast.Style.Success,
+                        title: "Added to Favorites",
+                        message: `${loc.displayName} has been added to your favorites`,
+                      });
+                    }
+                  })}
                 />
               ))}
             </List.Section>
