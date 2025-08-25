@@ -1,78 +1,22 @@
 import { Detail } from "@raycast/api";
 import { useEffect, useMemo, useState } from "react";
-import { getForecast, type TimeseriesEntry } from "./weather-client";
+import { type TimeseriesEntry } from "./weather-client";
 import { precipitationAmount, symbolCode } from "./utils-forecast";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
 import { scaleLinear } from "d3-scale";
 import { line, curveMonotoneX } from "d3-shape";
 import { formatPrecip, formatTemperatureCelsius, getUnits } from "./units";
-import { symbolToEmoji } from "./weather-emoji";
+import { symbolToEmoji } from "./utils/weather-symbols";
 import { directionFromDegrees } from "./weather-utils";
 import { minFinite, maxFinite, svgToDataUri } from "./graph-utils";
+import { useWeatherData } from "./hooks/useWeatherData";
+import { generateNoForecastDataMessage } from "./utils/error-messages";
+import { formatDate, formatTime } from "./utils/date-utils";
 
 export default function GraphView(props: { name: string; lat: number; lon: number; hours?: number }) {
   const { name, lat, lon, hours = 48 } = props;
-  const [series, setSeries] = useState<TimeseriesEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showError, setShowError] = useState(false);
-  const [showNoData, setShowNoData] = useState(false);
   const [sunByDate, setSunByDate] = useState<Record<string, SunTimes>>({});
-
-  useEffect(() => {
-    let cancelled = false;
-    let errorTimeout: NodeJS.Timeout;
-    let noDataTimeout: NodeJS.Timeout;
-
-    async function fetchData() {
-      setLoading(true);
-      setError(null);
-      setShowError(false);
-      setShowNoData(false);
-
-      try {
-        const data = await getForecast(lat, lon);
-        if (!cancelled) {
-          setSeries(data);
-          setError(null);
-          setShowError(false);
-          setShowNoData(false);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setSeries([]); // Clear existing weather forecasts
-          const errorMessage = err instanceof Error ? err.message : "Failed to fetch weather data";
-          setError(errorMessage);
-
-          // Delay showing error message by 150ms to give API time to catch up
-          errorTimeout = setTimeout(() => {
-            if (!cancelled) {
-              setShowError(true);
-            }
-          }, 150);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-
-          // Delay showing "no data" message by 150ms to give API time to catch up
-          if (series.length === 0) {
-            noDataTimeout = setTimeout(() => {
-              if (!cancelled) {
-                setShowNoData(true);
-              }
-            }, 150);
-          }
-        }
-      }
-    }
-    fetchData();
-    return () => {
-      cancelled = true;
-      if (errorTimeout) clearTimeout(errorTimeout);
-      if (noDataTimeout) clearTimeout(noDataTimeout);
-    };
-  }, [lat, lon]);
+  const { series, loading, showNoData } = useWeatherData(lat, lon);
 
   // Fetch sunrise/sunset for visible dates once forecast is loaded
   useEffect(() => {
@@ -104,37 +48,14 @@ export default function GraphView(props: { name: string; lat: number; lon: numbe
   }, [series, hours, lat, lon]);
 
   const { markdown } = useMemo(() => {
-    if (error && showError) {
-      return {
-        markdown: `## ⚠️ Data Fetch Failed
-
-Unable to retrieve weather forecast data from the MET API.
-
-**Error details:**
-${error}
-
-**Available options:**
-- Check your internet connection
-- Try again later
-- Verify the location coordinates are correct`,
-      };
-    }
-
     if (series.length === 0 && showNoData) {
       return {
-        markdown: `## ⚠️ No Forecast Data Available
-
-No weather forecast data is currently available for this location.
-
-**Available options:**
-- Check the location coordinates
-- Try refreshing the data
-- Contact support if the issue persists`,
+        markdown: generateNoForecastDataMessage({ locationName: name }),
       };
     }
 
     return buildGraphMarkdown(name, series, hours, { sunByDate });
-  }, [name, series, hours, sunByDate, error, showError, showNoData]);
+  }, [name, series, hours, sunByDate, showNoData]);
 
   return <Detail isLoading={loading} markdown={markdown} />;
 }
@@ -217,7 +138,7 @@ export function buildGraphMarkdown(
     const parts: string[] = [];
     for (let d = firstMidnight; d.getTime() < end.getTime(); d = new Date(d.getTime() + 24 * 3600 * 1000)) {
       const x = xScale(d.getTime());
-      const label = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+      const label = formatDate(d, "SHORT_DAY");
       parts.push(
         `<g>
           <line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${margin.top}" y2="${height - margin.bottom}" stroke="#ddd" stroke-dasharray="3 3" />
@@ -276,7 +197,7 @@ export function buildGraphMarkdown(
     .map((_, i) => {
       const t = xMin + ((xMax - xMin) * i) / xTicks;
       const x = xScale(t);
-      const label = new Date(t).toLocaleTimeString(undefined, { hour: "2-digit", hour12: false });
+      const label = formatTime(new Date(t), "HOUR_ONLY");
       return `\n  <g>
     <line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${margin.top}" y2="${height - margin.bottom}" stroke="#eee" />
     <text x="${x.toFixed(1)}" y="${height - margin.bottom + 36}" font-size="11" text-anchor="middle" fill="#888">${label}</text>
