@@ -27,12 +27,39 @@ export default function ForecastView(props: { name: string; lat: number; lon: nu
   const reduced = useMemo(() => reduceToDayPeriods(items, 9), [items]);
   const displaySeries = mode === "detailed" ? items.slice(0, 48) : reduced;
 
+  // Cache both graph types for instant switching
+  const [graphCache, setGraphCache] = useState<{
+    detailed?: string;
+    summary?: string;
+  }>({});
+
+  // Generate and cache graphs when data changes
+  useEffect(() => {
+    if (items.length > 0) {
+      // Cache detailed graph (48h)
+      const detailedGraph = buildGraphMarkdown(name, items.slice(0, 48), 48, {
+        title: "48h forecast",
+        smooth: true,
+      }).markdown;
+
+      // Cache summary graph (9-day)
+      const summaryGraph = buildGraphMarkdown(name, reduced, reduced.length, {
+        title: "9-day summary",
+        smooth: true,
+      }).markdown;
+
+      setGraphCache({
+        detailed: detailedGraph,
+        summary: summaryGraph,
+      });
+    }
+  }, [items, reduced, name]);
+
+  // Get cached graph based on current mode
   const graph = useMemo(() => {
     if (displaySeries.length === 0 && showNoData) return "";
-    const title = mode === "detailed" ? "48h forecast" : "9-day summary";
-    const smooth = true; // smooth both 48h detailed and 9-day summary
-    return buildGraphMarkdown(name, displaySeries, displaySeries.length, { title, smooth }).markdown;
-  }, [name, displaySeries, mode, showNoData]);
+    return mode === "detailed" ? graphCache.detailed : graphCache.summary;
+  }, [mode, graphCache, displaySeries.length, showNoData]);
 
   const listMarkdown = useMemo(() => {
     if (displaySeries.length === 0 && showNoData) {
@@ -42,7 +69,29 @@ export default function ForecastView(props: { name: string; lat: number; lon: nu
     return mode === "detailed" ? buildListMarkdown(byDay) : buildSummaryListMarkdown(reduced);
   }, [mode, byDay, reduced, displaySeries.length, showNoData, name]);
 
+  // Only show content when not loading and we have data or know there's no data
+  const shouldShowContent = !loading && (displaySeries.length > 0 || showNoData);
   const markdown = [graph, "\n---\n", listMarkdown].join("\n");
+
+  // Add a small delay to ensure graph is fully rendered before showing content
+  // Now much faster since graphs are pre-cached
+  const [graphReady, setGraphReady] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowContent && displaySeries.length > 0 && graph) {
+      // Much shorter delay since graphs are pre-cached
+      const timer = setTimeout(() => {
+        setGraphReady(true);
+      }, 50); // Reduced from 100ms to 50ms
+
+      return () => clearTimeout(timer);
+    } else {
+      setGraphReady(false);
+    }
+  }, [shouldShowContent, displaySeries.length, graph]);
+
+  // Only show content when graph is ready
+  const finalMarkdown = graphReady ? markdown : "";
 
   const handleFavoriteToggle = async () => {
     const favLocation: FavoriteLocation = { name, lat, lon };
@@ -77,7 +126,7 @@ export default function ForecastView(props: { name: string; lat: number; lon: nu
   return (
     <Detail
       isLoading={loading}
-      markdown={markdown}
+      markdown={finalMarkdown}
       actions={
         <ActionPanel>
           {mode === "detailed" ? (
