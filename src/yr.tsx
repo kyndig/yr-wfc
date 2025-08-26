@@ -1,26 +1,26 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Action, ActionPanel, List, showToast, Toast, Icon, Image } from "@raycast/api";
-import { formatPrecip, formatTemperatureCelsius, formatWindSpeed, getUnits, getFeatureFlags } from "./units";
+import { Action, ActionPanel, List, Icon } from "@raycast/api";
 import ForecastView from "./forecast";
-import GraphView from "./graph";
 import { searchLocations, type LocationResult } from "./location-search";
 import { getWeather, type TimeseriesEntry } from "./weather-client";
-import { precipitationAmount } from "./utils-forecast";
 import { addFavorite, isFavorite, removeFavorite, type FavoriteLocation, getFavorites } from "./storage";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
-import DayQuickView from "./day-view";
 import { parseQueryIntent } from "./query-intent";
 import { generateDaySummary, formatSummary } from "./weather-summary";
 import { getForecast } from "./weather-client";
 import { iconForSymbol } from "./weather-emoji";
-import { directionFromDegrees, filterToDate, formatTemp } from "./weather-utils";
+import { filterToDate, formatTemp } from "./weather-utils";
 import { useDelayedError } from "./hooks/useDelayedError";
 import { useNetworkTest } from "./hooks/useNetworkTest";
-import { formatDate, formatTime } from "./utils/date-utils";
+import { formatDate } from "./utils/date-utils";
+import { ToastMessages } from "./utils/toast-utils";
+import { WeatherFormatters } from "./utils/weather-formatters";
+import { LocationUtils } from "./utils/location-utils";
 
 export default function Command() {
   const [searchText, setSearchText] = useState("");
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
 
   // Simple search state management to avoid infinite loops
   const [locations, setLocations] = useState<LocationResult[]>([]);
@@ -64,7 +64,11 @@ export default function Command() {
   const networkTest = useNetworkTest();
 
   useEffect(() => {
-    (async () => setFavorites(await getFavorites()))();
+    (async () => {
+      const favs = await getFavorites();
+      setFavorites(favs);
+      setFavoritesLoaded(true);
+    })();
   }, []);
 
   useEffect(() => {
@@ -154,7 +158,7 @@ export default function Command() {
       (async () => {
         const map: Record<string, boolean> = {};
         for (const r of safeLocations) {
-          const favLike: FavoriteLocation = { id: r.id, name: r.displayName, lat: r.lat, lon: r.lon };
+          const favLike = LocationUtils.createFavoriteFromSearchResult(r.id, r.displayName, r.lat, r.lon);
           map[r.id] = await isFavorite(favLike);
         }
         setFavoriteIds(map);
@@ -250,93 +254,34 @@ export default function Command() {
 
       // Show user-friendly notifications for critical API failures
       if (!networkTest.metApi) {
-        showToast({
-          style: Toast.Style.Failure,
-          title: "Weather API Unavailable",
-          message: "Unable to connect to weather service. Some features may not work properly.",
-        });
+        ToastMessages.weatherApiUnavailable();
       }
 
       if (!networkTest.nominatim) {
-        showToast({
-          style: Toast.Style.Failure,
-          title: "Location Search Unavailable",
-          message: "Unable to connect to location service. You may not be able to search for new locations.",
-        });
+        ToastMessages.locationApiUnavailable();
       }
 
       // Only show general connectivity warning if both critical services fail
       if (!networkTest.metApi && !networkTest.nominatim) {
-        showToast({
-          style: Toast.Style.Failure,
-          title: "Network Connectivity Issues",
-          message: "Multiple services are unavailable. Please check your internet connection.",
-        });
+        ToastMessages.networkConnectivityIssues();
       }
     }
   }, [networkTest]);
 
-  const showEmpty = favorites.length === 0 && safeLocations.length === 0;
+  const showEmpty = favoritesLoaded && favorites.length === 0 && safeLocations.length === 0 && !isLoading;
 
   // Only show favorites when not actively searching or when search is empty
   const shouldShowFavorites = favorites.length > 0 && (!searchText.trim() || safeLocations.length === 0);
 
-  // Reusable function to create location actions
-  const createLocationActions = (
-    name: string,
-    lat: number,
-    lon: number,
-    isFavorite: boolean,
-    onFavoriteToggle: () => void,
-  ) => (
-    <ActionPanel>
-      <Action.Push title="Open Forecast" target={<ForecastView name={name} lat={lat} lon={lon} />} />
-      <Action
-        title="Show Current Weather"
-        onAction={async () => {
-          try {
-            const ts: TimeseriesEntry = await getWeather(lat, lon);
-            await showToast({
-              style: Toast.Style.Success,
-              title: `Now at ${name}`,
-              message: formatWeatherToast(ts),
-            });
-          } catch (error) {
-            await showToast({
-              style: Toast.Style.Failure,
-              title: "Failed to load weather",
-              message: String((error as Error)?.message ?? error),
-            });
-          }
-        }}
-      />
-      <Action.Push
-        title="Open Graph"
-        icon={Icon.BarChart}
-        shortcut={{ modifiers: ["cmd"], key: "g" }}
-        target={<GraphView name={name} lat={lat} lon={lon} />}
-      />
-      {isFavorite ? (
-        <Action
-          title="Remove from Favorites"
-          icon={Icon.StarDisabled}
-          shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
-          onAction={onFavoriteToggle}
-        />
-      ) : (
-        <Action
-          title="Add to Favorites"
-          icon={Icon.Star}
-          shortcut={{ modifiers: ["cmd"], key: "f" }}
-          onAction={onFavoriteToggle}
-        />
-      )}
-    </ActionPanel>
-  );
+  // Determine if we should show loading state
+  const shouldShowLoading = !favoritesLoaded || isLoading;
+
+  // Use the utility function to create location actions
+  const createLocationActions = LocationUtils.createLocationActions;
 
   return (
     <List
-      isLoading={isLoading}
+      isLoading={shouldShowLoading}
       onSearchTextChange={setSearchText}
       searchBarPlaceholder="Search for a location (min. 3 characters)..."
       throttle
@@ -386,14 +331,7 @@ export default function Command() {
                   <ActionPanel>
                     <Action.Push
                       title="Open 1-Day View"
-                      target={
-                        <DayQuickView
-                          name={quickTarget.name}
-                          lat={quickTarget.lat}
-                          lon={quickTarget.lon}
-                          date={quickTarget.date}
-                        />
-                      }
+                      target={<ForecastView name={quickTarget.name} lat={quickTarget.lat} lon={quickTarget.lon} />}
                     />
                     <Action.Push
                       title="Open Full Forecast"
@@ -430,22 +368,16 @@ export default function Command() {
                       onAction={() => {
                         // Note: Network tests will re-run when the component re-mounts
                         // For now, just show a toast message
-                        showToast({
-                          style: Toast.Style.Success,
-                          title: "Network Tests",
-                          message: "Tests will re-run when you restart the extension",
-                        });
+                        ToastMessages.networkTestsRetry();
                       }}
                     />
                     <Action
                       title="Show Error Details"
                       icon={Icon.Info}
                       onAction={async () => {
-                        await showToast({
-                          style: Toast.Style.Failure,
-                          title: "Network Test Errors",
-                          message: networkTest.error || "Unknown network connectivity issues",
-                        });
+                        await ToastMessages.networkTestErrors(
+                          networkTest.error || "Unknown network connectivity issues",
+                        );
                       }}
                     />
                   </ActionPanel>
@@ -464,40 +396,40 @@ export default function Command() {
                   accessories={[{ text: `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}` }]}
                   actions={createLocationActions(loc.displayName, loc.lat, loc.lon, favoriteIds[loc.id], async () => {
                     if (favoriteIds[loc.id]) {
-                      const fav: FavoriteLocation = {
-                        id: loc.id,
-                        name: loc.displayName,
-                        lat: loc.lat,
-                        lon: loc.lon,
-                      };
+                      const fav = LocationUtils.createFavoriteFromSearchResult(
+                        loc.id,
+                        loc.displayName,
+                        loc.lat,
+                        loc.lon,
+                      );
                       await removeFavorite(fav);
                       setFavoriteIds((m) => ({ ...m, [loc.id]: false }));
                       setFavorites(await getFavorites());
-                      await showToast({
-                        style: Toast.Style.Success,
-                        title: "Removed from Favorites",
-                        message: `${loc.displayName} has been removed from your favorites`,
-                      });
+                      await ToastMessages.favoriteRemoved(loc.displayName);
                     } else {
-                      const fav: FavoriteLocation = {
-                        id: loc.id,
-                        name: loc.displayName,
-                        lat: loc.lat,
-                        lon: loc.lon,
-                      };
+                      const fav = LocationUtils.createFavoriteFromSearchResult(
+                        loc.id,
+                        loc.displayName,
+                        loc.lat,
+                        loc.lon,
+                      );
                       await addFavorite(fav);
                       setFavoriteIds((m) => ({ ...m, [loc.id]: true }));
                       setFavorites(await getFavorites());
-                      await showToast({
-                        style: Toast.Style.Success,
-                        title: "Added to Favorites",
-                        message: `${loc.displayName} has been added to your favorites`,
-                      });
+                      await ToastMessages.favoriteAdded(loc.displayName);
                     }
                   })}
                 />
               ))}
             </List.Section>
+          )}
+
+          {/* Show "no results" message only when search has completed and returned no results */}
+          {!isLoading && searchText.trim().length >= 3 && safeLocations.length === 0 && (
+            <List.EmptyView
+              title={`No results found for "${searchText}"`}
+              description="Try a different location name or check your spelling"
+            />
           )}
 
           {/* Show favorites only when not actively searching or when no search results */}
@@ -533,11 +465,7 @@ export default function Command() {
                     await removeFavorite(fav);
                     setFavorites(await getFavorites());
                     if (fav.id) setFavoriteIds((m) => ({ ...m, [fav.id as string]: false }));
-                    await showToast({
-                      style: Toast.Style.Success,
-                      title: "Removed from Favorites",
-                      message: `${fav.name} has been removed from your favorites`,
-                    });
+                    await ToastMessages.favoriteRemoved(fav.name);
                   })}
                 />
               ))}
@@ -549,54 +477,5 @@ export default function Command() {
   );
 }
 
-function formatWeatherToast(ts: TimeseriesEntry): string {
-  const details = ts?.data?.instant?.details ?? {};
-  const temp = formatTemperatureCelsius(details.air_temperature) ?? "N/A";
-  const windSpeed = formatWindSpeed(details.wind_speed);
-  const windDir =
-    typeof details.wind_from_direction === "number"
-      ? (() => {
-          const d = directionFromDegrees(details.wind_from_direction);
-          return `${d.arrow} ${d.name}`;
-        })()
-      : undefined;
-  const precip = precipitationAmount(ts);
-  const precipText = formatPrecip(precip);
-  return [temp, windSpeed && `wind ${windSpeed}`, windDir && `from ${windDir}`, precipText && `precip ${precipText}`]
-    .filter(Boolean)
-    .join("  •  ");
-}
-
-function formatAccessories(
-  ts: TimeseriesEntry | undefined,
-  sun?: SunTimes,
-): Array<{ tag?: string | Image; text?: string; tooltip?: string }> | undefined {
-  const details = ts?.data?.instant?.details ?? {};
-  const acc: Array<{ tag?: string | Image; text?: string; tooltip?: string }> = [];
-  const units = getUnits();
-  const flags = getFeatureFlags();
-  const wind = formatWindSpeed(details.wind_speed, units);
-  if (wind) acc.push({ tag: `💨 ${wind}`, tooltip: "Wind" });
-  if (flags.showWindDirection && typeof details.wind_from_direction === "number") {
-    const dir = directionFromDegrees(details.wind_from_direction);
-    acc.push({ tag: `🧭 ${dir.arrow} ${dir.name}`, tooltip: `Direction ${Math.round(details.wind_from_direction)}°` });
-  }
-  const precip = precipitationAmount(ts);
-  const p = formatPrecip(precip, units);
-  if (p) acc.push({ tag: `☔ ${p}`, tooltip: "Precipitation" });
-  if (flags.showSunTimes) {
-    const sr = sun?.sunrise ? new Date(sun.sunrise) : undefined;
-    const ss = sun?.sunset ? new Date(sun.sunset) : undefined;
-    if (sr)
-      acc.push({
-        tag: `🌅 ${formatTime(sr, "MILITARY")}`,
-        tooltip: "Sunrise",
-      });
-    if (ss)
-      acc.push({
-        tag: `🌇 ${formatTime(ss, "MILITARY")}`,
-        tooltip: "Sunset",
-      });
-  }
-  return acc.length ? acc : undefined;
-}
+// Use the utility function instead of local implementation
+const formatAccessories = WeatherFormatters.formatAccessories;
