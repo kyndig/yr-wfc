@@ -13,9 +13,6 @@ declare global {
 
 /**
  * Custom hook for managing weather data fetching
- * This centralizes the pattern used across multiple components for fetching
- * weather forecast data with loading states, error handling, and cleanup
- * Now uses the centralized useAsyncState pattern for consistency
  */
 export function useWeatherData(lat: number, lon: number) {
   const [series, setSeries] = useState<TimeseriesEntry[]>([]);
@@ -36,12 +33,19 @@ export function useWeatherData(lat: number, lon: number) {
       try {
         const data = await getForecast(lat, lon);
         if (!cancelled) {
-          setSeries(data);
-          setShowNoData(false);
+          // Ensure data is always an array
+          const safeData = Array.isArray(data) ? data : [];
+          setSeries(safeData);
+
+          // Only show no data if we actually have no data after fetching
+          if (safeData.length === 0) {
+            setShowNoData(true);
+          }
         }
       } catch (err) {
         if (!cancelled) {
           setSeries([]); // Clear existing weather forecasts
+          setShowNoData(true); // Show no data message on error
 
           // Enhanced error logging for debugging
           const errorDetails = {
@@ -65,13 +69,10 @@ export function useWeatherData(lat: number, lon: number) {
         if (!cancelled) {
           setLoading(false);
 
-          // Delay showing "no data" message by 150ms to give API time to catch up
-          if (series.length === 0) {
-            noDataTimeoutRef.current = setTimeout(() => {
-              if (!cancelled) {
-                setShowNoData(true);
-              }
-            }, 150);
+          // Clear any pending no-data timeout since we've handled it above
+          if (noDataTimeoutRef.current) {
+            clearTimeout(noDataTimeoutRef.current);
+            noDataTimeoutRef.current = null;
           }
         }
       }
@@ -88,8 +89,11 @@ export function useWeatherData(lat: number, lon: number) {
     };
   }, [lat, lon]);
 
+  // Ensure series is always an array to prevent runtime errors
+  const safeSeries = Array.isArray(series) ? series : [];
+
   return {
-    series,
+    series: safeSeries,
     loading,
     showNoData,
   };
