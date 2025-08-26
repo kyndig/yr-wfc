@@ -33,25 +33,53 @@ export default function DayQuickView(props: { name: string; lat: number; lon: nu
   }, [date]);
 
   const graph = useMemo(() => {
+    // Don't show graph until we have data or explicitly know there's no data
+    if (loading) return "";
     if (daySeries.length === 0 && showNoData) return "";
     return buildGraphMarkdown(name, daySeries, daySeries.length, { title, smooth: true }).markdown;
-  }, [name, daySeries, title, showNoData]);
+  }, [name, daySeries, title, showNoData, loading]);
 
   const summary = useMemo(() => {
+    // Don't show summary until we have data or explicitly know there's no data
+    if (loading) return undefined;
     if (daySeries.length === 0 && showNoData) return undefined;
     return generateDaySummary(daySeries);
-  }, [daySeries, showNoData]);
+  }, [daySeries, showNoData, loading]);
 
   const list = useMemo(() => {
+    // Don't show list until we have data or explicitly know there's no data
+    if (loading) return "";
     if (daySeries.length === 0 && showNoData) {
       return generateNoForecastDataMessage({ locationName: name, date });
     }
 
     return buildWeatherTable(daySeries, { showDirection: true });
-  }, [daySeries, showNoData, name, date]);
+  }, [daySeries, showNoData, name, date, loading]);
 
   const summarySection = summary ? `## Summary\n\n${formatSummary(summary)}\n\n---\n` : "";
-  const markdown = [summarySection, graph, "\n---\n", list].join("\n");
+
+  // Only show content when not loading and we have data or know there's no data
+  const shouldShowContent = !loading && (daySeries.length > 0 || showNoData);
+  const markdown = shouldShowContent ? [summarySection, graph, "\n---\n", list].join("\n") : "";
+
+  // Add a small delay to ensure graph is fully rendered before showing content
+  const [graphReady, setGraphReady] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowContent && daySeries.length > 0) {
+      // Small delay to ensure graph SVG is fully generated and rendered
+      const timer = setTimeout(() => {
+        setGraphReady(true);
+      }, 100);
+
+      return () => clearTimeout(timer);
+    } else {
+      setGraphReady(false);
+    }
+  }, [shouldShowContent, daySeries.length]);
+
+  // Only show content when graph is ready
+  const finalMarkdown = graphReady ? markdown : "";
 
   const handleFavoriteToggle = async () => {
     const favLocation: FavoriteLocation = { name, lat, lon };
@@ -86,7 +114,7 @@ export default function DayQuickView(props: { name: string; lat: number; lon: nu
   return (
     <Detail
       isLoading={loading}
-      markdown={markdown}
+      markdown={finalMarkdown}
       actions={
         <ActionPanel>
           {isFavorite ? (

@@ -63,14 +63,41 @@ export default function GraphView(props: { name: string; lat: number; lon: numbe
   }, [series, hours, lat, lon]);
 
   const { markdown } = useMemo(() => {
+    // Don't show content until we have data or explicitly know there's no data
+    if (loading) {
+      return { markdown: "" };
+    }
     if (series.length === 0 && showNoData) {
       return {
         markdown: generateNoForecastDataMessage({ locationName: name }),
       };
     }
 
-    return buildGraphMarkdown(name, series, hours, { sunByDate });
-  }, [name, series, hours, sunByDate, showNoData]);
+    // Add a small delay to ensure graph generation is complete
+    // This prevents the table from appearing before the graph is ready
+    const graphMarkdown = buildGraphMarkdown(name, series, hours, { sunByDate });
+
+    return graphMarkdown;
+  }, [name, series, hours, sunByDate, showNoData, loading]);
+
+  // Add a small delay to ensure graph is fully rendered before showing content
+  const [graphReady, setGraphReady] = useState(false);
+
+  useEffect(() => {
+    if (!loading && series.length > 0) {
+      // Small delay to ensure graph SVG is fully generated and rendered
+      const timer = setTimeout(() => {
+        setGraphReady(true);
+      }, 100);
+
+      return () => clearTimeout(timer);
+    } else {
+      setGraphReady(false);
+    }
+  }, [loading, series.length]);
+
+  // Only show content when graph is ready
+  const finalMarkdown = graphReady ? markdown : "";
 
   const handleFavoriteToggle = async () => {
     const favLocation: FavoriteLocation = { name, lat, lon };
@@ -105,7 +132,7 @@ export default function GraphView(props: { name: string; lat: number; lon: numbe
   return (
     <Detail
       isLoading={loading}
-      markdown={markdown}
+      markdown={finalMarkdown}
       actions={
         <ActionPanel>
           {isFavorite ? (
