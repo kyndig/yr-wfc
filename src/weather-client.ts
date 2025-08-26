@@ -1,5 +1,5 @@
 import { getCached, setCached } from "./cache";
-import { API_HEADERS, API_ENDPOINTS, API_CONFIG, buildApiUrl } from "./utils/api-config";
+import { API_HEADERS, API_CONFIG, API_ENDPOINTS, buildApiUrl } from "./utils/api-config";
 
 export type TimeseriesEntry = {
   time: string;
