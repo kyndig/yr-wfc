@@ -1,18 +1,26 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { Action, ActionPanel, List, Icon } from "@raycast/api";
+import { useEffect, useState, useCallback } from "react";
+import { Action, ActionPanel, List, Icon, showToast, Toast } from "@raycast/api";
 import ForecastView from "./forecast";
+import GraphView from "./graph";
+
 import { searchLocations, type LocationResult } from "./location-search";
 import { getWeather, type TimeseriesEntry } from "./weather-client";
-import { addFavorite, isFavorite, removeFavorite, type FavoriteLocation, getFavorites } from "./storage";
+import {
+  addFavorite,
+  isFavorite,
+  removeFavorite,
+  moveFavoriteUp,
+  moveFavoriteDown,
+  type FavoriteLocation,
+  getFavorites,
+} from "./storage";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
-import { parseQueryIntent } from "./query-intent";
-import { generateDaySummary, formatSummary } from "./weather-summary";
-import { getForecast } from "./weather-client";
+
 import { iconForSymbol } from "./weather-emoji";
-import { filterToDate, formatTemp } from "./weather-utils";
-import { useDelayedError } from "./hooks/useDelayedError";
+import { formatTemp } from "./weather-utils";
+
 import { useNetworkTest } from "./hooks/useNetworkTest";
-import { formatDate } from "./utils/date-utils";
+
 import { ToastMessages } from "./utils/toast-utils";
 import { WeatherFormatters } from "./utils/weather-formatters";
 import { LocationUtils } from "./utils/location-utils";
@@ -57,10 +65,7 @@ export default function Command() {
   const [favoriteIds, setFavoriteIds] = useState<Record<string, boolean>>({});
   const [favoriteWeather, setFavoriteWeather] = useState<Record<string, TimeseriesEntry | undefined>>({});
   const [sunTimes, setSunTimes] = useState<Record<string, SunTimes>>({});
-  const [quickWeather, setQuickWeather] = useState<TimeseriesEntry | undefined>(undefined);
-  const [quickDayForecast, setQuickDayForecast] = useState<TimeseriesEntry[]>([]);
   const [favoriteErrors, setFavoriteErrors] = useState<Record<string, boolean>>({});
-  const { showError: showQuickViewError, setErrorWithDelay: setQuickViewErrorWithDelay } = useDelayedError();
   const networkTest = useNetworkTest();
 
   useEffect(() => {
@@ -135,8 +140,7 @@ export default function Command() {
   // Trigger search when search text changes with debouncing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      const parsed = parseQueryIntent(searchText);
-      const q = (parsed.locationQuery ?? searchText).trim();
+      const q = searchText.trim();
       if (q && q.length >= 3) {
         performSearch(q);
       } else if (q && q.length > 0 && q.length < 3) {
@@ -167,85 +171,6 @@ export default function Command() {
       setFavoriteIds({});
     }
   }, [safeLocations]);
-
-  const intent = useMemo(() => parseQueryIntent(searchText), [searchText]);
-
-  const quickTarget = useMemo(() => {
-    const date = intent.targetDate;
-    const q = intent.locationQuery?.toLowerCase().trim();
-    if (!date || !q) return undefined;
-    // Prefer favorites that include query
-    const fav = favorites.find((f) => f.name.toLowerCase().includes(q));
-    if (fav) return { name: fav.name, lat: fav.lat, lon: fav.lon, date } as const;
-    // Fall back to first matching search result
-    const loc = safeLocations.find((l) => l.displayName.toLowerCase().includes(q));
-    if (loc) return { name: loc.displayName, lat: loc.lat, lon: loc.lon, date } as const;
-    return undefined;
-  }, [favorites, locations, intent]);
-
-  // Fetch current weather for Quick View to display icon and accessories like Favorites
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!quickTarget) {
-        setQuickWeather(undefined);
-        setQuickDayForecast([]);
-        setQuickViewErrorWithDelay(null);
-        return;
-      }
-
-      setQuickViewErrorWithDelay(null);
-
-      try {
-        const [ts, forecast] = await Promise.all([
-          getWeather(quickTarget.lat, quickTarget.lon),
-          getForecast(quickTarget.lat, quickTarget.lon),
-        ]);
-        if (!cancelled) {
-          setQuickWeather(ts);
-          setQuickDayForecast(forecast);
-          setQuickViewErrorWithDelay(null);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          // Clear weather data when API fails
-          setQuickWeather(undefined);
-          setQuickDayForecast([]);
-          console.warn(`Failed to fetch weather for Quick View (${quickTarget.name}):`, err);
-
-          // Use the delayed error hook
-          setQuickViewErrorWithDelay("Failed to fetch weather data");
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [quickTarget?.lat, quickTarget?.lon]);
-
-  // Generate day summary for Quick View
-  const daySummary = useMemo(() => {
-    if (!quickTarget || quickDayForecast.length === 0) return undefined;
-
-    // Filter forecast to just the target day
-    const daySeries = filterToDate(quickDayForecast, quickTarget.date);
-
-    return generateDaySummary(daySeries);
-  }, [quickTarget, quickDayForecast]);
-
-  // Check if the requested date has forecast data
-  const hasForecastData = useMemo(() => {
-    if (!quickTarget || quickDayForecast.length === 0) return false;
-
-    const daySeries = filterToDate(quickDayForecast, quickTarget.date);
-
-    return daySeries.length > 0;
-  }, [quickTarget, quickDayForecast]);
-
-  // Check if there was an error fetching weather data
-  const hasWeatherError = useMemo(() => {
-    return quickTarget && showQuickViewError;
-  }, [quickTarget, showQuickViewError]);
 
   // Debug: Log network test results and show user-friendly notifications
   useEffect(() => {
@@ -315,32 +240,6 @@ export default function Command() {
                 { text: `${3 - searchText.trim().length} more`, tooltip: "Characters needed" },
               ]}
             />
-          )}
-
-          {quickTarget && (
-            <List.Section title="Quick View">
-              <List.Item
-                key={`qv:${quickTarget.name}:${quickTarget.date.toISOString().slice(0, 10)}`}
-                title={`${quickTarget.name} — ${formatDate(quickTarget.date, "WEEKDAY_ONLY")}`}
-                subtitle={`${formatDate(quickTarget.date, "MONTH_DAY")} • ${hasWeatherError ? "⚠️ Data fetch failed" : hasForecastData ? (daySummary ? formatSummary(daySummary) : "Loading...") : "⚠️ No forecast data available"}`}
-                icon={hasWeatherError ? "⚠️" : hasForecastData ? iconForSymbol(quickWeather) : "🤷"}
-                accessories={
-                  hasWeatherError ? undefined : hasForecastData ? formatAccessories(quickWeather) : undefined
-                }
-                actions={
-                  <ActionPanel>
-                    <Action.Push
-                      title="Open 1-Day View"
-                      target={<ForecastView name={quickTarget.name} lat={quickTarget.lat} lon={quickTarget.lon} />}
-                    />
-                    <Action.Push
-                      title="Open Full Forecast"
-                      target={<ForecastView name={quickTarget.name} lat={quickTarget.lat} lon={quickTarget.lon} />}
-                    />
-                  </ActionPanel>
-                }
-              />
-            </List.Section>
           )}
 
           {/* Network Status Section - Show when there are connectivity issues */}
@@ -461,12 +360,64 @@ export default function Command() {
                         )
                       : undefined
                   }
-                  actions={createLocationActions(fav.name, fav.lat, fav.lon, true, async () => {
-                    await removeFavorite(fav);
-                    setFavorites(await getFavorites());
-                    if (fav.id) setFavoriteIds((m) => ({ ...m, [fav.id as string]: false }));
-                    await ToastMessages.favoriteRemoved(fav.name);
-                  })}
+                  actions={
+                    <ActionPanel>
+                      <Action.Push
+                        title="Open Forecast"
+                        target={<ForecastView name={fav.name} lat={fav.lat} lon={fav.lon} />}
+                      />
+                      <Action
+                        title="Show Current Weather"
+                        onAction={async () => {
+                          try {
+                            const ts: TimeseriesEntry = await getWeather(fav.lat, fav.lon);
+                            await showToast({
+                              style: Toast.Style.Success,
+                              title: `Now at ${fav.name}`,
+                              message: WeatherFormatters.formatWeatherToast(ts),
+                            });
+                          } catch (error) {
+                            await ToastMessages.weatherLoadFailed(error);
+                          }
+                        }}
+                      />
+                      <Action.Push
+                        title="Open Graph"
+                        icon={Icon.BarChart}
+                        shortcut={{ modifiers: ["cmd"], key: "g" }}
+                        target={<GraphView name={fav.name} lat={fav.lat} lon={fav.lon} />}
+                      />
+                      <Action
+                        title="Remove from Favorites"
+                        icon={Icon.StarDisabled}
+                        shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
+                        onAction={async () => {
+                          await removeFavorite(fav);
+                          setFavorites(await getFavorites());
+                          if (fav.id) setFavoriteIds((m) => ({ ...m, [fav.id as string]: false }));
+                          await ToastMessages.favoriteRemoved(fav.name);
+                        }}
+                      />
+                      <Action
+                        title="Move up"
+                        icon={Icon.ArrowUp}
+                        shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
+                        onAction={async () => {
+                          await moveFavoriteUp(fav);
+                          setFavorites(await getFavorites());
+                        }}
+                      />
+                      <Action
+                        title="Move Down"
+                        icon={Icon.ArrowDown}
+                        shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
+                        onAction={async () => {
+                          await moveFavoriteDown(fav);
+                          setFavorites(await getFavorites());
+                        }}
+                      />
+                    </ActionPanel>
+                  }
                 />
               ))}
             </List.Section>
