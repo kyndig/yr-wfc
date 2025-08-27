@@ -165,7 +165,7 @@ export function buildGraphMarkdown(
   const subset = series.slice(0, hours);
   const width = 800;
   const height = 280;
-  const margin = { top: 28, right: 16, bottom: 48, left: 44 };
+  const margin = { top: 28, right: 24, bottom: 48, left: 52 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -204,14 +204,26 @@ export function buildGraphMarkdown(
   const tempLine = line<number>()
     .x((_: number, i: number) => xScale(times[i]))
     .y((_: number, i: number) => yT(tempsDisplay[i] ?? 0));
-  if (opts?.smooth) tempLine.curve(curveMonotoneX);
+  // Always apply smooth curves for better visual appearance
+  tempLine.curve(curveMonotoneX);
   const tempPath = tempLine(tempsDisplay as number[]) || "";
+
   // Build precipitation path (dotted)
   const precLine = line<number>()
     .x((_: number, i: number) => xScale(times[i]))
     .y((_: number, i: number) => yP(precsDisplay[i] ?? 0));
-  if (opts?.smooth) precLine.curve(curveMonotoneX);
+  // Always apply smooth curves for better visual appearance
+  precLine.curve(curveMonotoneX);
   const precPath = precLine(precsDisplay as number[]) || "";
+
+  // Build precipitation area fill for better visibility
+  const precAreaLine = line<number>()
+    .x((_: number, i: number) => xScale(times[i]))
+    .y((_: number, i: number) => yP(precsDisplay[i] ?? 0));
+  // Always apply smooth curves for better visual appearance
+  precAreaLine.curve(curveMonotoneX);
+  const precAreaPath = precAreaLine([...precsDisplay, 0, 0] as number[]) || "";
+  const precipAreaFill = `<path d="${precAreaPath} L ${xScale(times[times.length - 1])} ${py(0)} L ${xScale(times[0])} ${py(0)} Z" fill="#1e90ff" opacity="0.1" stroke-linejoin="round" />`;
 
   // Emoji labels for weather above temperature points
   const emojiLabels = times
@@ -305,7 +317,7 @@ export function buildGraphMarkdown(
   const tempLabel = (v: number) => (units === "imperial" ? `${Math.round(v)} °F` : `${Math.round(v)} °C`);
   const yLabels = [tMinDisp, (tMinDisp + tMaxDisp) / 2, tMaxDisp].map((v) => {
     const y = ty(v);
-    return `<text x="${margin.left - 8}" y="${y.toFixed(1)}" font-size="11" text-anchor="end" alignment-baseline="middle" fill="#888">${tempLabel(
+    return `<text x="${margin.left - 12}" y="${y.toFixed(1)}" font-size="11" text-anchor="end" alignment-baseline="middle" fill="#888">${tempLabel(
       v,
     )}</text>`;
   });
@@ -314,10 +326,38 @@ export function buildGraphMarkdown(
   const pLabel = (v: number) => (units === "imperial" ? `${Number(v.toFixed(2))} in` : `${v} mm`);
   const pLabels = [0, pMaxDisp / 2, pMaxDisp].map((v) => {
     const y = py(v);
-    return `<text x="${width - margin.right + 8}" y="${y.toFixed(1)}" font-size="11" text-anchor="start" alignment-baseline="middle" fill="#888">${pLabel(
+    return `<text x="${width - margin.right + 12}" y="${y.toFixed(1)}" font-size="11" text-anchor="start" alignment-baseline="middle" fill="#1e90ff" font-weight="500">${pLabel(
       v,
     )}</text>`;
   });
+
+  // Add precipitation axis line on the right
+  const precipAxisLine = `<line x1="${width - margin.right}" x2="${width - margin.right}" y1="${margin.top}" y2="${height - margin.bottom}" stroke="#1e90ff" stroke-width="1.5" opacity="0.8" />`;
+
+  // Add precipitation title on the right
+  const precipTitle = `<text x="${width - margin.right + 12}" y="${margin.top - 8}" font-size="12" text-anchor="start" fill="#1e90ff" font-weight="600">P (${units === "imperial" ? "in" : "mm"})</text>`;
+
+  // Add temperature title on the left
+  const tempTitle = `<text x="${margin.left - 12}" y="${margin.top - 8}" font-size="12" text-anchor="end" fill="#ff6b6b" font-weight="600">T (${units === "imperial" ? "°F" : "°C"})</text>`;
+
+  // Add precipitation grid lines for better readability
+  const precipGridLines = [0, pMaxDisp / 2, pMaxDisp].map((v) => {
+    const y = py(v);
+    return `<line x1="${margin.left}" x2="${width - margin.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e6f3ff" stroke-width="1" opacity="0.6" />`;
+  });
+
+  // Add precipitation data points for better visibility
+  const precipPoints = precsDisplay
+    .map((p, i) => {
+      if (p > 0) {
+        const x = xScale(times[i]);
+        const y = py(p);
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="#1e90ff" opacity="0.8" />`;
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .join("");
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
@@ -330,11 +370,17 @@ export function buildGraphMarkdown(
     ${dayLinesAndLabels}
     ${yLabels.join("\n")}
     ${pLabels.join("\n")}
-    <path d="${precPath}" fill="none" stroke="#1e90ff" stroke-width="2" stroke-dasharray="4 4" opacity="0.9" />
-    <path d="${tempPath}" fill="none" stroke="#ff6b6b" stroke-width="2.5" />
+    ${precipGridLines.join("\n")}
+    ${precipAxisLine}
+    ${precipTitle}
+    ${tempTitle}
+    ${precipAreaFill}
+    <path d="${precPath}" fill="none" stroke="#1e90ff" stroke-width="2" stroke-dasharray="4 4" opacity="0.9" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="${tempPath}" fill="none" stroke="#ff6b6b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
     ${emojiLabels}
     ${sunLines}
     ${windLabels}
+    ${precipPoints}
   </g>
 </svg>`;
 
