@@ -58,3 +58,23 @@ export async function isFavorite(fav: FavoriteLocation): Promise<boolean> {
   const list = await getFavorites();
   return list.some((f) => sameLocation(f, fav));
 }
+
+export async function moveFavoriteUp(fav: FavoriteLocation): Promise<void> {
+  const list = await getFavorites();
+  const index = list.findIndex((f) => sameLocation(f, fav));
+  if (index > 0) {
+    // Swap with the item above
+    [list[index], list[index - 1]] = [list[index - 1], list[index]];
+    await setFavorites(list);
+  }
+}
+
+export async function moveFavoriteDown(fav: FavoriteLocation): Promise<void> {
+  const list = await getFavorites();
+  const index = list.findIndex((f) => sameLocation(f, fav));
+  if (index >= 0 && index < list.length - 1) {
+    // Swap with the item below
+    [list[index], list[index + 1]] = [list[index + 1], list[index]];
+    await setFavorites(list);
+  }
+}
