@@ -7,8 +7,8 @@ import { useWeatherData } from "./hooks/useWeatherData";
 import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
 
-export default function ForecastView(props: { name: string; lat: number; lon: number }) {
-  const { name, lat, lon } = props;
+export default function ForecastView(props: { name: string; lat: number; lon: number; preCachedGraph?: string }) {
+  const { name, lat, lon, preCachedGraph } = props;
   const [mode, setMode] = useState<"detailed" | "summary">("detailed");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const { series: items, loading, showNoData } = useWeatherData(lat, lon);
@@ -36,11 +36,13 @@ export default function ForecastView(props: { name: string; lat: number; lon: nu
   // Generate and cache graphs when data changes
   useEffect(() => {
     if (items.length > 0) {
-      // Cache detailed graph (48h)
-      const detailedGraph = buildGraphMarkdown(name, items.slice(0, 48), 48, {
-        title: "48h forecast",
-        smooth: true,
-      }).markdown;
+      // Use pre-cached graph if available, otherwise generate new one
+      const detailedGraph =
+        preCachedGraph ||
+        buildGraphMarkdown(name, items.slice(0, 48), 48, {
+          title: "48h forecast",
+          smooth: true,
+        }).markdown;
 
       // Cache summary graph (9-day)
       const summaryGraph = buildGraphMarkdown(name, reduced, reduced.length, {
@@ -53,7 +55,12 @@ export default function ForecastView(props: { name: string; lat: number; lon: nu
         summary: summaryGraph,
       });
     }
-  }, [items, reduced, name]);
+  }, [items, reduced, name, preCachedGraph]);
+
+  // Clear graph cache when component mounts to ensure fresh styling
+  useEffect(() => {
+    setGraphCache({ detailed: "", summary: "" });
+  }, []);
 
   // Get cached graph based on current mode
   const graph = useMemo(() => {
@@ -71,27 +78,32 @@ export default function ForecastView(props: { name: string; lat: number; lon: nu
 
   // Only show content when not loading and we have data or know there's no data
   const shouldShowContent = !loading && (displaySeries.length > 0 || showNoData);
-  const markdown = [graph, "\n---\n", listMarkdown].join("\n");
 
-  // Add a small delay to ensure graph is fully rendered before showing content
-  // Now much faster since graphs are pre-cached
-  const [graphReady, setGraphReady] = useState(false);
+  // Wait for graph to actually render before showing content to prevent visual jumping
+  const [graphRendered, setGraphRendered] = useState(false);
 
+  // Show content only when graph is fully rendered
+  const finalMarkdown = shouldShowContent && graphRendered ? [graph, "\n---\n", listMarkdown].join("\n") : "";
+
+  // Reset graphRendered immediately when mode changes to prevent flickering
   useEffect(() => {
-    if (shouldShowContent && displaySeries.length > 0 && graph) {
-      // Much shorter delay since graphs are pre-cached
+    setGraphRendered(false);
+  }, [mode]);
+
+  // Detect when graph is actually rendered to prevent visual jumping
+  useEffect(() => {
+    if (shouldShowContent && graph) {
+      // Longer delay to ensure browser actually renders the SVG image
+      // This accounts for markdown parsing + SVG rendering + layout calculation
       const timer = setTimeout(() => {
-        setGraphReady(true);
-      }, 50); // Reduced from 100ms to 50ms
+        setGraphRendered(true);
+      }, 200); // Increased from 100ms to 200ms for more reliable rendering
 
       return () => clearTimeout(timer);
     } else {
-      setGraphReady(false);
+      setGraphRendered(false);
     }
-  }, [shouldShowContent, displaySeries.length, graph]);
-
-  // Only show content when graph is ready
-  const finalMarkdown = graphReady ? markdown : "";
+  }, [shouldShowContent, graph]);
 
   const handleFavoriteToggle = async () => {
     const favLocation: FavoriteLocation = { name, lat, lon };
