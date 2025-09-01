@@ -8,10 +8,16 @@ import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { formatDate } from "./utils/date-utils";
 import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
 
-export default function DayQuickView(props: { name: string; lat: number; lon: number; date: Date }) {
-  const { name, lat, lon, date } = props;
+export default function DayView(props: {
+  name: string;
+  lat: number;
+  lon: number;
+  date: string;
+  onShowWelcome?: () => void;
+}) {
+  const { name, lat, lon, date, onShowWelcome } = props;
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
-  const { series, loading, showNoData } = useWeatherData(lat, lon);
+  const { series: items, loading, showNoData } = useWeatherData(lat, lon);
 
   // Check if current location is in favorites
   useEffect(() => {
@@ -24,8 +30,8 @@ export default function DayQuickView(props: { name: string; lat: number; lon: nu
   }, [name, lat, lon]);
 
   const daySeries = useMemo(() => {
-    return filterToDate(series, date);
-  }, [series, date]);
+    return filterToDate(items, new Date(date));
+  }, [items, date]);
 
   const title = useMemo(() => {
     const label = formatDate(date, "LONG_DAY");
@@ -50,7 +56,7 @@ export default function DayQuickView(props: { name: string; lat: number; lon: nu
     // Don't show list until we have data or explicitly know there's no data
     if (loading) return "";
     if (daySeries.length === 0 && showNoData) {
-      return generateNoForecastDataMessage({ locationName: name, date });
+      return generateNoForecastDataMessage({ locationName: name, date: new Date(date) });
     }
 
     return buildWeatherTable(daySeries, { showDirection: true });
@@ -130,6 +136,15 @@ export default function DayQuickView(props: { name: string; lat: number; lon: nu
               icon={Icon.Star}
               shortcut={{ modifiers: ["cmd"], key: "f" }}
               onAction={handleFavoriteToggle}
+            />
+          )}
+
+          {onShowWelcome && (
+            <Action
+              title="Show Welcome Message"
+              icon={Icon.Info}
+              onAction={onShowWelcome}
+              shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
             />
           )}
         </ActionPanel>
