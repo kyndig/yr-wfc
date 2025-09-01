@@ -8,6 +8,7 @@ export type FavoriteLocation = {
 };
 
 const STORAGE_KEY = "favorite-locations";
+const FIRST_TIME_KEY = "first-time-user";
 
 export async function getFavorites(): Promise<FavoriteLocation[]> {
   const raw = await LocalStorage.getItem<string>(STORAGE_KEY);
@@ -77,4 +78,13 @@ export async function moveFavoriteDown(fav: FavoriteLocation): Promise<void> {
     [list[index], list[index + 1]] = [list[index + 1], list[index]];
     await setFavorites(list);
   }
+}
+
+export async function isFirstTimeUser(): Promise<boolean> {
+  const raw = await LocalStorage.getItem<string>(FIRST_TIME_KEY);
+  return raw === null || raw === undefined;
+}
+
+export async function markAsNotFirstTime(): Promise<void> {
+  await LocalStorage.setItem(FIRST_TIME_KEY, "false");
 }
