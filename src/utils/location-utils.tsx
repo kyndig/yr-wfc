@@ -20,10 +20,14 @@ export class LocationUtils {
     lon: number,
     isFavorite: boolean,
     onFavoriteToggle: () => void,
+    onShowWelcome?: () => void,
   ) {
     return (
       <ActionPanel>
-        <Action.Push title="Open Forecast" target={<ForecastView name={name} lat={lat} lon={lon} />} />
+        <Action.Push
+          title="Open Forecast"
+          target={<ForecastView name={name} lat={lat} lon={lon} onShowWelcome={onShowWelcome} />}
+        />
         <Action
           title="Show Current Weather"
           onAction={async () => {
@@ -43,7 +47,7 @@ export class LocationUtils {
           title="Open Graph"
           icon={Icon.BarChart}
           shortcut={{ modifiers: ["cmd"], key: "g" }}
-          target={<GraphView name={name} lat={lat} lon={lon} />}
+          target={<GraphView name={name} lat={lat} lon={lon} onShowWelcome={onShowWelcome} />}
         />
         {isFavorite ? (
           <Action
