@@ -39,6 +39,8 @@ This extension does not send any user data to our servers. All API requests are 
   - Natural language summary (e.g., "Partly cloudy, with a low chance of precipitation")
 - **Graph view**: Also available directly from a favorite.
 - **Units**: Metric (default) or Imperial; respected in lists and graphs.
+- **Welcome Message**: Helpful introduction for first-time users, accessible anytime with **Cmd+Shift+W**
+- **First-time User Experience**: Automatic welcome message on first install with smart tracking
 - **Caching**: Reduces API calls (MET: 30 minutes, Sunrise/Sunset: 6 hours).
 
 ### How to use
@@ -61,11 +63,18 @@ This extension does not send any user data to our servers. All API requests are 
 6. **Quick View**: When searching for a specific day, a Quick View item appears at the top showing:
    - Weather summary for that day
    - Actions to open the one-day view or full forecast
+7. **Welcome Message**: Access helpful information anytime:
+   - **Cmd+Shift+W** to show welcome message from any view
+   - **Cmd+Shift+Alt+W** to hide welcome message
+   - Available in favorites, search results, and all detail views
 
 ### Keyboard Shortcuts
 
 - **Cmd+F**: Add location to favorites
 - **Cmd+Shift+F**: Remove location from favorites
+- **Cmd+Shift+W**: Show welcome message (from any view)
+- **Cmd+Shift+Alt+W**: Hide welcome message
+- **Cmd+G**: Open graph view
 - **Enter**: Show current weather (search results) or open forecast (favorites)
 
 ### Command preferences
