@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Action, ActionPanel, List, Icon, showToast, Toast } from "@raycast/api";
 import ForecastView from "./forecast";
 import GraphView from "./graph";
+import WelcomeMessage from "./components/welcome-message";
 
 import { searchLocations, type LocationResult } from "./location-search";
 import { getWeather, type TimeseriesEntry } from "./weather-client";
@@ -13,6 +14,8 @@ import {
   moveFavoriteDown,
   type FavoriteLocation,
   getFavorites,
+  isFirstTimeUser,
+  markAsNotFirstTime,
 } from "./storage";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
 
@@ -29,6 +32,7 @@ export default function Command() {
   const [searchText, setSearchText] = useState("");
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
   const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
 
   // Simple search state management to avoid infinite loops
   const [locations, setLocations] = useState<LocationResult[]>([]);
@@ -193,6 +197,19 @@ export default function Command() {
     }
   }, [networkTest]);
 
+  // Check if this is the first time opening the extension
+  useEffect(() => {
+    const checkFirstTime = async () => {
+      const firstTime = await isFirstTimeUser();
+      if (firstTime) {
+        // Mark as not first time after showing the welcome message
+        await markAsNotFirstTime();
+        setShowWelcomeMessage(true);
+      }
+    };
+    checkFirstTime();
+  }, []);
+
   const showEmpty = favoritesLoaded && favorites.length === 0 && safeLocations.length === 0 && !isLoading;
 
   // Only show favorites when not actively searching or when search is empty
@@ -210,22 +227,44 @@ export default function Command() {
       onSearchTextChange={setSearchText}
       searchBarPlaceholder="Search for a location (min. 3 characters)..."
       throttle
+      actions={
+        <ActionPanel>
+          <Action
+            title="Show Welcome Message"
+            icon={Icon.Info}
+            onAction={() => setShowWelcomeMessage(true)}
+            shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+          />
+          <Action
+            title="Hide Welcome Message"
+            icon={Icon.Info}
+            onAction={() => setShowWelcomeMessage(false)}
+            shortcut={{ modifiers: ["cmd", "shift", "alt"], key: "w" }}
+          />
+        </ActionPanel>
+      }
     >
+      {/* Welcome message - shown when manually triggered, regardless of favorites/search state */}
+      {showWelcomeMessage && !searchText.trim() && <WelcomeMessage showActions={false} />}
+
       {showEmpty ? (
-        <List.EmptyView
-          title={
-            searchText && searchText.trim().length >= 3
-              ? `Searching for "${searchText}"`
-              : searchText
-                ? `"${searchText}"`
-                : "Search for a location"
-          }
-          description={
-            searchText && searchText.trim().length < 3
-              ? "Enter at least 3 characters to search"
-              : "Enter a city name or coordinates to get weather information"
-          }
-        />
+        <>
+          {/* Regular empty state */}
+          <List.EmptyView
+            title={
+              searchText && searchText.trim().length >= 3
+                ? `Searching for "${searchText}"`
+                : searchText
+                  ? `"${searchText}"`
+                  : "Search for a location"
+            }
+            description={
+              searchText && searchText.trim().length < 3
+                ? "Enter at least 3 characters to search"
+                : "Enter a city name or coordinates to get weather information"
+            }
+          />
+        </>
       ) : (
         <>
           {/* Show feedback when no results and insufficient characters */}
@@ -239,6 +278,16 @@ export default function Command() {
                 { text: `${searchText.trim().length}/3`, tooltip: "Characters entered" },
                 { text: `${3 - searchText.trim().length} more`, tooltip: "Characters needed" },
               ]}
+              actions={
+                <ActionPanel>
+                  <Action
+                    title="Show Welcome Message"
+                    icon={Icon.Info}
+                    onAction={() => setShowWelcomeMessage(true)}
+                    shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+                  />
+                </ActionPanel>
+              }
             />
           )}
 
@@ -279,6 +328,13 @@ export default function Command() {
                         );
                       }}
                     />
+
+                    <Action
+                      title="Show Welcome Message"
+                      icon={Icon.Info}
+                      onAction={() => setShowWelcomeMessage(true)}
+                      shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+                    />
                   </ActionPanel>
                 }
               />
@@ -293,31 +349,38 @@ export default function Command() {
                   key={loc.id}
                   title={loc.displayName}
                   accessories={[{ text: `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}` }]}
-                  actions={createLocationActions(loc.displayName, loc.lat, loc.lon, favoriteIds[loc.id], async () => {
-                    if (favoriteIds[loc.id]) {
-                      const fav = LocationUtils.createFavoriteFromSearchResult(
-                        loc.id,
-                        loc.displayName,
-                        loc.lat,
-                        loc.lon,
-                      );
-                      await removeFavorite(fav);
-                      setFavoriteIds((m) => ({ ...m, [loc.id]: false }));
-                      setFavorites(await getFavorites());
-                      await ToastMessages.favoriteRemoved(loc.displayName);
-                    } else {
-                      const fav = LocationUtils.createFavoriteFromSearchResult(
-                        loc.id,
-                        loc.displayName,
-                        loc.lat,
-                        loc.lon,
-                      );
-                      await addFavorite(fav);
-                      setFavoriteIds((m) => ({ ...m, [loc.id]: true }));
-                      setFavorites(await getFavorites());
-                      await ToastMessages.favoriteAdded(loc.displayName);
-                    }
-                  })}
+                  actions={createLocationActions(
+                    loc.displayName,
+                    loc.lat,
+                    loc.lon,
+                    favoriteIds[loc.id],
+                    async () => {
+                      if (favoriteIds[loc.id]) {
+                        const fav = LocationUtils.createFavoriteFromSearchResult(
+                          loc.id,
+                          loc.displayName,
+                          loc.lat,
+                          loc.lon,
+                        );
+                        await removeFavorite(fav);
+                        setFavoriteIds((m) => ({ ...m, [loc.id]: false }));
+                        setFavorites(await getFavorites());
+                        await ToastMessages.favoriteRemoved(loc.displayName);
+                      } else {
+                        const fav = LocationUtils.createFavoriteFromSearchResult(
+                          loc.id,
+                          loc.displayName,
+                          loc.lat,
+                          loc.lon,
+                        );
+                        await addFavorite(fav);
+                        setFavoriteIds((m) => ({ ...m, [loc.id]: true }));
+                        setFavorites(await getFavorites());
+                        await ToastMessages.favoriteAdded(loc.displayName);
+                      }
+                    },
+                    () => setShowWelcomeMessage(true),
+                  )}
                 />
               ))}
             </List.Section>
@@ -364,7 +427,14 @@ export default function Command() {
                     <ActionPanel>
                       <Action.Push
                         title="Open Forecast"
-                        target={<ForecastView name={fav.name} lat={fav.lat} lon={fav.lon} />}
+                        target={
+                          <ForecastView
+                            name={fav.name}
+                            lat={fav.lat}
+                            lon={fav.lon}
+                            onShowWelcome={() => setShowWelcomeMessage(true)}
+                          />
+                        }
                       />
                       <Action
                         title="Show Current Weather"
@@ -385,7 +455,14 @@ export default function Command() {
                         title="Open Graph"
                         icon={Icon.BarChart}
                         shortcut={{ modifiers: ["cmd"], key: "g" }}
-                        target={<GraphView name={fav.name} lat={fav.lat} lon={fav.lon} />}
+                        target={
+                          <GraphView
+                            name={fav.name}
+                            lat={fav.lat}
+                            lon={fav.lon}
+                            onShowWelcome={() => setShowWelcomeMessage(true)}
+                          />
+                        }
                       />
                       <Action
                         title="Remove from Favorites"
@@ -415,6 +492,13 @@ export default function Command() {
                           await moveFavoriteDown(fav);
                           setFavorites(await getFavorites());
                         }}
+                      />
+
+                      <Action
+                        title="Show Welcome Message"
+                        icon={Icon.Info}
+                        onAction={() => setShowWelcomeMessage(true)}
+                        shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
                       />
                     </ActionPanel>
                   }
