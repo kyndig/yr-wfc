@@ -7,8 +7,14 @@ import { useWeatherData } from "./hooks/useWeatherData";
 import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
 
-export default function ForecastView(props: { name: string; lat: number; lon: number; preCachedGraph?: string }) {
-  const { name, lat, lon, preCachedGraph } = props;
+export default function ForecastView(props: {
+  name: string;
+  lat: number;
+  lon: number;
+  preCachedGraph?: string;
+  onShowWelcome?: () => void;
+}) {
+  const { name, lat, lon, preCachedGraph, onShowWelcome } = props;
   const [mode, setMode] = useState<"detailed" | "summary">("detailed");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const { series: items, loading, showNoData } = useWeatherData(lat, lon);
@@ -159,6 +165,15 @@ export default function ForecastView(props: { name: string; lat: number; lon: nu
               icon={Icon.Star}
               shortcut={{ modifiers: ["cmd"], key: "f" }}
               onAction={handleFavoriteToggle}
+            />
+          )}
+
+          {onShowWelcome && (
+            <Action
+              title="Show Welcome Message"
+              icon={Icon.Info}
+              onAction={onShowWelcome}
+              shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
             />
           )}
         </ActionPanel>
