@@ -14,8 +14,14 @@ import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { formatDate, formatTime } from "./utils/date-utils";
 import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
 
-export default function GraphView(props: { name: string; lat: number; lon: number; hours?: number }) {
-  const { name, lat, lon, hours = 48 } = props;
+export default function GraphView(props: {
+  name: string;
+  lat: number;
+  lon: number;
+  hours?: number;
+  onShowWelcome?: () => void;
+}) {
+  const { name, lat, lon, hours = 48, onShowWelcome } = props;
   const [sunByDate, setSunByDate] = useState<Record<string, SunTimes>>({});
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const { series, loading, showNoData } = useWeatherData(lat, lon);
@@ -150,6 +156,15 @@ export default function GraphView(props: { name: string; lat: number; lon: numbe
               onAction={handleFavoriteToggle}
             />
           )}
+
+          {onShowWelcome && (
+            <Action
+              title="Show Welcome Message"
+              icon={Icon.Info}
+              onAction={onShowWelcome}
+              shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+            />
+          )}
         </ActionPanel>
       }
     />
@@ -165,7 +180,7 @@ export function buildGraphMarkdown(
   const subset = series.slice(0, hours);
   const width = 800;
   const height = 280;
-  const margin = { top: 28, right: 24, bottom: 48, left: 52 };
+  const margin = { top: 28, right: 50, bottom: 48, left: 52 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -326,7 +341,7 @@ export function buildGraphMarkdown(
   const pLabel = (v: number) => (units === "imperial" ? `${Number(v.toFixed(2))} in` : `${v} mm`);
   const pLabels = [0, pMaxDisp / 2, pMaxDisp].map((v) => {
     const y = py(v);
-    return `<text x="${width - margin.right + 12}" y="${y.toFixed(1)}" font-size="11" text-anchor="start" alignment-baseline="middle" fill="#1e90ff" font-weight="500">${pLabel(
+    return `<text x="${width - margin.right + 12}" y="${y.toFixed(1)}" font-size="11" text-anchor="start" alignment-baseline="middle" fill="#888" font-weight="500">${pLabel(
       v,
     )}</text>`;
   });
