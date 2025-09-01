@@ -61,6 +61,15 @@
           "type": "checkbox",
           "required": false,
           "default": true
+        },
+        {
+          "name": "debugMode",
+          "label": "Debug Mode",
+          "title": "Debug Mode",
+          "description": "Show detailed console output for debugging API calls and network tests",
+          "type": "checkbox",
+          "required": false,
+          "default": false
         }
       ]
     }

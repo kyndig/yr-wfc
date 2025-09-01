@@ -1,5 +1,6 @@
 import { getCached, setCached } from "../cache";
 import { API_HEADERS, API_CONFIG, buildApiUrl } from "./api-config";
+import { DebugLogger } from "./debug-utils";
 
 /**
  * Generic API client for making cached HTTP requests
@@ -69,7 +70,7 @@ export class ApiClient {
     try {
       return await this.request(params, cacheKeySuffix, responseTransformer);
     } catch (error) {
-      console.warn(`API request failed for ${cacheKeySuffix}:`, error);
+      DebugLogger.warn(`API request failed for ${cacheKeySuffix}:`, error);
       return fallback;
     }
   }
@@ -91,7 +92,7 @@ export const sunriseApiClient = new ApiClient(
 );
 
 // Debug: Log API client initialization
-console.log("API clients initialized:", {
+DebugLogger.log("API clients initialized:", {
   weatherApiClient: !!weatherApiClient,
   sunriseApiClient: !!sunriseApiClient,
   weatherApiClientType: typeof weatherApiClient,

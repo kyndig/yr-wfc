@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { DebugLogger } from "../utils/debug-utils";
 
 type NetworkTestConfig = {
   name: string;
@@ -48,10 +49,10 @@ export function useNetworkTest() {
     // Run all tests in parallel
     const testPromises = testConfigs.map(async (config) => {
       try {
-        console.log(`Testing ${config.name}...`);
+        DebugLogger.log(`Testing ${config.name}...`);
         const response = await fetch(config.url, { headers: config.headers });
         const success = response.ok;
-        console.log(`${config.name} test result:`, success);
+        DebugLogger.log(`${config.name} test result:`, success);
 
         // Update results based on test name
         if (config.name === "httpbin") results.httpbin = success;
@@ -61,7 +62,7 @@ export function useNetworkTest() {
         return { success, name: config.name };
       } catch (err) {
         const errorMsg = `${config.name} failed: ${err instanceof Error ? err.message : String(err)}`;
-        console.error(`${config.name} test failed:`, err);
+        DebugLogger.error(`${config.name} test failed:`, err);
         errors.push(errorMsg);
         return { success: false, name: config.name };
       }

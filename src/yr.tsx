@@ -27,6 +27,7 @@ import { useNetworkTest } from "./hooks/useNetworkTest";
 import { ToastMessages } from "./utils/toast-utils";
 import { WeatherFormatters } from "./utils/weather-formatters";
 import { LocationUtils } from "./utils/location-utils";
+import { DebugLogger } from "./utils/debug-utils";
 
 export default function Command() {
   const [searchText, setSearchText] = useState("");
@@ -57,7 +58,7 @@ export default function Command() {
       const results = await searchLocations(trimmed);
       setLocations(results);
     } catch (error) {
-      console.error("Search failed:", error);
+      DebugLogger.error("Search failed:", error);
       setLocations([]);
     } finally {
       setIsLoading(false);
@@ -130,7 +131,7 @@ export default function Command() {
           setSunTimes(sunMap);
         }
       } catch (err) {
-        console.error("Error fetching favorites:", err);
+        DebugLogger.error("Error fetching favorites:", err);
       }
     }
     fetchAll();
@@ -179,7 +180,7 @@ export default function Command() {
   // Debug: Log network test results and show user-friendly notifications
   useEffect(() => {
     if (networkTest.error) {
-      console.error("Network test results:", networkTest);
+      DebugLogger.error("Network test results:", networkTest);
 
       // Show user-friendly notifications for critical API failures
       if (!networkTest.metApi) {

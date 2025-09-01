@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getForecast, type TimeseriesEntry } from "../weather-client";
+import { DebugLogger } from "../utils/debug-utils";
 
 // Type declaration for navigator to handle browser environment
 declare global {
@@ -58,11 +59,11 @@ export function useWeatherData(lat: number, lon: number) {
               typeof navigator !== "undefined" ? navigator.userAgent || "Raycast Extension" : "Raycast Extension",
           };
 
-          console.error("Weather API fetch failed:", errorDetails);
+          DebugLogger.error("Weather API fetch failed:", errorDetails);
 
           // Log additional network info if available
           if (typeof navigator !== "undefined" && "onLine" in navigator) {
-            console.log("Network status:", navigator.onLine);
+            DebugLogger.log("Network status:", navigator.onLine);
           }
         }
       } finally {
