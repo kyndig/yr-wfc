@@ -154,11 +154,11 @@ npm run build
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - see package.json for details.
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please open an issue or submit a pull request on GitHub.
 
 ### Development Guidelines
 - Follow TypeScript best practices
