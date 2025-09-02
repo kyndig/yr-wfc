@@ -315,8 +315,8 @@ export default function Command() {
                       title="Retry Network Tests"
                       icon={Icon.ArrowClockwise}
                       onAction={() => {
-                        // Note: Network tests will re-run when the component re-mounts
-                        // For now, just show a toast message
+                        // Network tests will re-run when the component re-mounts
+                        // Show a toast message to indicate retry action
                         ToastMessages.networkTestsRetry();
                       }}
                     />

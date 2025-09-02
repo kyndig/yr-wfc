@@ -14,13 +14,13 @@ export type WeatherSummary = {
 /**
  * Precipitation intensity thresholds for determining precipitation chance levels.
  * These values are based on meteorological standards for precipitation classification:
- * 
+ *
  * - HIGH_THRESHOLD (5mm): Heavy precipitation intensity threshold
  *   Used to classify periods with significant rainfall that would be considered "high" chance
- * 
- * - MEDIUM_THRESHOLD (2mm): Moderate precipitation intensity threshold  
+ *
+ * - MEDIUM_THRESHOLD (2mm): Moderate precipitation intensity threshold
  *   Used to classify periods with moderate rainfall that would be considered "medium" chance
- * 
+ *
  * Values below MEDIUM_THRESHOLD are considered "low" chance, and periods with no precipitation
  * are classified as "none".
  */

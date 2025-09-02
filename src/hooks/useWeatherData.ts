@@ -24,18 +24,11 @@ export function useWeatherData(lat: number, lon: number) {
       try {
         const result = await getForecast(lat, lon);
         if (!cancelled) {
-          if (result.success) {
-            setSeries(result.data);
-            
-            // Only show no data if we actually have no data after fetching
-            if (result.data.length === 0) {
-              setShowNoData(true);
-            }
-          } else {
-            // Handle error case
-            setSeries([]);
+          setSeries(result);
+
+          // Only show no data if we actually have no data after fetching
+          if (result.length === 0) {
             setShowNoData(true);
-            DebugLogger.error("Weather API fetch failed:", result.error);
           }
         }
       } catch (err) {
