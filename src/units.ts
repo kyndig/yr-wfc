@@ -3,12 +3,12 @@ import { getPreferenceValues } from "@raycast/api";
 export type Units = "metric" | "imperial";
 
 export function getUnits(): Units {
-  const prefs = getPreferenceValues<{ units?: Units }>();
+  const prefs = getPreferenceValues<Preferences.Yr>();
   return (prefs.units as Units) ?? "metric";
 }
 
 export function getFeatureFlags(): { showWindDirection: boolean; showSunTimes: boolean } {
-  const prefs = getPreferenceValues<{ showWindDirection?: boolean; showSunTimes?: boolean }>();
+  const prefs = getPreferenceValues<Preferences.Yr>();
   return {
     showWindDirection: prefs.showWindDirection ?? true,
     showSunTimes: prefs.showSunTimes ?? true,
