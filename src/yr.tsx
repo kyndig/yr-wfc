@@ -42,7 +42,7 @@ export default function Command() {
   const [queryIntent, setQueryIntent] = useState<QueryIntent>({});
 
   // Search function with query intent parsing and debouncing
-  const performSearch = useCallback(async (query: string) => {
+  const performSearch = useCallback(async (query: string, preParsedIntent?: QueryIntent) => {
     const trimmed = query.trim();
     if (!trimmed) {
       setLocations([]);
@@ -50,8 +50,8 @@ export default function Command() {
       return;
     }
 
-    // Parse query intent to extract location and date information
-    const intent = parseQueryIntent(trimmed);
+    // Use pre-parsed intent if provided, otherwise parse it
+    const intent = preParsedIntent || parseQueryIntent(trimmed);
     setQueryIntent(intent);
 
     // Show toast notification if a date query was successfully parsed
@@ -172,10 +172,11 @@ export default function Command() {
         const locationQuery = intent.locationQuery || q;
 
         if (locationQuery.length >= 3) {
-          performSearch(q);
+          performSearch(q, intent); // Pass the pre-parsed intent to avoid duplication
         } else {
           // Clear locations but keep query intent for display
           setLocations([]);
+          setQueryIntent(intent); // Set the parsed intent even when not searching
           setIsLoading(false);
         }
       } else {
