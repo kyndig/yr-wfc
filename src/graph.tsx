@@ -18,7 +18,14 @@ import { withErrorBoundary } from "./components/error-boundary";
 import { GraphErrorFallback } from "./components/error-fallbacks";
 import { getGraphThresholds, getUIThresholds, convertTemperature, convertPrecipitation } from "./config/weather-config";
 
-function GraphView(props: { name: string; lat: number; lon: number; hours?: number; onShowWelcome?: () => void; preCachedGraph?: string }) {
+function GraphView(props: {
+  name: string;
+  lat: number;
+  lon: number;
+  hours?: number;
+  onShowWelcome?: () => void;
+  preCachedGraph?: string;
+}) {
   const { name, lat, lon, hours = getUIThresholds().DEFAULT_FORECAST_HOURS, onShowWelcome, preCachedGraph } = props;
   const [sunByDate, setSunByDate] = useState<Record<string, SunTimes>>({});
   const [isFavorite, setIsFavorite] = useState<boolean>(false);

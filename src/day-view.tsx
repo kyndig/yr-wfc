@@ -39,12 +39,12 @@ function DayView(props: { name: string; lat: number; lon: number; date: string; 
     // Don't show graph until we have data or explicitly know there's no data
     if (loading) return "";
     if (daySeries.length === 0 && showNoData) return "";
-    
+
     // Use pre-rendered graph if available and it matches our day data, otherwise generate new
     if (preRenderedGraph && daySeries.length > 0) {
       return preRenderedGraph;
     }
-    
+
     return buildGraphMarkdown(name, daySeries, daySeries.length, { title, smooth: true }).markdown;
   }, [name, daySeries, title, showNoData, loading, preRenderedGraph]);
 
