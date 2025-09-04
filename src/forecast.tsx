@@ -8,6 +8,7 @@ import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
 import { withErrorBoundary } from "./components/error-boundary";
 import { WeatherErrorFallback } from "./components/error-fallbacks";
+import { getUIThresholds } from "./config/weather-config";
 
 function ForecastView(props: {
   name: string;
@@ -32,8 +33,8 @@ function ForecastView(props: {
   }, [name, lat, lon]);
 
   const byDay = useMemo(() => groupByDay(items), [items]);
-  const reduced = useMemo(() => reduceToDayPeriods(items, 9), [items]);
-  const displaySeries = mode === "detailed" ? items.slice(0, 48) : reduced;
+  const reduced = useMemo(() => reduceToDayPeriods(items, getUIThresholds().SUMMARY_FORECAST_DAYS), [items]);
+  const displaySeries = mode === "detailed" ? items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS) : reduced;
 
   // Cache both graph types for instant switching
   const [graphCache, setGraphCache] = useState<{
@@ -47,7 +48,7 @@ function ForecastView(props: {
       // Use pre-cached graph if available, otherwise generate new one
       const detailedGraph =
         preCachedGraph ||
-        buildGraphMarkdown(name, items.slice(0, 48), 48, {
+        buildGraphMarkdown(name, items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS), getUIThresholds().DETAILED_FORECAST_HOURS, {
           title: "48h forecast",
           smooth: true,
         }).markdown;
