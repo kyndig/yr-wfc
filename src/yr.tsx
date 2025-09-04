@@ -57,10 +57,17 @@ export default function Command() {
     // Show toast notification if a date query was successfully parsed
     if (intent.targetDate) {
       const dateStr = intent.targetDate.toLocaleDateString();
+      const isToday = intent.targetDate.toDateString() === new Date().toDateString();
+      const isTomorrow = intent.targetDate.toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString();
+      
+      let dateLabel = dateStr;
+      if (isToday) dateLabel = "today";
+      else if (isTomorrow) dateLabel = "tomorrow";
+      
       showToast({
         style: Toast.Style.Success,
-        title: "📅 Date query detected!",
-        message: `Found weather for ${dateStr} - tap a location to open day view`,
+        title: `📅 ${dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} weather query detected!`,
+        message: `Search results will show weather for ${dateLabel} - tap any location to view detailed forecast`,
       });
     }
 
@@ -269,6 +276,9 @@ export default function Command() {
 
   // Determine if we should show loading state - only true during initial load
   const shouldShowLoading = isInitialLoad || isLoading;
+  
+  // Special loading state for date queries
+  const isDateQueryLoading = isLoading && queryIntent.targetDate;
 
   // Use the utility function to create location actions
   const createLocationActions = LocationUtils.createLocationActions;
@@ -277,7 +287,11 @@ export default function Command() {
     <List
       isLoading={shouldShowLoading}
       onSearchTextChange={setSearchText}
-      searchBarPlaceholder="Search for a location or try 'Oslo fredag', 'London tomorrow'..."
+      searchBarPlaceholder={
+        queryIntent.targetDate 
+          ? `Searching for weather on ${queryIntent.targetDate.toLocaleDateString()}...`
+          : "Search for a location or try 'Oslo fredag', 'London tomorrow'..."
+      }
       throttle
       actions={
         <ActionPanel>
@@ -393,14 +407,65 @@ export default function Command() {
             </List.Section>
           )}
 
+          {/* Show special loading state for date queries */}
+          {isDateQueryLoading && safeLocations.length === 0 && (
+            <List.Section title="🔍 Processing Date Query">
+              <List.Item
+                key="date-query-loading"
+                title={`Searching for weather on ${queryIntent.targetDate?.toLocaleDateString()}`}
+                subtitle="Finding locations and preparing date-specific results..."
+                icon="⏳"
+                accessories={[
+                  { 
+                    text: "Loading...", 
+                    icon: Icon.ArrowClockwise 
+                  }
+                ]}
+                actions={
+                  <ActionPanel>
+                    <Action
+                      title="Show Welcome Message"
+                      icon={Icon.Info}
+                      onAction={() => setShowWelcomeMessage(true)}
+                      shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+                    />
+                  </ActionPanel>
+                }
+              />
+            </List.Section>
+          )}
+
           {/* Show search results first when actively searching */}
           {safeLocations.length > 0 && (
-            <List.Section title={`Search Results (${safeLocations.length})`}>
+            <List.Section 
+              title={
+                queryIntent.targetDate 
+                  ? `📅 Search Results for ${queryIntent.targetDate.toLocaleDateString()} (${safeLocations.length})`
+                  : `Search Results (${safeLocations.length})`
+              }
+            >
               {safeLocations.map((loc) => (
                 <List.Item
                   key={loc.id}
                   title={loc.displayName}
-                  accessories={[{ text: `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}` }]}
+                  subtitle={
+                    queryIntent.targetDate 
+                      ? `Tap to view weather for ${queryIntent.targetDate.toLocaleDateString()}`
+                      : undefined
+                  }
+                  icon={
+                    queryIntent.targetDate 
+                      ? "📅" 
+                      : "📍"
+                  }
+                  accessories={[
+                    { 
+                      text: queryIntent.targetDate 
+                        ? queryIntent.targetDate.toLocaleDateString()
+                        : `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`,
+                      icon: queryIntent.targetDate ? Icon.Calendar : undefined
+                    }
+                  ]}
                   actions={createLocationActions(
                     loc.displayName,
                     loc.lat,
