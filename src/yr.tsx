@@ -3,6 +3,8 @@ import { Action, ActionPanel, List, Icon, showToast, Toast } from "@raycast/api"
 import ForecastView from "./forecast";
 import GraphView from "./graph";
 import WelcomeMessage from "./components/welcome-message";
+import { ErrorBoundary } from "./components/error-boundary";
+import { SearchErrorFallback, FavoritesErrorFallback } from "./components/error-fallbacks";
 
 import { searchLocations, type LocationResult } from "./location-search";
 import { getWeather, type TimeseriesEntry } from "./weather-client";
@@ -437,67 +439,72 @@ export default function Command() {
 
           {/* Show search results first when actively searching */}
           {safeLocations.length > 0 && (
-            <List.Section
-              title={
-                queryIntent.targetDate
-                  ? `📅 Search Results for ${queryIntent.targetDate.toLocaleDateString()} (${safeLocations.length})`
-                  : `Search Results (${safeLocations.length})`
-              }
+            <ErrorBoundary
+              componentName="Search Results"
+              fallback={<SearchErrorFallback componentName="Search Results" />}
             >
-              {safeLocations.map((loc) => (
-                <List.Item
-                  key={loc.id}
-                  title={loc.displayName}
-                  subtitle={
-                    queryIntent.targetDate
-                      ? `Tap to view weather for ${queryIntent.targetDate.toLocaleDateString()}`
-                      : undefined
-                  }
-                  icon={queryIntent.targetDate ? "📅" : "📍"}
-                  accessories={[
-                    {
-                      text: queryIntent.targetDate
-                        ? queryIntent.targetDate.toLocaleDateString()
-                        : `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`,
-                      icon: queryIntent.targetDate ? Icon.Calendar : undefined,
-                    },
-                  ]}
-                  actions={createLocationActions(
-                    loc.displayName,
-                    loc.lat,
-                    loc.lon,
-                    favoriteIds[loc.id],
-                    async () => {
-                      if (favoriteIds[loc.id]) {
-                        const fav = LocationUtils.createFavoriteFromSearchResult(
-                          loc.id,
-                          loc.displayName,
-                          loc.lat,
-                          loc.lon,
-                        );
-                        await removeFavorite(fav);
-                        setFavoriteIds((m) => ({ ...m, [loc.id]: false }));
-                        setFavorites(await getFavorites());
-                        await ToastMessages.favoriteRemoved(loc.displayName);
-                      } else {
-                        const fav = LocationUtils.createFavoriteFromSearchResult(
-                          loc.id,
-                          loc.displayName,
-                          loc.lat,
-                          loc.lon,
-                        );
-                        await addFavorite(fav);
-                        setFavoriteIds((m) => ({ ...m, [loc.id]: true }));
-                        setFavorites(await getFavorites());
-                        await ToastMessages.favoriteAdded(loc.displayName);
-                      }
-                    },
-                    () => setShowWelcomeMessage(true),
-                    queryIntent.targetDate,
-                  )}
-                />
-              ))}
-            </List.Section>
+              <List.Section
+                title={
+                  queryIntent.targetDate
+                    ? `📅 Search Results for ${queryIntent.targetDate.toLocaleDateString()} (${safeLocations.length})`
+                    : `Search Results (${safeLocations.length})`
+                }
+              >
+                {safeLocations.map((loc) => (
+                  <List.Item
+                    key={loc.id}
+                    title={loc.displayName}
+                    subtitle={
+                      queryIntent.targetDate
+                        ? `Tap to view weather for ${queryIntent.targetDate.toLocaleDateString()}`
+                        : undefined
+                    }
+                    icon={queryIntent.targetDate ? "📅" : "📍"}
+                    accessories={[
+                      {
+                        text: queryIntent.targetDate
+                          ? queryIntent.targetDate.toLocaleDateString()
+                          : `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`,
+                        icon: queryIntent.targetDate ? Icon.Calendar : undefined,
+                      },
+                    ]}
+                    actions={createLocationActions(
+                      loc.displayName,
+                      loc.lat,
+                      loc.lon,
+                      favoriteIds[loc.id],
+                      async () => {
+                        if (favoriteIds[loc.id]) {
+                          const fav = LocationUtils.createFavoriteFromSearchResult(
+                            loc.id,
+                            loc.displayName,
+                            loc.lat,
+                            loc.lon,
+                          );
+                          await removeFavorite(fav);
+                          setFavoriteIds((m) => ({ ...m, [loc.id]: false }));
+                          setFavorites(await getFavorites());
+                          await ToastMessages.favoriteRemoved(loc.displayName);
+                        } else {
+                          const fav = LocationUtils.createFavoriteFromSearchResult(
+                            loc.id,
+                            loc.displayName,
+                            loc.lat,
+                            loc.lon,
+                          );
+                          await addFavorite(fav);
+                          setFavoriteIds((m) => ({ ...m, [loc.id]: true }));
+                          setFavorites(await getFavorites());
+                          await ToastMessages.favoriteAdded(loc.displayName);
+                        }
+                      },
+                      () => setShowWelcomeMessage(true),
+                      queryIntent.targetDate,
+                    )}
+                  />
+                ))}
+              </List.Section>
+            </ErrorBoundary>
           )}
 
           {/* Show "no results" message only when search has completed and returned no results */}
@@ -510,131 +517,136 @@ export default function Command() {
 
           {/* Show favorites only when not actively searching or when no search results */}
           {shouldShowFavorites && (
-            <List.Section title="Favorites">
-              {favorites.map((fav) => {
-                const key = LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon);
+            <ErrorBoundary
+              componentName="Favorites"
+              fallback={<FavoritesErrorFallback componentName="Favorites" />}
+            >
+              <List.Section title="Favorites">
+                {favorites.map((fav) => {
+                  const key = LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon);
 
-                return (
-                  <List.Item
-                    key={key}
-                    title={fav.name}
-                    subtitle={(() => {
-                      const weather = favoriteWeather[key];
-                      const error = favoriteErrors[key];
-                      const loading = favoritesLoading[key];
+                  return (
+                    <List.Item
+                      key={key}
+                      title={fav.name}
+                      subtitle={(() => {
+                        const weather = favoriteWeather[key];
+                        const error = favoriteErrors[key];
+                        const loading = favoritesLoading[key];
 
-                      if (weather) {
-                        const temp = formatTemp(weather);
-                        return temp || "⚠️ Temperature unavailable";
+                        if (weather) {
+                          const temp = formatTemp(weather);
+                          return temp || "⚠️ Temperature unavailable";
+                        }
+
+                        if (error) {
+                          return "⚠️ Data fetch failed";
+                        }
+
+                        if (loading) {
+                          return "Loading...";
+                        }
+
+                        return "No data";
+                      })()}
+                      icon={
+                        favoriteWeather[key]
+                          ? iconForSymbol(favoriteWeather[key])
+                          : favoriteErrors[key]
+                            ? "⚠️"
+                            : favoritesLoading[key]
+                              ? "⏳"
+                              : "❓"
                       }
-
-                      if (error) {
-                        return "⚠️ Data fetch failed";
+                      accessories={
+                        favoriteWeather[key] ? formatAccessories(favoriteWeather[key], sunTimes[key]) : undefined
                       }
-
-                      if (loading) {
-                        return "Loading...";
-                      }
-
-                      return "No data";
-                    })()}
-                    icon={
-                      favoriteWeather[key]
-                        ? iconForSymbol(favoriteWeather[key])
-                        : favoriteErrors[key]
-                          ? "⚠️"
-                          : favoritesLoading[key]
-                            ? "⏳"
-                            : "❓"
-                    }
-                    accessories={
-                      favoriteWeather[key] ? formatAccessories(favoriteWeather[key], sunTimes[key]) : undefined
-                    }
-                    actions={
-                      <ActionPanel>
-                        <Action.Push
-                          title="Open Forecast"
-                          icon={Icon.Clock}
-                          target={
-                            <ForecastView
-                              name={fav.name}
-                              lat={fav.lat}
-                              lon={fav.lon}
-                              onShowWelcome={() => setShowWelcomeMessage(true)}
-                            />
-                          }
-                        />
-                        <Action
-                          title="Show Current Weather"
-                          icon={Icon.Wind}
-                          onAction={async () => {
-                            try {
-                              const ts: TimeseriesEntry = await getWeather(fav.lat, fav.lon);
-                              await showToast({
-                                style: Toast.Style.Success,
-                                title: `Now at ${fav.name}`,
-                                message: WeatherFormatters.formatWeatherToast(ts),
-                              });
-                            } catch (error) {
-                              await ToastMessages.weatherLoadFailed(error);
+                      actions={
+                        <ActionPanel>
+                          <Action.Push
+                            title="Open Forecast"
+                            icon={Icon.Clock}
+                            target={
+                              <ForecastView
+                                name={fav.name}
+                                lat={fav.lat}
+                                lon={fav.lon}
+                                onShowWelcome={() => setShowWelcomeMessage(true)}
+                              />
                             }
-                          }}
-                        />
-                        <Action.Push
-                          title="Open Graph"
-                          icon={Icon.BarChart}
-                          shortcut={{ modifiers: ["cmd"], key: "g" }}
-                          target={
-                            <GraphView
-                              name={fav.name}
-                              lat={fav.lat}
-                              lon={fav.lon}
-                              onShowWelcome={() => setShowWelcomeMessage(true)}
-                            />
-                          }
-                        />
-                        <Action
-                          title="Remove from Favorites"
-                          icon={Icon.StarDisabled}
-                          shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
-                          onAction={async () => {
-                            await removeFavorite(fav);
-                            setFavorites(await getFavorites());
-                            if (fav.id) setFavoriteIds((m) => ({ ...m, [fav.id as string]: false }));
-                            await ToastMessages.favoriteRemoved(fav.name);
-                          }}
-                        />
-                        <Action
-                          title="Move up"
-                          icon={Icon.ArrowUp}
-                          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
-                          onAction={async () => {
-                            await moveFavoriteUp(fav);
-                            setFavorites(await getFavorites());
-                          }}
-                        />
-                        <Action
-                          title="Move Down"
-                          icon={Icon.ArrowDown}
-                          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
-                          onAction={async () => {
-                            await moveFavoriteDown(fav);
-                            setFavorites(await getFavorites());
-                          }}
-                        />
+                          />
+                          <Action
+                            title="Show Current Weather"
+                            icon={Icon.Wind}
+                            onAction={async () => {
+                              try {
+                                const ts: TimeseriesEntry = await getWeather(fav.lat, fav.lon);
+                                await showToast({
+                                  style: Toast.Style.Success,
+                                  title: `Now at ${fav.name}`,
+                                  message: WeatherFormatters.formatWeatherToast(ts),
+                                });
+                              } catch (error) {
+                                await ToastMessages.weatherLoadFailed(error);
+                              }
+                            }}
+                          />
+                          <Action.Push
+                            title="Open Graph"
+                            icon={Icon.BarChart}
+                            shortcut={{ modifiers: ["cmd"], key: "g" }}
+                            target={
+                              <GraphView
+                                name={fav.name}
+                                lat={fav.lat}
+                                lon={fav.lon}
+                                onShowWelcome={() => setShowWelcomeMessage(true)}
+                              />
+                            }
+                          />
+                          <Action
+                            title="Remove from Favorites"
+                            icon={Icon.StarDisabled}
+                            shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
+                            onAction={async () => {
+                              await removeFavorite(fav);
+                              setFavorites(await getFavorites());
+                              if (fav.id) setFavoriteIds((m) => ({ ...m, [fav.id as string]: false }));
+                              await ToastMessages.favoriteRemoved(fav.name);
+                            }}
+                          />
+                          <Action
+                            title="Move up"
+                            icon={Icon.ArrowUp}
+                            shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
+                            onAction={async () => {
+                              await moveFavoriteUp(fav);
+                              setFavorites(await getFavorites());
+                            }}
+                          />
+                          <Action
+                            title="Move Down"
+                            icon={Icon.ArrowDown}
+                            shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
+                            onAction={async () => {
+                              await moveFavoriteDown(fav);
+                              setFavorites(await getFavorites());
+                            }}
+                          />
 
-                        <Action
-                          title="Show Welcome Message"
-                          icon={Icon.Info}
-                          onAction={() => setShowWelcomeMessage(true)}
-                          shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
-                        />
-                      </ActionPanel>
-                    }
-                  />
-                );
-              })}
-            </List.Section>
+                          <Action
+                            title="Show Welcome Message"
+                            icon={Icon.Info}
+                            onAction={() => setShowWelcomeMessage(true)}
+                            shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+                          />
+                        </ActionPanel>
+                      }
+                    />
+                  );
+                })}
+              </List.Section>
+            </ErrorBoundary>
           )}
         </>
       )}

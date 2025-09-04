@@ -6,8 +6,10 @@ import { groupByDay, reduceToDayPeriods, buildWeatherTable } from "./weather-uti
 import { useWeatherData } from "./hooks/useWeatherData";
 import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
+import { withErrorBoundary } from "./components/error-boundary";
+import { WeatherErrorFallback } from "./components/error-fallbacks";
 
-export default function ForecastView(props: {
+function ForecastView(props: {
   name: string;
   lat: number;
   lon: number;
@@ -188,6 +190,12 @@ export default function ForecastView(props: {
     />
   );
 }
+
+// Export with error boundary
+export default withErrorBoundary(ForecastView, {
+  componentName: "Forecast View",
+  fallback: <WeatherErrorFallback componentName="Forecast View" />,
+});
 
 function buildListMarkdown(byDay: Record<string, TimeseriesEntry[]>): string {
   const sections: string[] = [];

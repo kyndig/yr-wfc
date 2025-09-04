@@ -13,8 +13,10 @@ import { useWeatherData } from "./hooks/useWeatherData";
 import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { formatDate, formatTime } from "./utils/date-utils";
 import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
+import { withErrorBoundary } from "./components/error-boundary";
+import { GraphErrorFallback } from "./components/error-fallbacks";
 
-export default function GraphView(props: {
+function GraphView(props: {
   name: string;
   lat: number;
   lon: number;
@@ -170,6 +172,12 @@ export default function GraphView(props: {
     />
   );
 }
+
+// Export with error boundary
+export default withErrorBoundary(GraphView, {
+  componentName: "Graph View",
+  fallback: <GraphErrorFallback componentName="Graph View" />,
+});
 
 export function buildGraphMarkdown(
   name: string,

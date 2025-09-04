@@ -8,8 +8,10 @@ import { useWeatherData } from "./hooks/useWeatherData";
 import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { formatDate } from "./utils/date-utils";
 import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
+import { withErrorBoundary } from "./components/error-boundary";
+import { WeatherErrorFallback } from "./components/error-fallbacks";
 
-export default function DayView(props: {
+function DayView(props: {
   name: string;
   lat: number;
   lon: number;
@@ -149,3 +151,9 @@ export default function DayView(props: {
     />
   );
 }
+
+// Export with error boundary
+export default withErrorBoundary(DayView, {
+  componentName: "Day View",
+  fallback: <WeatherErrorFallback componentName="Day View" />,
+});
