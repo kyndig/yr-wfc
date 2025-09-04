@@ -27,6 +27,7 @@ import { formatTemp } from "./weather-utils";
 
 import { useNetworkTest } from "./hooks/useNetworkTest";
 import { useDebouncedCallback } from "./hooks/useDebounce";
+import { getUIThresholds, getTimingThresholds } from "./config/weather-config";
 
 import { ToastMessages } from "./utils/toast-utils";
 import { WeatherFormatters } from "./utils/weather-formatters";
@@ -77,8 +78,9 @@ export default function Command() {
     // Use the parsed location query if available, otherwise use the full query
     const locationQuery = intent.locationQuery || trimmed;
 
-    // Require minimum 3 characters before searching
-    if (locationQuery.length < 3) {
+    // Require minimum characters before searching
+    const minChars = getUIThresholds().SEARCH_MIN_CHARS;
+    if (locationQuery.length < minChars) {
       setLocations([]);
       return;
     }
@@ -96,7 +98,7 @@ export default function Command() {
   }, []);
 
   // Debounced search function
-  const debouncedSearch = useDebouncedCallback(performSearch, 300);
+  const debouncedSearch = useDebouncedCallback(performSearch, getTimingThresholds().SEARCH_DEBOUNCE);
 
   // Ensure locations is always an array
   const safeLocations = locations || [];
@@ -206,13 +208,14 @@ export default function Command() {
       const intent = parseQueryIntent(q);
       const locationQuery = intent.locationQuery || q;
 
-      if (locationQuery.length >= 3) {
-        debouncedSearch(q);
-      } else {
-        // Clear locations but keep query intent for display
-        setLocations([]);
-        setIsLoading(false);
-      }
+              const minChars = getUIThresholds().SEARCH_MIN_CHARS;
+        if (locationQuery.length >= minChars) {
+          debouncedSearch(q);
+        } else {
+          // Clear locations but keep query intent for display
+          setLocations([]);
+          setIsLoading(false);
+        }
     } else {
       setLocations([]);
       setQueryIntent({});
@@ -320,15 +323,15 @@ export default function Command() {
           {/* Regular empty state */}
           <List.EmptyView
             title={
-              searchText && searchText.trim().length >= 3
+              searchText && searchText.trim().length >= getUIThresholds().SEARCH_MIN_CHARS
                 ? `Searching for "${searchText}"`
                 : searchText
                   ? `"${searchText}"`
                   : "Search for a location"
             }
             description={
-              searchText && searchText.trim().length < 3
-                ? "Enter at least 3 characters to search"
+              searchText && searchText.trim().length < getUIThresholds().SEARCH_MIN_CHARS
+                ? `Enter at least ${getUIThresholds().SEARCH_MIN_CHARS} characters to search`
                 : "Enter a city name or coordinates to get weather information"
             }
           />
@@ -336,15 +339,15 @@ export default function Command() {
       ) : (
         <>
           {/* Show feedback when no results and insufficient characters */}
-          {safeLocations.length === 0 && searchText && searchText.trim().length > 0 && searchText.trim().length < 3 && (
+          {safeLocations.length === 0 && searchText && searchText.trim().length > 0 && searchText.trim().length < getUIThresholds().SEARCH_MIN_CHARS && (
             <List.Item
               key="min-chars-feedback"
               title={`"${searchText}" - More characters needed`}
-              subtitle={`Type ${3 - searchText.trim().length} more character${3 - searchText.trim().length === 1 ? "" : "s"} to search`}
+              subtitle={`Type ${getUIThresholds().SEARCH_MIN_CHARS - searchText.trim().length} more character${getUIThresholds().SEARCH_MIN_CHARS - searchText.trim().length === 1 ? "" : "s"} to search`}
               icon="💡"
               accessories={[
-                { text: `${searchText.trim().length}/3`, tooltip: "Characters entered" },
-                { text: `${3 - searchText.trim().length} more`, tooltip: "Characters needed" },
+                { text: `${searchText.trim().length}/${getUIThresholds().SEARCH_MIN_CHARS}`, tooltip: "Characters entered" },
+                { text: `${getUIThresholds().SEARCH_MIN_CHARS - searchText.trim().length} more`, tooltip: "Characters needed" },
               ]}
               actions={
                 <ActionPanel>
@@ -464,7 +467,7 @@ export default function Command() {
                       {
                         text: queryIntent.targetDate
                           ? queryIntent.targetDate.toLocaleDateString()
-                          : `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`,
+                          : `${loc.lat.toFixed(getUIThresholds().COORDINATE_PRECISION)}, ${loc.lon.toFixed(getUIThresholds().COORDINATE_PRECISION)}`,
                         icon: queryIntent.targetDate ? Icon.Calendar : undefined,
                       },
                     ]}
@@ -508,7 +511,7 @@ export default function Command() {
           )}
 
           {/* Show "no results" message only when search has completed and returned no results */}
-          {!isLoading && searchText.trim().length >= 3 && safeLocations.length === 0 && (
+          {!isLoading && searchText.trim().length >= getUIThresholds().SEARCH_MIN_CHARS && safeLocations.length === 0 && (
             <List.EmptyView
               title={`No results found for "${searchText}"`}
               description="Try a different location name or check your spelling"
