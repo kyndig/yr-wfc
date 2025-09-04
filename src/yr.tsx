@@ -24,6 +24,7 @@ import { iconForSymbol } from "./weather-emoji";
 import { formatTemp } from "./weather-utils";
 
 import { useNetworkTest } from "./hooks/useNetworkTest";
+import { useDebouncedCallback } from "./hooks/useDebounce";
 
 import { ToastMessages } from "./utils/toast-utils";
 import { WeatherFormatters } from "./utils/weather-formatters";
@@ -41,7 +42,7 @@ export default function Command() {
   const [isLoading, setIsLoading] = useState(false);
   const [queryIntent, setQueryIntent] = useState<QueryIntent>({});
 
-  // Search function with query intent parsing and debouncing
+  // Search function with query intent parsing (no debouncing here)
   const performSearch = useCallback(async (query: string) => {
     const trimmed = query.trim();
     if (!trimmed) {
@@ -91,6 +92,9 @@ export default function Command() {
       setIsLoading(false);
     }
   }, []);
+
+  // Debounced search function
+  const debouncedSearch = useDebouncedCallback(performSearch, 300);
 
   // Ensure locations is always an array
   const safeLocations = locations || [];
@@ -194,29 +198,25 @@ export default function Command() {
 
   // Trigger search when search text changes with debouncing
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const q = searchText.trim();
-      if (q) {
-        // Parse query intent to check if we have a valid location query
-        const intent = parseQueryIntent(q);
-        const locationQuery = intent.locationQuery || q;
+    const q = searchText.trim();
+    if (q) {
+      // Parse query intent to check if we have a valid location query
+      const intent = parseQueryIntent(q);
+      const locationQuery = intent.locationQuery || q;
 
-        if (locationQuery.length >= 3) {
-          performSearch(q);
-        } else {
-          // Clear locations but keep query intent for display
-          setLocations([]);
-          setIsLoading(false);
-        }
+      if (locationQuery.length >= 3) {
+        debouncedSearch(q);
       } else {
+        // Clear locations but keep query intent for display
         setLocations([]);
-        setQueryIntent({});
         setIsLoading(false);
       }
-    }, 300); // 300ms debounce
-
-    return () => clearTimeout(timeoutId);
-  }, [searchText, performSearch]);
+    } else {
+      setLocations([]);
+      setQueryIntent({});
+      setIsLoading(false);
+    }
+  }, [searchText, debouncedSearch]);
 
   // Update favorite flags when search results change
   useEffect(() => {
