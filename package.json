@@ -5,6 +5,14 @@
   "description": "Weather forecast using the Norwegian Meteorological Institute's API",
   "icon": "extension-icon.png",
   "author": "kakaoduft",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kakaoduft/yr-wfc.git"
+  },
+  "homepage": "https://github.com/kakaoduft/yr-wfc#readme",
+  "bugs": {
+    "url": "https://github.com/kakaoduft/yr-wfc/issues"
+  },
   "access": "public",
   "license": "MIT",
   "keywords": [
@@ -13,7 +21,23 @@
     "yr",
     "institute of meteorology",
     "met.no",
-    "met"
+    "met",
+    "norway",
+    "norwegian",
+    "meteorology",
+    "temperature",
+    "precipitation",
+    "wind",
+    "sunrise",
+    "sunset",
+    "raycast",
+    "extension",
+    "api",
+    "weather data",
+    "climate",
+    "atmospheric",
+    "weather app",
+    "weather tool"
   ],
   "categories": [
     "Productivity"
