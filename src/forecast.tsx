@@ -48,10 +48,15 @@ function ForecastView(props: {
       // Use pre-cached graph if available, otherwise generate new one
       const detailedGraph =
         preCachedGraph ||
-        buildGraphMarkdown(name, items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS), getUIThresholds().DETAILED_FORECAST_HOURS, {
-          title: "48h forecast",
-          smooth: true,
-        }).markdown;
+        buildGraphMarkdown(
+          name,
+          items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS),
+          getUIThresholds().DETAILED_FORECAST_HOURS,
+          {
+            title: "48h forecast",
+            smooth: true,
+          },
+        ).markdown;
 
       // Cache summary graph (9-day)
       const summaryGraph = buildGraphMarkdown(name, reduced, reduced.length, {

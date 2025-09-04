@@ -7,11 +7,11 @@
   "author": "kakaoduft",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kakaoduft/yr-wfc.git"
+    "url": "https://github.com/kyndig/raycast-yr"
   },
-  "homepage": "https://github.com/kakaoduft/yr-wfc#readme",
+  "homepage": "https://www.kynd.no",
   "bugs": {
-    "url": "https://github.com/kakaoduft/yr-wfc/issues"
+    "url": "https://github.com/kyndig/raycast-yr/issues"
   },
   "access": "public",
   "license": "MIT",
@@ -19,25 +19,15 @@
     "weather",
     "forecast",
     "yr",
-    "institute of meteorology",
-    "met.no",
-    "met",
-    "norway",
-    "norwegian",
     "meteorology",
+    "norway",
     "temperature",
     "precipitation",
     "wind",
     "sunrise",
     "sunset",
-    "raycast",
-    "extension",
-    "api",
-    "weather data",
     "climate",
-    "atmospheric",
-    "weather app",
-    "weather tool"
+    "atmospheric"
   ],
   "categories": [
     "Productivity"

@@ -17,13 +17,7 @@ import { withErrorBoundary } from "./components/error-boundary";
 import { GraphErrorFallback } from "./components/error-fallbacks";
 import { getGraphThresholds, getUIThresholds, convertTemperature, convertPrecipitation } from "./config/weather-config";
 
-function GraphView(props: {
-  name: string;
-  lat: number;
-  lon: number;
-  hours?: number;
-  onShowWelcome?: () => void;
-}) {
+function GraphView(props: { name: string; lat: number; lon: number; hours?: number; onShowWelcome?: () => void }) {
   const { name, lat, lon, hours = getUIThresholds().DEFAULT_FORECAST_HOURS, onShowWelcome } = props;
   const [sunByDate, setSunByDate] = useState<Record<string, SunTimes>>({});
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
@@ -254,7 +248,9 @@ export function buildGraphMarkdown(
       const x = xScale(t);
       const y = ty(tempsDisplay[i] ?? 0) - 12;
       const e = symbolToEmoji(symbols[i]);
-      return e ? `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${graphConfig.FONT_SIZES.EMOJI}" text-anchor="middle">${e}</text>` : "";
+      return e
+        ? `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${graphConfig.FONT_SIZES.EMOJI}" text-anchor="middle">${e}</text>`
+        : "";
     })
     .join("");
 

@@ -7,10 +7,7 @@ import { ErrorBoundary } from "./components/error-boundary";
 import { SearchErrorFallback, FavoritesErrorFallback } from "./components/error-fallbacks";
 
 import { getWeather, type TimeseriesEntry } from "./weather-client";
-import {
-  isFirstTimeUser,
-  markAsNotFirstTime,
-} from "./storage";
+import { isFirstTimeUser, markAsNotFirstTime } from "./storage";
 
 import { iconForSymbol } from "./weather-emoji";
 import { formatTemp } from "./weather-utils";
@@ -75,11 +72,17 @@ export default function Command() {
     checkFirstTime();
   }, []);
 
-  const showEmpty = favorites.favoritesLoaded && favorites.favorites.length === 0 && search.safeLocations.length === 0 && !search.isLoading;
+  const showEmpty =
+    favorites.favoritesLoaded &&
+    favorites.favorites.length === 0 &&
+    search.safeLocations.length === 0 &&
+    !search.isLoading;
 
   // Only show favorites when not actively searching or when search is empty, AND when weather data is ready
   const shouldShowFavorites =
-    favorites.favorites.length > 0 && (!search.searchText.trim() || search.safeLocations.length === 0) && favorites.weatherDataInitialized;
+    favorites.favorites.length > 0 &&
+    (!search.searchText.trim() || search.safeLocations.length === 0) &&
+    favorites.weatherDataInitialized;
 
   // Determine if we should show loading state - only true during initial load
   const shouldShowLoading = favorites.isInitialLoad || search.isLoading;
@@ -141,28 +144,37 @@ export default function Command() {
       ) : (
         <>
           {/* Show feedback when no results and insufficient characters */}
-          {search.safeLocations.length === 0 && search.searchText && search.searchText.trim().length > 0 && search.searchText.trim().length < getUIThresholds().SEARCH_MIN_CHARS && (
-            <List.Item
-              key="min-chars-feedback"
-              title={`"${search.searchText}" - More characters needed`}
-              subtitle={`Type ${getUIThresholds().SEARCH_MIN_CHARS - search.searchText.trim().length} more character${getUIThresholds().SEARCH_MIN_CHARS - search.searchText.trim().length === 1 ? "" : "s"} to search`}
-              icon="💡"
-              accessories={[
-                { text: `${search.searchText.trim().length}/${getUIThresholds().SEARCH_MIN_CHARS}`, tooltip: "Characters entered" },
-                { text: `${getUIThresholds().SEARCH_MIN_CHARS - search.searchText.trim().length} more`, tooltip: "Characters needed" },
-              ]}
-              actions={
-                <ActionPanel>
-                  <Action
-                    title="Show Welcome Message"
-                    icon={Icon.Info}
-                    onAction={() => setShowWelcomeMessage(true)}
-                    shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
-                  />
-                </ActionPanel>
-              }
-            />
-          )}
+          {search.safeLocations.length === 0 &&
+            search.searchText &&
+            search.searchText.trim().length > 0 &&
+            search.searchText.trim().length < getUIThresholds().SEARCH_MIN_CHARS && (
+              <List.Item
+                key="min-chars-feedback"
+                title={`"${search.searchText}" - More characters needed`}
+                subtitle={`Type ${getUIThresholds().SEARCH_MIN_CHARS - search.searchText.trim().length} more character${getUIThresholds().SEARCH_MIN_CHARS - search.searchText.trim().length === 1 ? "" : "s"} to search`}
+                icon="💡"
+                accessories={[
+                  {
+                    text: `${search.searchText.trim().length}/${getUIThresholds().SEARCH_MIN_CHARS}`,
+                    tooltip: "Characters entered",
+                  },
+                  {
+                    text: `${getUIThresholds().SEARCH_MIN_CHARS - search.searchText.trim().length} more`,
+                    tooltip: "Characters needed",
+                  },
+                ]}
+                actions={
+                  <ActionPanel>
+                    <Action
+                      title="Show Welcome Message"
+                      icon={Icon.Info}
+                      onAction={() => setShowWelcomeMessage(true)}
+                      shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+                    />
+                  </ActionPanel>
+                }
+              />
+            )}
 
           {/* Network Status Section - Show when there are connectivity issues */}
           {networkTest.error && (
@@ -309,19 +321,18 @@ export default function Command() {
           )}
 
           {/* Show "no results" message only when search has completed and returned no results */}
-          {!search.isLoading && search.searchText.trim().length >= getUIThresholds().SEARCH_MIN_CHARS && search.safeLocations.length === 0 && (
-            <List.EmptyView
-              title={`No results found for "${search.searchText}"`}
-              description="Try a different location name or check your spelling"
-            />
-          )}
+          {!search.isLoading &&
+            search.searchText.trim().length >= getUIThresholds().SEARCH_MIN_CHARS &&
+            search.safeLocations.length === 0 && (
+              <List.EmptyView
+                title={`No results found for "${search.searchText}"`}
+                description="Try a different location name or check your spelling"
+              />
+            )}
 
           {/* Show favorites only when not actively searching or when no search results */}
           {shouldShowFavorites && (
-            <ErrorBoundary
-              componentName="Favorites"
-              fallback={<FavoritesErrorFallback componentName="Favorites" />}
-            >
+            <ErrorBoundary componentName="Favorites" fallback={<FavoritesErrorFallback componentName="Favorites" />}>
               <List.Section title="Favorites">
                 {favorites.favorites.map((fav) => {
                   const key = LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon);

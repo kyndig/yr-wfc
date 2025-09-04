@@ -11,13 +11,7 @@ import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type Favori
 import { withErrorBoundary } from "./components/error-boundary";
 import { WeatherErrorFallback } from "./components/error-fallbacks";
 
-function DayView(props: {
-  name: string;
-  lat: number;
-  lon: number;
-  date: string;
-  onShowWelcome?: () => void;
-}) {
+function DayView(props: { name: string; lat: number; lon: number; date: string; onShowWelcome?: () => void }) {
   const { name, lat, lon, date, onShowWelcome } = props;
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const { series: items, loading, showNoData } = useWeatherData(lat, lon);

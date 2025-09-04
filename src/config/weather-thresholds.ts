@@ -1,9 +1,9 @@
 /**
  * Weather Thresholds Configuration
- * 
+ *
  * This file contains all weather-related thresholds and magic numbers used throughout the application.
  * All values are based on meteorological standards and best practices to ensure accurate weather classification.
- * 
+ *
  * Sources:
  * - World Meteorological Organization (WMO) International Cloud Atlas
  * - American Meteorological Society (AMS) Glossary of Meteorology
@@ -14,7 +14,7 @@
 /**
  * Precipitation Intensity Thresholds (mm per hour)
  * Based on WMO International Cloud Atlas standards
- * 
+ *
  * @see https://cloudatlas.wmo.int/en/rain.html
  * @see https://glossary.ametsoc.org/wiki/Rain
  */
@@ -25,21 +25,21 @@ export const PRECIPITATION_THRESHOLDS = {
    * Used for: Light rain, drizzle, light snow
    */
   LIGHT: 2.5,
-  
+
   /**
-   * Moderate precipitation threshold  
+   * Moderate precipitation threshold
    * WMO: 2.6-7.5 mm per hour
    * Used for: Moderate rain, moderate snow
    */
   MODERATE: 7.5,
-  
+
   /**
    * Heavy precipitation threshold
    * WMO: More than 7.5 mm per hour
    * Used for: Heavy rain, heavy snow, downpours
    */
   HEAVY: 7.5,
-  
+
   /**
    * Very heavy precipitation threshold
    * WMO: More than 10 mm per hour
@@ -58,13 +58,13 @@ export const PRECIPITATION_COVERAGE_THRESHOLDS = {
    * When precipitation occurs for more than 70% of the time period
    */
   HIGH: 0.7,
-  
+
   /**
    * Medium coverage threshold
    * When precipitation occurs for more than 40% of the time period
    */
   MEDIUM: 0.4,
-  
+
   /**
    * Low coverage threshold
    * When precipitation occurs for more than 10% of the time period
@@ -82,25 +82,25 @@ export const TEMPERATURE_THRESHOLDS = {
    * Used for: Ice formation, snow vs rain determination
    */
   FREEZING: 0,
-  
+
   /**
    * Cold threshold
    * Used for: Cold weather warnings, winter conditions
    */
   COLD: -5,
-  
+
   /**
    * Very cold threshold
    * Used for: Severe cold warnings, extreme winter conditions
    */
   VERY_COLD: -15,
-  
+
   /**
    * Hot threshold
    * Used for: Heat warnings, summer conditions
    */
   HOT: 30,
-  
+
   /**
    * Very hot threshold
    * Used for: Extreme heat warnings, dangerous conditions
@@ -118,19 +118,19 @@ export const WIND_THRESHOLDS = {
    * Beaufort scale: 1-3 (1-5 m/s)
    */
   LIGHT: 5,
-  
+
   /**
    * Moderate wind threshold
    * Beaufort scale: 4-5 (6-10 m/s)
    */
   MODERATE: 10,
-  
+
   /**
    * Strong wind threshold
    * Beaufort scale: 6-7 (11-17 m/s)
    */
   STRONG: 17,
-  
+
   /**
    * Very strong wind threshold
    * Beaufort scale: 8+ (18+ m/s)
@@ -148,25 +148,25 @@ export const UI_THRESHOLDS = {
    * Used for: Location search input validation
    */
   SEARCH_MIN_CHARS: 3,
-  
+
   /**
    * Coordinate precision for display
    * Used for: Latitude/longitude display formatting
    */
   COORDINATE_PRECISION: 3,
-  
+
   /**
    * Default forecast hours
    * Used for: Default graph and forecast display period
    */
   DEFAULT_FORECAST_HOURS: 48,
-  
+
   /**
    * Summary forecast days
    * Used for: 9-day summary view
    */
   SUMMARY_FORECAST_DAYS: 9,
-  
+
   /**
    * Detailed forecast hours
    * Used for: 2-day detailed view
@@ -184,7 +184,7 @@ export const GRAPH_THRESHOLDS = {
    */
   WIDTH: 800,
   HEIGHT: 280,
-  
+
   /**
    * Graph margins (top, right, bottom, left)
    */
@@ -194,13 +194,13 @@ export const GRAPH_THRESHOLDS = {
     BOTTOM: 48,
     LEFT: 52,
   },
-  
+
   /**
    * Temperature padding for graph scaling
    * Used to add visual padding around temperature range
    */
   TEMPERATURE_PADDING: 2,
-  
+
   /**
    * Font sizes for graph elements
    */
@@ -210,7 +210,7 @@ export const GRAPH_THRESHOLDS = {
     EMOJI: 14,
     AXIS: 11,
   },
-  
+
   /**
    * Line styles and weights
    */
@@ -220,12 +220,12 @@ export const GRAPH_THRESHOLDS = {
     GRID_WIDTH: 1,
     AXIS_WIDTH: 1.5,
   },
-  
+
   /**
    * Circle radius for precipitation points
    */
   PRECIPITATION_POINT_RADIUS: 2,
-  
+
   /**
    * Opacity values for graph elements
    */
@@ -248,19 +248,19 @@ export const TIMING_THRESHOLDS = {
    * Used for: Preventing excessive API calls during typing
    */
   SEARCH_DEBOUNCE: 300,
-  
+
   /**
    * Graph rendering delay (ms)
    * Used for: Smooth graph transitions and loading states
    */
   GRAPH_RENDER_DELAY: 100,
-  
+
   /**
    * Error retry delay (ms)
    * Used for: Delayed error display to allow for recovery
    */
   ERROR_DISPLAY_DELAY: 150,
-  
+
   /**
    * Component initialization delay (ms)
    * Used for: Smooth component transitions
@@ -281,13 +281,13 @@ export const UNIT_CONVERSION = {
     MULTIPLIER: 9 / 5,
     OFFSET: 32,
   },
-  
+
   /**
    * Speed conversion: m/s to mph
    * Formula: mph = m/s * 2.236936
    */
   MS_TO_MPH: 2.236936,
-  
+
   /**
    * Length conversion: mm to inches
    * Formula: inches = mm / 25.4
@@ -304,12 +304,12 @@ export const ERROR_THRESHOLDS = {
    * Maximum retry attempts for error boundaries
    */
   MAX_RETRIES: 3,
-  
+
   /**
    * Maximum retry attempts for API calls
    */
   MAX_API_RETRIES: 3,
-  
+
   /**
    * Timeout for network requests (ms)
    */
@@ -326,13 +326,13 @@ export const CACHE_THRESHOLDS = {
    * 30 minutes - balances freshness with performance
    */
   WEATHER: 30 * 60 * 1000,
-  
+
   /**
    * Sunrise/sunset data cache TTL
    * 6 hours - changes slowly throughout the day
    */
   SUNRISE: 6 * 60 * 60 * 1000,
-  
+
   /**
    * Location search cache TTL
    * 1 hour - locations don't change frequently

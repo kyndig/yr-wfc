@@ -13,14 +13,13 @@ interface ErrorFallbackProps {
 /**
  * Weather-specific error fallback component
  */
-export function WeatherErrorFallback({ 
-  componentName, 
-  error, 
-  onRetry, 
-  onReset, 
-  retryCount = 0, 
-  maxRetries = 3 
-}: ErrorFallbackProps) {
+export function WeatherErrorFallback({
+  componentName,
+  onRetry,
+  onReset,
+  retryCount = 0,
+  maxRetries = 3,
+}: Omit<ErrorFallbackProps, "error">) {
   return (
     <List.Section title="🌤️ Weather Error">
       <List.Item
@@ -68,14 +67,13 @@ export function WeatherErrorFallback({
 /**
  * Search-specific error fallback component
  */
-export function SearchErrorFallback({ 
-  componentName, 
-  error, 
-  onRetry, 
-  onReset, 
-  retryCount = 0, 
-  maxRetries = 3 
-}: ErrorFallbackProps) {
+export function SearchErrorFallback({
+  componentName,
+  onRetry,
+  onReset,
+  retryCount = 0,
+  maxRetries = 3,
+}: Omit<ErrorFallbackProps, "error">) {
   return (
     <List.Section title="🔍 Search Error">
       <List.Item
@@ -123,14 +121,13 @@ export function SearchErrorFallback({
 /**
  * Graph/Chart-specific error fallback component
  */
-export function GraphErrorFallback({ 
-  componentName, 
-  error, 
-  onRetry, 
-  onReset, 
-  retryCount = 0, 
-  maxRetries = 3 
-}: ErrorFallbackProps) {
+export function GraphErrorFallback({
+  componentName,
+  onRetry,
+  onReset,
+  retryCount = 0,
+  maxRetries = 3,
+}: Omit<ErrorFallbackProps, "error">) {
   return (
     <List.Section title="📊 Graph Error">
       <List.Item
@@ -178,14 +175,13 @@ export function GraphErrorFallback({
 /**
  * Favorites-specific error fallback component
  */
-export function FavoritesErrorFallback({ 
-  componentName, 
-  error, 
-  onRetry, 
-  onReset, 
-  retryCount = 0, 
-  maxRetries = 3 
-}: ErrorFallbackProps) {
+export function FavoritesErrorFallback({
+  componentName,
+  onRetry,
+  onReset,
+  retryCount = 0,
+  maxRetries = 3,
+}: Omit<ErrorFallbackProps, "error">) {
   return (
     <List.Section title="⭐ Favorites Error">
       <List.Item
@@ -233,14 +229,13 @@ export function FavoritesErrorFallback({
 /**
  * Generic error fallback component
  */
-export function GenericErrorFallback({ 
-  componentName, 
-  error, 
-  onRetry, 
-  onReset, 
-  retryCount = 0, 
-  maxRetries = 3 
-}: ErrorFallbackProps) {
+export function GenericErrorFallback({
+  componentName,
+  onRetry,
+  onReset,
+  retryCount = 0,
+  maxRetries = 3,
+}: Omit<ErrorFallbackProps, "error">) {
   return (
     <List.Section title="⚠️ Error">
       <List.Item

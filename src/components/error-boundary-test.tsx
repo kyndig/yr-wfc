@@ -22,16 +22,8 @@ function ErrorTestComponent() {
         icon="🧪"
         actions={
           <ActionPanel>
-            <Action
-              title="Throw Test Error"
-              icon={Icon.ExclamationMark}
-              onAction={() => setShouldThrow(true)}
-            />
-            <Action
-              title="Reset Component"
-              icon={Icon.ArrowClockwise}
-              onAction={() => setShouldThrow(false)}
-            />
+            <Action title="Throw Test Error" icon={Icon.ExclamationMark} onAction={() => setShouldThrow(true)} />
+            <Action title="Reset Component" icon={Icon.ArrowClockwise} onAction={() => setShouldThrow(false)} />
           </ActionPanel>
         }
       />

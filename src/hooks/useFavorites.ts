@@ -3,7 +3,6 @@ import { getWeather, type TimeseriesEntry } from "../weather-client";
 import { getSunTimes, type SunTimes } from "../sunrise-client";
 import {
   addFavorite,
-  isFavorite,
   removeFavorite,
   moveFavoriteUp,
   moveFavoriteDown,
@@ -23,14 +22,14 @@ export interface UseFavoritesReturn {
   favoritesLoading: Record<string, boolean>;
   weatherDataInitialized: boolean;
   isInitialLoad: boolean;
-  
+
   // Favorites actions
   addFavoriteLocation: (location: FavoriteLocation) => Promise<void>;
   removeFavoriteLocation: (location: FavoriteLocation) => Promise<void>;
   moveFavoriteUp: (location: FavoriteLocation) => Promise<void>;
   moveFavoriteDown: (location: FavoriteLocation) => Promise<void>;
   refreshFavorites: () => Promise<void>;
-  
+
   // Utility functions
   isLocationFavorite: (locationId: string) => boolean;
   getFavoriteWeather: (locationId: string, lat: number, lon: number) => TimeseriesEntry | undefined;
@@ -76,7 +75,7 @@ export function useFavorites(): UseFavoritesReturn {
       setWeatherDataInitialized(true); // No favorites to load, so we're "done"
       return;
     }
-    
+
     let cancelled = false;
     setWeatherDataInitialized(false); // Starting fresh data load
 
@@ -110,7 +109,7 @@ export function useFavorites(): UseFavoritesReturn {
             }
           }),
         );
-        
+
         if (!cancelled) {
           // Set each entry individually to ensure React picks up the changes
           for (const [key, ts, sun] of entries) {
@@ -141,7 +140,7 @@ export function useFavorites(): UseFavoritesReturn {
         }
       }
     }
-    
+
     fetchAll();
     return () => {
       cancelled = true;
@@ -179,33 +178,48 @@ export function useFavorites(): UseFavoritesReturn {
   }, []);
 
   // Check if location is favorite
-  const isLocationFavorite = useCallback((locationId: string) => {
-    return favorites.some(fav => fav.id === locationId);
-  }, [favorites]);
+  const isLocationFavorite = useCallback(
+    (locationId: string) => {
+      return favorites.some((fav) => fav.id === locationId);
+    },
+    [favorites],
+  );
 
   // Get weather data for a favorite location
-  const getFavoriteWeather = useCallback((locationId: string, lat: number, lon: number) => {
-    const key = LocationUtils.getLocationKey(locationId, lat, lon);
-    return favoriteWeather[key];
-  }, [favoriteWeather]);
+  const getFavoriteWeather = useCallback(
+    (locationId: string, lat: number, lon: number) => {
+      const key = LocationUtils.getLocationKey(locationId, lat, lon);
+      return favoriteWeather[key];
+    },
+    [favoriteWeather],
+  );
 
   // Get sun times for a favorite location
-  const getFavoriteSunTimes = useCallback((locationId: string, lat: number, lon: number) => {
-    const key = LocationUtils.getLocationKey(locationId, lat, lon);
-    return sunTimes[key];
-  }, [sunTimes]);
+  const getFavoriteSunTimes = useCallback(
+    (locationId: string, lat: number, lon: number) => {
+      const key = LocationUtils.getLocationKey(locationId, lat, lon);
+      return sunTimes[key];
+    },
+    [sunTimes],
+  );
 
   // Check if favorite is loading
-  const isFavoriteLoading = useCallback((locationId: string, lat: number, lon: number) => {
-    const key = LocationUtils.getLocationKey(locationId, lat, lon);
-    return favoritesLoading[key] || false;
-  }, [favoritesLoading]);
+  const isFavoriteLoading = useCallback(
+    (locationId: string, lat: number, lon: number) => {
+      const key = LocationUtils.getLocationKey(locationId, lat, lon);
+      return favoritesLoading[key] || false;
+    },
+    [favoritesLoading],
+  );
 
   // Check if favorite has error
-  const hasFavoriteError = useCallback((locationId: string, lat: number, lon: number) => {
-    const key = LocationUtils.getLocationKey(locationId, lat, lon);
-    return favoriteErrors[key] || false;
-  }, [favoriteErrors]);
+  const hasFavoriteError = useCallback(
+    (locationId: string, lat: number, lon: number) => {
+      const key = LocationUtils.getLocationKey(locationId, lat, lon);
+      return favoriteErrors[key] || false;
+    },
+    [favoriteErrors],
+  );
 
   return {
     // Favorites state
@@ -217,14 +231,14 @@ export function useFavorites(): UseFavoritesReturn {
     favoritesLoading,
     weatherDataInitialized,
     isInitialLoad,
-    
+
     // Favorites actions
     addFavoriteLocation,
     removeFavoriteLocation,
     moveFavoriteUp: moveFavoriteUpAction,
     moveFavoriteDown: moveFavoriteDownAction,
     refreshFavorites,
-    
+
     // Utility functions
     isLocationFavorite,
     getFavoriteWeather,

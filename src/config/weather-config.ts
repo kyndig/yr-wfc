@@ -13,7 +13,7 @@ import {
 
 /**
  * Weather Configuration Manager
- * 
+ *
  * Provides a centralized way to manage and override weather-related thresholds.
  * Allows for runtime configuration changes and provides type-safe access to all thresholds.
  */
@@ -78,7 +78,7 @@ export class WeatherConfigManager {
    */
   getThreshold<K extends keyof WeatherConfig, T extends keyof WeatherConfig[K]>(
     category: K,
-    threshold: T
+    threshold: T,
   ): WeatherConfig[K][T] {
     return this.config[category][threshold];
   }
@@ -89,7 +89,7 @@ export class WeatherConfigManager {
   setThreshold<K extends keyof WeatherConfig, T extends keyof WeatherConfig[K]>(
     category: K,
     threshold: T,
-    value: WeatherConfig[K][T]
+    value: WeatherConfig[K][T],
   ): void {
     this.config[category] = {
       ...this.config[category],
@@ -100,10 +100,7 @@ export class WeatherConfigManager {
   /**
    * Update an entire threshold category
    */
-  setThresholds<K extends keyof WeatherConfig>(
-    category: K,
-    thresholds: Partial<WeatherConfig[K]>
-  ): void {
+  setThresholds<K extends keyof WeatherConfig>(category: K, thresholds: Partial<WeatherConfig[K]>): void {
     this.config[category] = {
       ...this.config[category],
       ...thresholds,
@@ -130,10 +127,7 @@ export class WeatherConfigManager {
   /**
    * Get precipitation chance level based on intensity and coverage
    */
-  getPrecipitationChanceLevel(
-    maxIntensity: number,
-    coverageRatio: number
-  ): "none" | "low" | "medium" | "high" {
+  getPrecipitationChanceLevel(maxIntensity: number, coverageRatio: number): "none" | "low" | "medium" | "high" {
     const { LIGHT, MODERATE, HEAVY } = this.config.precipitation;
     const { LOW, MEDIUM, HIGH } = this.config.precipitationCoverage;
 
@@ -161,7 +155,7 @@ export class WeatherConfigManager {
    * Get wind classification
    */
   getWindClassification(speed: number): "light" | "moderate" | "strong" | "very_strong" {
-    const { LIGHT, MODERATE, STRONG, VERY_STRONG } = this.config.wind;
+    const { MODERATE, STRONG, VERY_STRONG } = this.config.wind;
 
     if (speed >= VERY_STRONG) return "very_strong";
     if (speed >= STRONG) return "strong";
@@ -220,11 +214,9 @@ export const getCacheThresholds = () => weatherConfig.getThresholds("cache");
 export const getPrecipitationChanceLevel = (maxIntensity: number, coverageRatio: number) =>
   weatherConfig.getPrecipitationChanceLevel(maxIntensity, coverageRatio);
 
-export const getTemperatureClassification = (temp: number) =>
-  weatherConfig.getTemperatureClassification(temp);
+export const getTemperatureClassification = (temp: number) => weatherConfig.getTemperatureClassification(temp);
 
-export const getWindClassification = (speed: number) =>
-  weatherConfig.getWindClassification(speed);
+export const getWindClassification = (speed: number) => weatherConfig.getWindClassification(speed);
 
 /**
  * Unit conversion convenience functions
@@ -232,8 +224,7 @@ export const getWindClassification = (speed: number) =>
 export const convertTemperature = (celsius: number, toImperial: boolean) =>
   weatherConfig.convertTemperature(celsius, toImperial);
 
-export const convertSpeed = (ms: number, toImperial: boolean) =>
-  weatherConfig.convertSpeed(ms, toImperial);
+export const convertSpeed = (ms: number, toImperial: boolean) => weatherConfig.convertSpeed(ms, toImperial);
 
 export const convertPrecipitation = (mm: number, toImperial: boolean) =>
   weatherConfig.convertPrecipitation(mm, toImperial);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { type LocationResult } from "../location-search";
 import { isFavorite } from "../storage";
 import { LocationUtils } from "../utils/location-utils";
@@ -17,9 +17,12 @@ export function useFavoriteIds(): UseFavoriteIdsReturn {
   const [favoriteIds, setFavoriteIds] = useState<Record<string, boolean>>({});
 
   // Check if a location is favorite
-  const isLocationFavorite = useCallback((locationId: string) => {
-    return favoriteIds[locationId] || false;
-  }, [favoriteIds]);
+  const isLocationFavorite = useCallback(
+    (locationId: string) => {
+      return favoriteIds[locationId] || false;
+    },
+    [favoriteIds],
+  );
 
   // Refresh favorite IDs for given locations
   const refreshFavoriteIds = useCallback(async (locations: LocationResult[]) => {
@@ -34,7 +37,7 @@ export function useFavoriteIds(): UseFavoriteIdsReturn {
         location.id,
         location.displayName,
         location.lat,
-        location.lon
+        location.lon,
       );
       map[location.id] = await isFavorite(favLike);
     }

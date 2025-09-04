@@ -34,7 +34,7 @@ export function formatPrecip(mm?: number, units: Units = getUnits()): string | u
   if (typeof mm !== "number") return undefined;
   const isImperial = units === "imperial";
   const precip = convertPrecipitation(mm, isImperial);
-  
+
   if (isImperial) {
     const inchesText = precip.toFixed(2).replace(/\.?0+$/, "");
     return `${inchesText} in`;

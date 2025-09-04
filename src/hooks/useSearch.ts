@@ -13,11 +13,11 @@ export interface UseSearchReturn {
   locations: LocationResult[];
   isLoading: boolean;
   queryIntent: QueryIntent;
-  
+
   // Search actions
   performSearch: (query: string) => Promise<void>;
   clearSearch: () => void;
-  
+
   // Computed values
   safeLocations: LocationResult[];
   hasSearchResults: boolean;
@@ -81,7 +81,7 @@ export function useSearch(): UseSearchReturn {
 
     setIsLoading(true);
     setSearchError(null);
-    
+
     try {
       const results = await searchLocations(locationQuery);
       setLocations(results);
@@ -143,11 +143,11 @@ export function useSearch(): UseSearchReturn {
     locations: safeLocations,
     isLoading,
     queryIntent,
-    
+
     // Search actions
     performSearch,
     clearSearch,
-    
+
     // Computed values
     safeLocations,
     hasSearchResults,
