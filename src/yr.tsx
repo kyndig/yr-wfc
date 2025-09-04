@@ -59,11 +59,11 @@ export default function Command() {
       const dateStr = intent.targetDate.toLocaleDateString();
       const isToday = intent.targetDate.toDateString() === new Date().toDateString();
       const isTomorrow = intent.targetDate.toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString();
-      
+
       let dateLabel = dateStr;
       if (isToday) dateLabel = "today";
       else if (isTomorrow) dateLabel = "tomorrow";
-      
+
       showToast({
         style: Toast.Style.Success,
         title: `📅 ${dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} weather query detected!`,
@@ -276,7 +276,7 @@ export default function Command() {
 
   // Determine if we should show loading state - only true during initial load
   const shouldShowLoading = isInitialLoad || isLoading;
-  
+
   // Special loading state for date queries
   const isDateQueryLoading = isLoading && queryIntent.targetDate;
 
@@ -288,7 +288,7 @@ export default function Command() {
       isLoading={shouldShowLoading}
       onSearchTextChange={setSearchText}
       searchBarPlaceholder={
-        queryIntent.targetDate 
+        queryIntent.targetDate
           ? `Searching for weather on ${queryIntent.targetDate.toLocaleDateString()}...`
           : "Search for a location or try 'Oslo fredag', 'London tomorrow'..."
       }
@@ -416,10 +416,10 @@ export default function Command() {
                 subtitle="Finding locations and preparing date-specific results..."
                 icon="⏳"
                 accessories={[
-                  { 
-                    text: "Loading...", 
-                    icon: Icon.ArrowClockwise 
-                  }
+                  {
+                    text: "Loading...",
+                    icon: Icon.ArrowClockwise,
+                  },
                 ]}
                 actions={
                   <ActionPanel>
@@ -437,9 +437,9 @@ export default function Command() {
 
           {/* Show search results first when actively searching */}
           {safeLocations.length > 0 && (
-            <List.Section 
+            <List.Section
               title={
-                queryIntent.targetDate 
+                queryIntent.targetDate
                   ? `📅 Search Results for ${queryIntent.targetDate.toLocaleDateString()} (${safeLocations.length})`
                   : `Search Results (${safeLocations.length})`
               }
@@ -449,22 +449,18 @@ export default function Command() {
                   key={loc.id}
                   title={loc.displayName}
                   subtitle={
-                    queryIntent.targetDate 
+                    queryIntent.targetDate
                       ? `Tap to view weather for ${queryIntent.targetDate.toLocaleDateString()}`
                       : undefined
                   }
-                  icon={
-                    queryIntent.targetDate 
-                      ? "📅" 
-                      : "📍"
-                  }
+                  icon={queryIntent.targetDate ? "📅" : "📍"}
                   accessories={[
-                    { 
-                      text: queryIntent.targetDate 
+                    {
+                      text: queryIntent.targetDate
                         ? queryIntent.targetDate.toLocaleDateString()
                         : `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`,
-                      icon: queryIntent.targetDate ? Icon.Calendar : undefined
-                    }
+                      icon: queryIntent.targetDate ? Icon.Calendar : undefined,
+                    },
                   ]}
                   actions={createLocationActions(
                     loc.displayName,
