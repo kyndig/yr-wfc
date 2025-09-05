@@ -29,10 +29,10 @@ export function useDebounce<T>(value: T, delay: number): T {
  * @param deps - Dependencies array for the callback
  * @returns The debounced function
  */
-export function useDebouncedCallback<T extends (...args: unknown[]) => unknown>(
+export function useDebouncedCallback<T extends (...args: any[]) => any>(
   callback: T,
   delay: number,
-  deps: unknown[] = [],
+  deps: any[] = [],
 ): T {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const callbackRef = useRef(callback);
