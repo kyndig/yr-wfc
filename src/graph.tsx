@@ -16,7 +16,13 @@ import { formatDate, formatTime } from "./utils/date-utils";
 import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
 import { withErrorBoundary } from "./components/error-boundary";
 import { GraphErrorFallback } from "./components/error-fallbacks";
-import { getGraphThresholds, getUIThresholds, convertTemperature, convertPrecipitation, getWeatherConfig } from "./config/weather-config";
+import {
+  getGraphThresholds,
+  getUIThresholds,
+  convertTemperature,
+  convertPrecipitation,
+  getWeatherConfig,
+} from "./config/weather-config";
 
 function GraphView(props: {
   name: string;
@@ -257,7 +263,10 @@ export function buildGraphMarkdown(
     .range([margin.TOP + innerHeight, margin.TOP]);
   const ty = (v: number) => yT(v);
 
-  const pMaxDisp = Math.max(weatherConfig.precipitation.DISPLAY_MIN, maxFinite(precsDisplay) ?? weatherConfig.precipitation.DISPLAY_MIN);
+  const pMaxDisp = Math.max(
+    weatherConfig.precipitation.DISPLAY_MIN,
+    maxFinite(precsDisplay) ?? weatherConfig.precipitation.DISPLAY_MIN,
+  );
   const yP = scaleLinear()
     .domain([weatherConfig.precipitation.ZERO, pMaxDisp])
     .range([margin.TOP + innerHeight, margin.TOP]);
@@ -309,7 +318,11 @@ export function buildGraphMarkdown(
     const firstMidnight = new Date(start);
     firstMidnight.setHours(graphConfig.STYLING.MIDNIGHT_HOUR, 0, 0, 0);
     const parts: string[] = [];
-    for (let d = firstMidnight; d.getTime() < end.getTime(); d = new Date(d.getTime() + graphConfig.STYLING.MILLISECONDS_PER_DAY)) {
+    for (
+      let d = firstMidnight;
+      d.getTime() < end.getTime();
+      d = new Date(d.getTime() + graphConfig.STYLING.MILLISECONDS_PER_DAY)
+    ) {
       const x = xScale(d.getTime());
       const label = formatDate(d, "SHORT_DAY");
       parts.push(

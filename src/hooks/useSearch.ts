@@ -56,7 +56,9 @@ export function useSearch(): UseSearchReturn {
     if (intent.targetDate) {
       const dateStr = intent.targetDate.toLocaleDateString();
       const isToday = intent.targetDate.toDateString() === new Date().toDateString();
-      const isTomorrow = intent.targetDate.toDateString() === new Date(Date.now() + getGraphThresholds().STYLING.MILLISECONDS_PER_DAY).toDateString();
+      const isTomorrow =
+        intent.targetDate.toDateString() ===
+        new Date(Date.now() + getGraphThresholds().STYLING.MILLISECONDS_PER_DAY).toDateString();
 
       let dateLabel = dateStr;
       if (isToday) dateLabel = "today";
