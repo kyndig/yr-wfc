@@ -131,9 +131,14 @@ Perfect for troubleshooting connectivity issues or understanding API behavior.
 
 All APIs are used in compliance with their respective terms of service.
 
+## 🗄️ Caching
+
+- **Forecast Data**: 30 minutes per location
+- **Sunrise/Sunset**: 6 hours per location/day
+- **Search Results**: Intelligent caching for better performance
+
 ## 🔐 Requirements & Privacy
 
-### No API Key Required
 This extension uses publicly available APIs that don't require authentication:
 - **MET APIs**: Free weather data from the Norwegian Meteorological Institute
 - **OpenStreetMap Nominatim**: Free geocoding service for location search
@@ -147,17 +152,6 @@ This extension uses publicly available APIs that don't require authentication:
 - **Data Retention**: Cached weather data is automatically cleared after expiration (30 minutes to 6 hours)
 - **Location Privacy**: Search queries are sent to OpenStreetMap for geocoding, but no personal identifiers are included
 
-### Data Flow
-1. **Location Search**: Query sent to OpenStreetMap → coordinates returned
-2. **Weather Data**: Coordinates sent to MET API → weather data returned
-3. **Local Storage**: Data cached locally for performance
-4. **No External Servers**: No data sent to third-party services beyond the official APIs
-
-## 🗄️ Caching
-
-- **Forecast Data**: 30 minutes per location
-- **Sunrise/Sunset**: 6 hours per location/day
-- **Search Results**: Intelligent caching for better performance
 
 ## 📄 License
 
