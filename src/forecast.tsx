@@ -158,19 +158,19 @@ function ForecastView(props: {
           titleText = `# ${name} – ${mode === "detailed" ? "48-Hour Forecast" : "9-Day Summary"}${view === "data" ? " (Data)" : ""}`;
         }
         const content = view === "graph" ? graph : listMarkdown;
-        
+
         // Add temperature, precipitation, and sunrise/sunset summary for detailed forecast
         let summaryInfo = "";
         if (mode === "detailed") {
           const summaryParts: string[] = [];
-          
+
           // Temperature range
           if (items.length > 0) {
             const temps = items
               .slice(0, getUIThresholds().DETAILED_FORECAST_HOURS)
-              .map(s => s.data?.instant?.details?.air_temperature)
-              .filter((t): t is number => typeof t === 'number' && Number.isFinite(t));
-            
+              .map((s) => s.data?.instant?.details?.air_temperature)
+              .filter((t): t is number => typeof t === "number" && Number.isFinite(t));
+
             if (temps.length > 0) {
               const minTemp = Math.min(...temps);
               const maxTemp = Math.max(...temps);
@@ -179,37 +179,37 @@ function ForecastView(props: {
               summaryParts.push(`Min ${minText} • Max ${maxText}`);
             }
           }
-          
+
           // Precipitation
           if (items.length > 0) {
             const precips = items
               .slice(0, getUIThresholds().DETAILED_FORECAST_HOURS)
-              .map(s => precipitationAmount(s))
-              .filter((p): p is number => typeof p === 'number' && Number.isFinite(p));
-            
+              .map((s) => precipitationAmount(s))
+              .filter((p): p is number => typeof p === "number" && Number.isFinite(p));
+
             if (precips.length > 0) {
               const maxPrecip = Math.max(...precips);
               const precipText = formatPrecip(maxPrecip);
               summaryParts.push(`Max precip ${precipText}`);
             }
           }
-          
+
           // Sunrise/sunset
           if (Object.keys(sunByDate).length > 0) {
             const firstDate = Object.keys(sunByDate)[0];
             const sunTimes = sunByDate[firstDate];
             if (sunTimes.sunrise || sunTimes.sunset) {
-              const sunriseTime = sunTimes.sunrise ? formatTime(sunTimes.sunrise, "MILITARY") : 'N/A';
-              const sunsetTime = sunTimes.sunset ? formatTime(sunTimes.sunset, "MILITARY") : 'N/A';
+              const sunriseTime = sunTimes.sunrise ? formatTime(sunTimes.sunrise, "MILITARY") : "N/A";
+              const sunsetTime = sunTimes.sunset ? formatTime(sunTimes.sunset, "MILITARY") : "N/A";
               summaryParts.push(`Sunrise ${sunriseTime} • Sunset ${sunsetTime}`);
             }
           }
-          
+
           if (summaryParts.length > 0) {
-            summaryInfo = `\n\n${summaryParts.join(' • ')}`;
+            summaryInfo = `\n\n${summaryParts.join(" • ")}`;
           }
         }
-        
+
         return [titleText, summaryInfo, content].join("\n");
       })()
     : "";

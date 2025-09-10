@@ -87,15 +87,15 @@ export function formatDate(date: Date | string, format: keyof typeof DATE_FORMAT
 export function formatTime(date: Date | string, format: keyof typeof TIME_FORMATS): string {
   const dateObj = typeof date === "string" ? new Date(date) : date;
   const clockFormat = getClockFormat();
-  
+
   // Get the base format options
   const formatOptions = { ...TIME_FORMATS[format] };
-  
+
   // Override hour12 based on user preference for STANDARD and MILITARY formats
   if (format === "STANDARD" || format === "MILITARY") {
-    (formatOptions as any).hour12 = clockFormat === "12h";
+    (formatOptions as Intl.DateTimeFormatOptions).hour12 = clockFormat === "12h";
   }
-  
+
   return dateObj.toLocaleTimeString(undefined, formatOptions);
 }
 

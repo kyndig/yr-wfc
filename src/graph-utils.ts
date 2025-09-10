@@ -3,7 +3,7 @@ import { line, curveMonotoneX } from "d3-shape";
 import { TimeseriesEntry } from "./weather-client";
 import { SunTimes } from "./sunrise-client";
 import { getGraphThresholds, getWeatherConfig } from "./config/weather-config";
-import { getUnits, formatTemperatureCelsius, formatPrecip } from "./units";
+import { getUnits } from "./units";
 import { precipitationAmount, symbolCode } from "./utils-forecast";
 import { symbolToEmoji } from "./utils/weather-symbols";
 import { directionFromDegrees } from "./weather-utils";
@@ -138,11 +138,11 @@ export function buildGraphMarkdown(
   const sunLines = (() => {
     const map = opts?.sunByDate ?? {};
     const parts: string[] = [];
-    
-    for (const [date, st] of Object.entries(map)) {
+
+    for (const [, st] of Object.entries(map)) {
       const sr = st.sunrise ? new Date(st.sunrise).getTime() : undefined;
       const ss = st.sunset ? new Date(st.sunset).getTime() : undefined;
-      
+
       if (sr && sr >= xMin && sr <= xMax) {
         const x = xScale(sr);
         parts.push(
@@ -260,12 +260,10 @@ export function buildGraphMarkdown(
 </svg>`;
 
   // Add textual min/max using original units helpers (based on Celsius / mm)
-  const tMinC = minFinite(tempsC);
-  const tMaxC = maxFinite(tempsC);
-  const pMaxMm = maxFinite(precsMm);
-  const tMinText = formatTemperatureCelsius(tMinC);
-  const tMaxText = formatTemperatureCelsius(tMaxC);
-  const pMaxText = formatPrecip(pMaxMm);
+  // Note: These values are calculated but not currently used in the display
+  // const tMinC = minFinite(tempsC);
+  // const tMaxC = maxFinite(tempsC);
+  // const pMaxMm = maxFinite(precsMm);
   // Use HTML img with explicit dimensions to prevent layout shift
   const svgDataUri = `data:image/svg+xml;utf8,${svgToDataUri(svg)}`;
   const graphHtml = `<img src="${svgDataUri}" width="${width}" height="${height}" alt="Forecast graph" style="display:block;" />`;
