@@ -1,6 +1,6 @@
 # Yr Weather Forecast
 
-A modern, feature-rich [Raycast](https://www.raycast.com) extension for displaying weather forecasts from The Norwegian Institute of Meteorology (MET). Get accurate weather information with an intuitive interface, smart search, and beautiful visualizations.
+A modern, feature-rich [Raycast](https://www.raycast.com) extension for displaying weather forecasts from [The Norwegian Institute of Meteorology (MET)](https://www.met.no). Get accurate weather information with an intuitive interface, smart search, and beautiful visualizations. 
 
 **Maintainer:** Kynd  
 **Contact:** weather@kynd.no  
@@ -24,6 +24,7 @@ A modern, feature-rich [Raycast](https://www.raycast.com) extension for displayi
 - **Welcome System**: Helpful onboarding for new users
 - **Keyboard Shortcuts**: Quick actions for power users
 - **Units Support**: Metric (default) or Imperial units
+- **Clock Format**: Choose between 12-hour and 24-hour time display (24h is default because I like it better)
 
 ### 🚀 Technicalities
 - **Fast Performance**: Intelligent caching reduces API calls
@@ -105,10 +106,11 @@ The **Data View** provides a comprehensive markdown table showing detailed weath
 
 Access preferences via `Yr` command → `Cmd+K` → Configure Command:
 
-- **Units**: Metric (°C, m/s, mm) or Imperial (°F, mph, in)
+- **Units**: Metric (°C, m/s, mm) or Imperial (°F, mph, in) - pick your poison
+- **Clock Format**: 12-hour (2:30 PM) or 24-hour (14:30) time display - I default to 24h because it makes more sense
 - **Show Wind Direction**: Display wind arrows and cardinal directions
 - **Show Sunrise/Sunset**: Include sun times in location displays
-- **Debug Mode**: Enable console output for troubleshooting
+- **Debug Mode**: Enable console output for troubleshooting (useful when things break)
 
 ## 🔧 Debug Mode
 
