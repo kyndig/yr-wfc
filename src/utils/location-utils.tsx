@@ -1,6 +1,5 @@
 import { Action, ActionPanel, Icon, showToast, Toast } from "@raycast/api";
 import ForecastView from "../forecast";
-import LazyGraphView from "../components/lazy-graph";
 import { getWeather } from "../weather-client";
 import { TimeseriesEntry } from "../weather-client";
 import { FavoriteLocation } from "../storage";
@@ -21,6 +20,7 @@ export class LocationUtils {
     onFavoriteToggle: () => void,
     onShowWelcome?: () => void,
     targetDate?: Date,
+    onFavoriteChange?: () => void,
   ) {
     return (
       <ActionPanel>
@@ -31,6 +31,7 @@ export class LocationUtils {
               name={name}
               lat={lat}
               lon={lon}
+              onFavoriteChange={onFavoriteChange}
               onShowWelcome={onShowWelcome}
               targetDate={targetDate?.toISOString().split("T")[0]}
             />
@@ -54,11 +55,6 @@ export class LocationUtils {
               });
             }
           }}
-        />
-        <Action.Push
-          title="Open Graph"
-          icon={Icon.BarChart}
-          target={<LazyGraphView name={name} lat={lat} lon={lon} onShowWelcome={onShowWelcome} />}
         />
         {isFavorite ? (
           <Action

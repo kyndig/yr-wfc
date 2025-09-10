@@ -77,26 +77,23 @@ A modern, feature-rich [Raycast](https://www.raycast.com) extension for displayi
 - **Cmd+F**: Add location to favorites
 - **Cmd+Shift+F**: Remove location from favorites
 - **Enter**: Show current weather (search results) or open forecast (favorites)
-- **Cmd+G**: Open graph view directly
 - **Cmd+K**: Configure command preferences
 
 ### View Navigation
-- **D**: Switch to data table view (from Forecast or Graph view)
+- **D**: Switch to data table view (from Forecast view)
 - **G**: Switch to graph view (from data table view)
 - **Space**: Toggle between detailed (48-hour) and summary (9-day) modes in Forecast view
 
 ### Detailed Views
-- **Forecast View**: Combined hourly data with graphs and data tables
+- **Forecast View**: Combined hourly data with graphs and data tables (includes sunrise/sunset indicators)
 - **One-Day View**: Focused view for specific dates
-- **Graph View**: Visual representation of weather trends
 - **Data View**: Markdown table of the current location's data
 
 ### Data View
-The **Data View** provides a comprehensive markdown table showing detailed weather information for the current location. This view is available in both the Forecast View and Graph View.
+The **Data View** provides a comprehensive markdown table showing detailed weather information for the current location. This view is available in the Forecast View.
 
 **Accessing Data View:**
 - **From Forecast View**: Press `D` to switch from graph to data table
-- **From Graph View**: Press `D` to switch from graph to data table
 - **Switch back to Graph**: Press `G` from data view
 
 **Data View Features:**

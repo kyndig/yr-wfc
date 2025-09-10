@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Action, ActionPanel, List, Icon, showToast, Toast } from "@raycast/api";
 import ForecastView from "./forecast";
-import LazyGraphView from "./components/lazy-graph";
 import WelcomeMessage from "./components/welcome-message";
 import { ErrorBoundary } from "./components/error-boundary";
 import { SearchErrorFallback, FavoritesErrorFallback } from "./components/error-fallbacks";
@@ -313,6 +312,7 @@ export default function Command() {
                       },
                       () => setShowWelcomeMessage(true),
                       search.queryIntent.targetDate,
+                      favorites.refreshFavorites,
                     )}
                   />
                 ))}
@@ -408,6 +408,7 @@ export default function Command() {
                                 name={fav.name}
                                 lat={fav.lat}
                                 lon={fav.lon}
+                                onFavoriteChange={favorites.refreshFavorites}
                                 onShowWelcome={() => setShowWelcomeMessage(true)}
                               />
                             }
@@ -427,18 +428,6 @@ export default function Command() {
                                 await ToastMessages.weatherLoadFailed(error);
                               }
                             }}
-                          />
-                          <Action.Push
-                            title="Open Graph"
-                            icon={Icon.BarChart}
-                            target={
-                              <LazyGraphView
-                                name={fav.name}
-                                lat={fav.lat}
-                                lon={fav.lon}
-                                onShowWelcome={() => setShowWelcomeMessage(true)}
-                              />
-                            }
                           />
                           <Action
                             title="Remove from Favorites"
