@@ -8,7 +8,7 @@ import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type Favori
 import { withErrorBoundary } from "./components/error-boundary";
 import { WeatherErrorFallback } from "./components/error-fallbacks";
 import { getUIThresholds } from "./config/weather-config";
-import { formatDate } from "./utils/date-utils";
+import { formatDate, formatTime } from "./utils/date-utils";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
 import { formatTemperatureCelsius, formatPrecip } from "./units";
 import { precipitationAmount } from "./utils-forecast";
@@ -199,8 +199,8 @@ function ForecastView(props: {
             const firstDate = Object.keys(sunByDate)[0];
             const sunTimes = sunByDate[firstDate];
             if (sunTimes.sunrise || sunTimes.sunset) {
-              const sunriseTime = sunTimes.sunrise ? new Date(sunTimes.sunrise).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
-              const sunsetTime = sunTimes.sunset ? new Date(sunTimes.sunset).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+              const sunriseTime = sunTimes.sunrise ? formatTime(sunTimes.sunrise, "MILITARY") : 'N/A';
+              const sunsetTime = sunTimes.sunset ? formatTime(sunTimes.sunset, "MILITARY") : 'N/A';
               summaryParts.push(`Sunrise ${sunriseTime} • Sunset ${sunsetTime}`);
             }
           }

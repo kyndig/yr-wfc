@@ -6,8 +6,8 @@ import { getGraphThresholds, getWeatherConfig } from "./config/weather-config";
 import { getUnits, formatTemperatureCelsius, formatPrecip } from "./units";
 import { precipitationAmount, symbolCode } from "./utils-forecast";
 import { symbolToEmoji } from "./utils/weather-symbols";
-import { directionFromDegrees, formatTime } from "./weather-utils";
-import { formatDate } from "./utils/date-utils";
+import { directionFromDegrees } from "./weather-utils";
+import { formatDate, formatTime } from "./utils/date-utils";
 import { convertTemperature, convertPrecipitation } from "./config/weather-config";
 // Utility functions for graph generation
 function minFinite(arr: (number | undefined)[]): number | undefined {
