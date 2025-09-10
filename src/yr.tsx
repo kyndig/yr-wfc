@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Action, ActionPanel, List, Icon, showToast, Toast } from "@raycast/api";
 import ForecastView from "./forecast";
-import LazyGraphView from "./components/lazy-graph";
 import WelcomeMessage from "./components/welcome-message";
 import { ErrorBoundary } from "./components/error-boundary";
 import { SearchErrorFallback, FavoritesErrorFallback } from "./components/error-fallbacks";
@@ -22,6 +21,8 @@ import { ToastMessages } from "./utils/toast-utils";
 import { WeatherFormatters } from "./utils/weather-formatters";
 import { LocationUtils } from "./utils/location-utils";
 import { DebugLogger } from "./utils/debug-utils";
+import { OpenGraphAction } from "./components/OpenGraphAction";
+import { FavoriteToggleAction } from "./components/FavoriteToggleAction";
 
 export default function Command() {
   // UI state
@@ -428,23 +429,15 @@ export default function Command() {
                               }
                             }}
                           />
-                          <Action.Push
-                            title="Open Graph"
-                            icon={Icon.BarChart}
-                            target={
-                              <LazyGraphView
-                                name={fav.name}
-                                lat={fav.lat}
-                                lon={fav.lon}
-                                onShowWelcome={() => setShowWelcomeMessage(true)}
-                              />
-                            }
+                          <OpenGraphAction
+                            name={fav.name}
+                            lat={fav.lat}
+                            lon={fav.lon}
+                            onShowWelcome={() => setShowWelcomeMessage(true)}
                           />
-                          <Action
-                            title="Remove from Favorites"
-                            icon={Icon.StarDisabled}
-                            shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
-                            onAction={async () => {
+                          <FavoriteToggleAction
+                            isFavorite={true}
+                            onToggle={async () => {
                               await favorites.removeFavoriteLocation(fav);
                               await ToastMessages.favoriteRemoved(fav.name);
                             }}
