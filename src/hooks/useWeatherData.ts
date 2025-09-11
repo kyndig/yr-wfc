@@ -1,25 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { getForecast, type TimeseriesEntry } from "../weather-client";
-
-// Type declaration for navigator to handle browser environment
-declare global {
-  const navigator:
-    | {
-        userAgent?: string;
-        onLine?: boolean;
-      }
-    | undefined;
-}
+import { DebugLogger } from "../utils/debug-utils";
+import { buildGraphMarkdown } from "../graph";
 
 /**
  * Custom hook for managing weather data fetching
- * This centralizes the pattern used across multiple components for fetching
- * weather forecast data with loading states, error handling, and cleanup
- * Now uses the centralized useAsyncState pattern for consistency
  */
-export function useWeatherData(lat: number, lon: number) {
+export function useWeatherData(lat: number, lon: number, preGenerateGraph = false) {
   const [series, setSeries] = useState<TimeseriesEntry[]>([]);
   const [showNoData, setShowNoData] = useState(false);
+  const [preRenderedGraph, setPreRenderedGraph] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
   const cancelledRef = useRef(false);
@@ -34,14 +24,28 @@ export function useWeatherData(lat: number, lon: number) {
       setShowNoData(false);
 
       try {
-        const data = await getForecast(lat, lon);
+        const result = await getForecast(lat, lon);
         if (!cancelled) {
-          setSeries(data);
-          setShowNoData(false);
+          setSeries(result);
+
+          // Pre-generate graph if requested and we have data
+          if (preGenerateGraph && result.length > 0) {
+            const graphMarkdown = buildGraphMarkdown("Location", result, 48, {
+              title: "48h forecast",
+              smooth: true,
+            }).markdown;
+            setPreRenderedGraph(graphMarkdown);
+          }
+
+          // Only show no data if we actually have no data after fetching
+          if (result.length === 0) {
+            setShowNoData(true);
+          }
         }
       } catch (err) {
         if (!cancelled) {
           setSeries([]); // Clear existing weather forecasts
+          setShowNoData(true); // Show no data message on error
 
           // Enhanced error logging for debugging
           const errorDetails = {
@@ -50,28 +54,19 @@ export function useWeatherData(lat: number, lon: number) {
             stack: err instanceof Error ? err.stack : undefined,
             timestamp: new Date().toISOString(),
             coordinates: { lat, lon },
-            userAgent:
-              typeof navigator !== "undefined" ? navigator.userAgent || "Raycast Extension" : "Raycast Extension",
+            userAgent: "Raycast Extension",
           };
 
-          console.error("Weather API fetch failed:", errorDetails);
-
-          // Log additional network info if available
-          if (typeof navigator !== "undefined" && "onLine" in navigator) {
-            console.log("Network status:", navigator.onLine);
-          }
+          DebugLogger.error("Weather API fetch failed:", errorDetails);
         }
       } finally {
         if (!cancelled) {
           setLoading(false);
 
-          // Delay showing "no data" message by 150ms to give API time to catch up
-          if (series.length === 0) {
-            noDataTimeoutRef.current = setTimeout(() => {
-              if (!cancelled) {
-                setShowNoData(true);
-              }
-            }, 150);
+          // Clear any pending no-data timeout since we've handled it above
+          if (noDataTimeoutRef.current) {
+            clearTimeout(noDataTimeoutRef.current);
+            noDataTimeoutRef.current = null;
           }
         }
       }
@@ -92,5 +87,6 @@ export function useWeatherData(lat: number, lon: number) {
     series,
     loading,
     showNoData,
+    preRenderedGraph,
   };
 }

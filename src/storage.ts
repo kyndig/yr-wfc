@@ -8,6 +8,7 @@ export type FavoriteLocation = {
 };
 
 const STORAGE_KEY = "favorite-locations";
+const FIRST_TIME_KEY = "first-time-user";
 
 export async function getFavorites(): Promise<FavoriteLocation[]> {
   const raw = await LocalStorage.getItem<string>(STORAGE_KEY);
@@ -57,4 +58,33 @@ export async function removeFavorite(fav: FavoriteLocation): Promise<void> {
 export async function isFavorite(fav: FavoriteLocation): Promise<boolean> {
   const list = await getFavorites();
   return list.some((f) => sameLocation(f, fav));
+}
+
+export async function moveFavoriteUp(fav: FavoriteLocation): Promise<void> {
+  const list = await getFavorites();
+  const index = list.findIndex((f) => sameLocation(f, fav));
+  if (index > 0) {
+    // Swap with the item above
+    [list[index], list[index - 1]] = [list[index - 1], list[index]];
+    await setFavorites(list);
+  }
+}
+
+export async function moveFavoriteDown(fav: FavoriteLocation): Promise<void> {
+  const list = await getFavorites();
+  const index = list.findIndex((f) => sameLocation(f, fav));
+  if (index >= 0 && index < list.length - 1) {
+    // Swap with the item below
+    [list[index], list[index + 1]] = [list[index + 1], list[index]];
+    await setFavorites(list);
+  }
+}
+
+export async function isFirstTimeUser(): Promise<boolean> {
+  const raw = await LocalStorage.getItem<string>(FIRST_TIME_KEY);
+  return raw === null || raw === undefined;
+}
+
+export async function markAsNotFirstTime(): Promise<void> {
+  await LocalStorage.setItem(FIRST_TIME_KEY, "false");
 }

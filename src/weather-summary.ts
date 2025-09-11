@@ -1,6 +1,7 @@
 import type { TimeseriesEntry } from "./weather-client";
 import { symbolCode, precipitationAmount } from "./utils-forecast";
 import { symbolToCondition } from "./utils/weather-symbols";
+import { getPrecipitationChanceLevel } from "./config/weather-config";
 
 export type WeatherSummary = {
   condition: string;
@@ -11,8 +12,10 @@ export type WeatherSummary = {
   };
 };
 
-// Use the centralized symbolToCondition function from weather-symbols utility
-
+/**
+ * Get precipitation chance level based on intensity and coverage
+ * Uses the centralized weather configuration system for thresholds
+ */
 function getPrecipitationChance(series: TimeseriesEntry[]): "none" | "low" | "medium" | "high" {
   if (series.length === 0) return "none";
 
@@ -25,11 +28,10 @@ function getPrecipitationChance(series: TimeseriesEntry[]): "none" | "low" | "me
   const maxPrecip = Math.max(...precipAmounts);
   const precipHours = precipAmounts.length;
   const totalHours = series.length;
+  const coverageRatio = precipHours / totalHours;
 
-  // Consider both intensity and coverage
-  if (maxPrecip > 5 || precipHours > totalHours * 0.7) return "high";
-  if (maxPrecip > 2 || precipHours > totalHours * 0.4) return "medium";
-  return "low";
+  // Use the centralized configuration system
+  return getPrecipitationChanceLevel(maxPrecip, coverageRatio);
 }
 
 function getTemperatureRange(series: TimeseriesEntry[]): { min: number | undefined; max: number | undefined } {
@@ -37,7 +39,8 @@ function getTemperatureRange(series: TimeseriesEntry[]): { min: number | undefin
 
   const temps = series
     .map((ts) => ts.data?.instant?.details?.air_temperature)
-    .filter((temp): temp is number => temp !== undefined && Number.isFinite(temp));
+    .filter((temp): temp is NonNullable<typeof temp> => temp !== undefined && Number.isFinite(temp as number))
+    .map((temp) => temp as number); // Convert branded type to number for calculations
 
   if (temps.length === 0) return { min: undefined, max: undefined };
 

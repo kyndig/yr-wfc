@@ -1,7 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
+import { DebugLogger } from "../utils/debug-utils";
+import { API_HEADERS } from "../utils/api-config";
+
+type NetworkTestConfig = {
+  name: string;
+  url: string;
+  headers?: Record<string, string>;
+};
 
 /**
- * Simple network test hook to debug network connectivity issues
+ * Simplified network test hook with DRY principles
  */
 export function useNetworkTest() {
   const [testResults, setTestResults] = useState<{
@@ -12,6 +20,42 @@ export function useNetworkTest() {
   }>({ httpbin: false, metApi: false, nominatim: false, error: undefined });
 
   const runTests = useCallback(async () => {
+    const testConfigs: NetworkTestConfig[] = [
+      {
+        name: "httpbin",
+        url: "https://httpbin.org/get",
+      },
+      {
+        name: "metApi",
+        url: "https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=59.9139&lon=10.7522",
+      },
+      {
+        name: "nominatim",
+        url: "https://nominatim.openstreetmap.org/search?format=json&q=test&limit=1",
+        headers: API_HEADERS,
+      },
+    ];
+
+    // Run all tests in parallel
+    const testPromises = testConfigs.map(async (config) => {
+      try {
+        DebugLogger.log(`Testing ${config.name}...`);
+        const response = await fetch(config.url, { headers: config.headers });
+        const success = response.ok;
+        DebugLogger.log(`${config.name} test result:`, success);
+
+        return { success, name: config.name, error: undefined };
+      } catch (err) {
+        const errorMsg = `${config.name} failed: ${err instanceof Error ? err.message : String(err)}`;
+        DebugLogger.error(`${config.name} test failed:`, err);
+        return { success: false, name: config.name, error: errorMsg };
+      }
+    });
+
+    // Wait for all tests to complete and collect results
+    const testResults = await Promise.all(testPromises);
+
+    // Build final results object from collected results
     const results: { httpbin: boolean; metApi: boolean; nominatim: boolean; error: string | undefined } = {
       httpbin: false,
       metApi: false,
@@ -19,47 +63,22 @@ export function useNetworkTest() {
       error: undefined,
     };
 
-    try {
-      // Test 1: Simple HTTP request
-      console.log("Testing httpbin.org...");
-      const httpbinResponse = await fetch("https://httpbin.org/get");
-      results.httpbin = httpbinResponse.ok;
-      console.log("httpbin test result:", results.httpbin);
-    } catch (err) {
-      console.error("httpbin test failed:", err);
-      results.error = `httpbin failed: ${err instanceof Error ? err.message : String(err)}`;
+    const errors: string[] = [];
+
+    // Process each test result
+    for (const result of testResults) {
+      if (result.name === "httpbin") results.httpbin = result.success;
+      else if (result.name === "metApi") results.metApi = result.success;
+      else if (result.name === "nominatim") results.nominatim = result.success;
+
+      if (result.error) {
+        errors.push(result.error);
+      }
     }
 
-    try {
-      // Test 2: MET API request
-      console.log("Testing MET API...");
-      const metResponse = await fetch(
-        "https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=59.9139&lon=10.7522",
-      );
-      results.metApi = metResponse.ok;
-      console.log("MET API test result:", results.metApi);
-    } catch (err) {
-      console.error("MET API test failed:", err);
-      results.error = results.error
-        ? `${results.error}; MET API failed: ${err instanceof Error ? err.message : String(err)}`
-        : `MET API failed: ${err instanceof Error ? err.message : String(err)}`;
-    }
-
-    try {
-      // Test 3: Nominatim location search API request
-      console.log("Testing Nominatim API...");
-      const nominatimResponse = await fetch("https://nominatim.openstreetmap.org/search?format=json&q=test&limit=1", {
-        headers: {
-          "User-Agent": "raycast-yr-extension/1.0 (https://github.com/kyndig/raycast-yr; contact: raycast@kynd.no)",
-        },
-      });
-      results.nominatim = nominatimResponse.ok;
-      console.log("Nominatim API test result:", results.nominatim);
-    } catch (err) {
-      console.error("Nominatim API test failed:", err);
-      results.error = results.error
-        ? `${results.error}; Nominatim API failed: ${err instanceof Error ? err.message : String(err)}`
-        : `Nominatim API failed: ${err instanceof Error ? err.message : String(err)}`;
+    // Combine all errors if any tests failed
+    if (errors.length > 0) {
+      results.error = errors.join("; ");
     }
 
     setTestResults(results);
