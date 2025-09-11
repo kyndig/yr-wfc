@@ -117,10 +117,10 @@ The **Data View** provides a comprehensive markdown table showing detailed weath
 Access preferences via `Yr` command → `Cmd+K` → Configure Command:
 
 - **Units**: Metric (°C, m/s, mm) or Imperial (°F, mph, in) - pick your poison
-- **Clock Format**: 12-hour (2:30 PM) or 24-hour (14:30) time display - I default to 24h because it makes more sense
+- **Clock Format**: 12-hour (2:30 PM) or 24-hour (14:30) time display
 - **Show Wind Direction**: Display wind arrows and cardinal directions
 - **Show Sunrise/Sunset**: Include sun times in location displays
-- **Debug Mode**: Enable console output for troubleshooting (useful when things break)
+- **Debug Mode**: Enable console output for terminal troubleshooting
 
 ## 🔧 Debug Mode
 
