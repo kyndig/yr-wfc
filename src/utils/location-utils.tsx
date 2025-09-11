@@ -180,6 +180,58 @@ export class LocationUtils {
   }
 
   /**
+   * Get appropriate emoji for location type
+   */
+  static getLocationEmoji(location: LocationResult): string {
+    const { addresstype, type, class: osmClass } = location;
+    
+    // Use addresstype as primary indicator, fall back to type/class
+    const locationType = addresstype || type;
+    
+    switch (locationType) {
+      case 'house':
+      case 'building':
+        return '🏠';
+      
+      case 'neighbourhood':
+      case 'suburb':
+        return '🏘️';
+      
+      case 'city':
+        return '🏙️';
+      
+      case 'town':
+        return '🏘️';
+      
+      case 'village':
+        return '🏘️';
+      
+      case 'hamlet':
+        return '🏘️';
+      
+      case 'municipality':
+        return '🏛️';
+      
+      case 'county':
+      case 'state':
+        return '🗺️';
+      
+      case 'country':
+        return '🌍';
+      
+      default:
+        // Fallback based on OSM class/type
+        if (osmClass === 'place') {
+          return '📍';
+        } else if (osmClass === 'boundary' && type === 'administrative') {
+          return '🏛️';
+        } else {
+          return '📍';
+        }
+    }
+  }
+
+  /**
    * Format location name concisely using structured address data
    * Creates shorter, more user-friendly display names
    */

@@ -280,7 +280,7 @@ export default function Command() {
                         ? `Tap to view weather for ${search.queryIntent.targetDate.toLocaleDateString()}`
                         : undefined
                     }
-                    icon={search.queryIntent.targetDate ? "📅" : "📍"}
+                    icon={search.queryIntent.targetDate ? "📅" : LocationUtils.getLocationEmoji(loc)}
                     accessories={[
                       {
                         text: search.queryIntent.targetDate
