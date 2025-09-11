@@ -18,8 +18,8 @@ import { useFavoriteIds } from "./hooks/useFavoriteIds";
 import { getUIThresholds } from "./config/weather-config";
 
 import { ToastMessages } from "./utils/toast-utils";
-import { WeatherFormatters } from "./utils/weather-formatters";
 import { LocationUtils } from "./utils/location-utils";
+import { WeatherFormatters } from "./utils/weather-formatters";
 import { DebugLogger } from "./utils/debug-utils";
 
 export default function Command() {
@@ -274,7 +274,7 @@ export default function Command() {
                 {search.safeLocations.map((loc) => (
                   <List.Item
                     key={loc.id}
-                    title={loc.displayName}
+                    title={LocationUtils.formatLocationName(loc)}
                     subtitle={
                       search.queryIntent.targetDate
                         ? `Tap to view weather for ${search.queryIntent.targetDate.toLocaleDateString()}`
