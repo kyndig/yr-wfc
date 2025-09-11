@@ -16,17 +16,20 @@ This document outlines the bundle size optimizations implemented to address the 
 - **Impact**: Better tree-shaking, smaller bundle size
 
 ### 3. Lazy Loading Implementation
-- **Created**: `LazyGraphView` component that lazy loads the graph functionality
+- **Created**: `LazyForecastView` component that lazy loads the entire forecast functionality
 - **Benefits**:
-  - D3 libraries (~50KB) are only loaded when graph is accessed
+  - D3 libraries (~50KB) are only loaded when forecast is accessed
   - Initial bundle size is significantly smaller
   - Better performance for users who don't use the graph feature
   - Improved startup time
+  - Preloading on hover for better UX
 
 ### 4. Code Splitting
-- **Graph component**: Now loaded on-demand using React.lazy()
-- **Fallback UI**: Provides smooth loading experience
+- **Forecast component**: Now loaded on-demand using React.lazy()
+- **Graph generation**: Deferred until actually needed
+- **Fallback UI**: Provides smooth loading experience with informative messages
 - **Error boundaries**: Maintained error handling for lazy-loaded components
+- **Performance tracking**: Added bundle analyzer for monitoring load times
 
 ## Bundle Size Impact
 
@@ -44,10 +47,13 @@ This document outlines the bundle size optimizations implemented to address the 
 ## Files Modified
 
 1. `package.json` - Removed unused d3-array dependency
-2. `src/components/lazy-graph.tsx` - New lazy loading wrapper
-3. `src/yr.tsx` - Updated to use LazyGraphView
-4. `src/utils/location-utils.tsx` - Updated to use LazyGraphView
-5. `src/graph.tsx` - Added tree-shaking comments
+2. `src/components/lazy-forecast.tsx` - New lazy loading wrapper for forecast views
+3. `src/components/lazy-graph.tsx` - Lazy loading wrapper for graph components
+4. `src/components/optimized-components.tsx` - Memoized components for better performance
+5. `src/utils/bundle-analyzer.ts` - Performance tracking utilities
+6. `src/yr.tsx` - Updated to use LazyForecastView with preloading
+7. `src/utils/location-utils.tsx` - Updated to use LazyForecastView
+8. `src/graph-utils.ts` - Already optimized with tree-shaking
 
 ## Usage
 

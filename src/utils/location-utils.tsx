@@ -1,5 +1,5 @@
 import { Action, ActionPanel, showToast, Toast, Icon } from "@raycast/api";
-import ForecastView from "../forecast";
+import { LazyForecastView } from "../components/lazy-forecast";
 import { getWeather } from "../weather-client";
 import { TimeseriesEntry } from "../weather-client";
 import { FavoriteLocation } from "../storage";
@@ -23,16 +23,18 @@ export class LocationUtils {
     onShowWelcome?: () => void,
     targetDate?: Date,
     onFavoriteChange?: () => void,
+    preCachedGraph?: string,
   ) {
     return (
       <ActionPanel>
         <Action.Push
           title="Open Forecast"
           target={
-            <ForecastView
+            <LazyForecastView
               name={name}
               lat={lat}
               lon={lon}
+              preCachedGraph={preCachedGraph}
               onShowWelcome={onShowWelcome}
               targetDate={targetDate?.toISOString().split("T")[0]}
               onFavoriteChange={onFavoriteChange}
@@ -47,10 +49,11 @@ export class LocationUtils {
               title="View Tomorrow's Weather"
               icon={Icon.Clock}
               target={
-                <ForecastView
+                <LazyForecastView
                   name={name}
                   lat={lat}
                   lon={lon}
+                  preCachedGraph={preCachedGraph}
                   onShowWelcome={onShowWelcome}
                   targetDate={targetDate.toISOString().split("T")[0]}
                   onFavoriteChange={onFavoriteChange}
@@ -61,10 +64,11 @@ export class LocationUtils {
               title="View Full Forecast"
               icon={Icon.Calendar}
               target={
-                <ForecastView
+                <LazyForecastView
                   name={name}
                   lat={lat}
                   lon={lon}
+                  preCachedGraph={preCachedGraph}
                   onShowWelcome={onShowWelcome}
                   onFavoriteChange={onFavoriteChange}
                 />

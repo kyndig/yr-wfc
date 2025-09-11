@@ -13,6 +13,8 @@ import { formatDate, formatTime } from "./utils/date-utils";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
 import { formatTemperatureCelsius, formatPrecip } from "./units";
 import { precipitationAmount } from "./utils-forecast";
+import { generateAndCacheGraph } from "./graph-cache";
+import { LocationUtils } from "./utils/location-utils";
 
 function ForecastView(props: {
   name: string;
@@ -101,44 +103,87 @@ function ForecastView(props: {
   // Generate and cache graphs when data changes
   useEffect(() => {
     if (items.length > 0) {
+      const locationKey = LocationUtils.getLocationKey(`${lat},${lon}`, lat, lon);
+      
       // Use displaySeries for graph generation to respect target date filtering
       const dataForDetailedGraph = targetDate ? displaySeries : items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS);
       const dataForSummaryGraph = targetDate ? displaySeries : reduced;
       
-      const detailedGraph = buildGraphMarkdown(
-        name,
-        dataForDetailedGraph,
-        targetDate ? displaySeries.length : getUIThresholds().DETAILED_FORECAST_HOURS,
-        {
-          title: targetDate ? "1-day forecast" : "48h forecast",
-          smooth: true,
-          sunByDate,
-        },
-      ).markdown;
+      // Generate graphs using persistent cache
+      const generateGraphs = async () => {
+        try {
+          const [detailedGraph, summaryGraph] = await Promise.all([
+            generateAndCacheGraph(
+              locationKey,
+              "detailed",
+              dataForDetailedGraph,
+              name,
+              targetDate ? displaySeries.length : getUIThresholds().DETAILED_FORECAST_HOURS,
+              sunByDate,
+              targetDate
+            ),
+            generateAndCacheGraph(
+              locationKey,
+              "summary",
+              dataForSummaryGraph,
+              name,
+              dataForSummaryGraph.length,
+              undefined, // No sunrise/sunset data for summary
+              targetDate
+            )
+          ]);
 
-      // Cache summary graph (9-day) - no sunrise/sunset data needed
-      const summaryGraph = buildGraphMarkdown(name, dataForSummaryGraph, dataForSummaryGraph.length, {
-        title: targetDate ? "1-day forecast" : "9-day summary",
-        smooth: true,
-      }).markdown;
+          setGraphCache({
+            detailed: detailedGraph,
+            summary: summaryGraph,
+          });
+        } catch (error) {
+          console.warn("Failed to generate cached graphs, falling back to direct generation:", error);
+          
+          // Fallback to direct generation if caching fails
+          const detailedGraph = buildGraphMarkdown(
+            name,
+            dataForDetailedGraph,
+            targetDate ? displaySeries.length : getUIThresholds().DETAILED_FORECAST_HOURS,
+            {
+              title: targetDate ? "1-day forecast" : "48h forecast",
+              smooth: true,
+              sunByDate,
+            },
+          ).markdown;
 
-      setGraphCache({
-        detailed: detailedGraph,
-        summary: summaryGraph,
-      });
+          const summaryGraph = buildGraphMarkdown(name, dataForSummaryGraph, dataForSummaryGraph.length, {
+            title: targetDate ? "1-day forecast" : "9-day summary",
+            smooth: true,
+          }).markdown;
+
+          setGraphCache({
+            detailed: detailedGraph,
+            summary: summaryGraph,
+          });
+        }
+      };
+
+      generateGraphs();
     }
-  }, [items, reduced, name, preCachedGraph, preRenderedGraph, sunByDate, displaySeries, targetDate]);
+  }, [items, reduced, name, preCachedGraph, preRenderedGraph, sunByDate, displaySeries, targetDate, lat, lon]);
 
   // Clear graph cache when component mounts to ensure fresh styling
   useEffect(() => {
     setGraphCache({ detailed: "", summary: "" });
   }, []);
 
-  // Get cached graph based on current mode
+  // Get cached graph based on current mode, with preCachedGraph as fallback
   const graph = useMemo(() => {
     if (displaySeries.length === 0 && showNoData) return "";
+    
+    // Use preCachedGraph if available and we don't have a cached version yet
+    if (preCachedGraph && !graphCache[mode]) {
+      return preCachedGraph;
+    }
+    
     return mode === "detailed" ? graphCache.detailed : graphCache.summary;
-  }, [mode, graphCache, displaySeries.length, showNoData]);
+  }, [mode, graphCache, displaySeries.length, showNoData, preCachedGraph]);
 
   const listMarkdown = useMemo(() => {
     if (displaySeries.length === 0 && showNoData) {
