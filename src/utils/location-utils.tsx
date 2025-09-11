@@ -1,9 +1,11 @@
-import { Action, ActionPanel, Icon, showToast, Toast } from "@raycast/api";
+import { Action, ActionPanel, showToast, Toast } from "@raycast/api";
 import ForecastView from "../forecast";
 import { getWeather } from "../weather-client";
 import { TimeseriesEntry } from "../weather-client";
 import { FavoriteLocation } from "../storage";
 import { WeatherFormatters } from "./weather-formatters";
+import { OpenGraphAction } from "../components/OpenGraphAction";
+import { FavoriteToggleAction } from "../components/FavoriteToggleAction";
 
 /**
  * Location utility functions to eliminate duplication

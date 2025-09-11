@@ -295,22 +295,7 @@ function ForecastView(props: {
             />
           )}
 
-          {/* Favorites management */}
-          {isFavorite ? (
-            <Action
-              title="Remove from Favorites"
-              icon={Icon.StarDisabled}
-              shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
-              onAction={handleFavoriteToggle}
-            />
-          ) : (
-            <Action
-              title="Add to Favorites"
-              icon={Icon.Star}
-              shortcut={{ modifiers: ["cmd"], key: "f" }}
-              onAction={handleFavoriteToggle}
-            />
-          )}
+          <FavoriteToggleAction isFavorite={isFavorite} onToggle={handleFavoriteToggle} />
 
           {onShowWelcome && (
             <Action
