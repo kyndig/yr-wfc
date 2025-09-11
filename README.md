@@ -80,16 +80,15 @@ A modern, feature-rich [Raycast](https://www.raycast.com) extension for displayi
 - **Enter**: Show current weather (search results) or open forecast (favorites)
 - **Cmd+K**: Configure command preferences
 
-### Date Query Actions
-- **Cmd+4**: View tomorrow's weather (single day view for date queries)
-- **Cmd+9**: View full forecast (regular forecast view for date queries)
-
 ### View Navigation
 - **D**: Switch to data table view (from Forecast view)
 - **G**: Switch to graph view (from data table view)
-- **Space**: Toggle between detailed (48-hour) and summary (9-day) modes in Forecast view
-- **Cmd+4**: Show 48-hour detailed forecast (works in all forecast views)
-- **Cmd+9**: Show 9-day summary forecast (works in all forecast views)
+- **Cmd+4**: Show 48-hour detailed forecast
+  - In regular forecasts: Switch to detailed mode
+  - In date query forecasts: Navigate to full 48-hour forecast
+- **Cmd+9**: Show 9-day summary forecast
+  - In regular forecasts: Switch to summary mode
+  - In date query forecasts: Navigate to full 9-day forecast
 
 ### Detailed Views
 - **Forecast View**: Combined hourly data with graphs and data tables (includes sunrise/sunset indicators)
