@@ -108,6 +108,51 @@
           "type": "checkbox",
           "required": false,
           "default": false
+        },
+        {
+          "name": "enableScreenReaderMode",
+          "label": "Screen Reader Mode",
+          "title": "Screen Reader Mode",
+          "description": "Enable enhanced screen reader support with detailed descriptions",
+          "type": "checkbox",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "verboseDescriptions",
+          "label": "Verbose Descriptions",
+          "title": "Verbose Descriptions",
+          "description": "Include detailed weather information in descriptions",
+          "type": "checkbox",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "announceLoadingStates",
+          "label": "Announce Loading States",
+          "title": "Announce Loading States",
+          "description": "Announce when data is being loaded",
+          "type": "checkbox",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "announceErrors",
+          "label": "Announce Errors",
+          "title": "Announce Errors",
+          "description": "Announce when errors occur",
+          "type": "checkbox",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "announceWeatherChanges",
+          "label": "Announce Weather Changes",
+          "title": "Announce Weather Changes",
+          "description": "Announce when weather conditions change significantly",
+          "type": "checkbox",
+          "required": false,
+          "default": false
         }
       ]
     }

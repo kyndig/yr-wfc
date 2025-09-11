@@ -33,7 +33,10 @@ export function LazyForecastView(props: LazyForecastProps) {
   }, [startTiming, endTiming]);
 
   return (
-    <ErrorBoundary componentName="Lazy Forecast" fallback={<FavoritesErrorFallback componentName="Lazy Forecast" />}>
+    <ErrorBoundary
+      componentName="Lazy Forecast"
+      fallback={<FavoritesErrorFallback componentName="Lazy Forecast" />}
+    >
       <Suspense
         fallback={
           <Detail
@@ -50,9 +53,17 @@ ${props.targetDate ? `**Date:** ${props.targetDate}` : ""}
             `}
             actions={
               <ActionPanel>
-                <Action title="Refresh Forecast" icon={Icon.ArrowClockwise} onAction={() => window.location.reload()} />
+                <Action
+                  title="Refresh Forecast"
+                  icon={Icon.ArrowClockwise}
+                  onAction={() => window.location.reload()}
+                />
                 {props.onShowWelcome && (
-                  <Action title="Show Welcome Message" icon={Icon.Info} onAction={props.onShowWelcome} />
+                  <Action
+                    title="Show Welcome Message"
+                    icon={Icon.Info}
+                    onAction={props.onShowWelcome}
+                  />
                 )}
               </ActionPanel>
             }

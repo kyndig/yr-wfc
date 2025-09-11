@@ -127,14 +127,13 @@ export function useFavorites(): UseFavoritesReturn {
 
               // Pre-warm graph for this favorite using persistent cache
               try {
-                const favoriteName =
-                  favorites.find((f) => LocationUtils.getLocationKey(f.id, f.lat, f.lon) === key)?.name || "Location";
+                const favoriteName = favorites.find((f) => LocationUtils.getLocationKey(f.id, f.lat, f.lon) === key)?.name || "Location";
                 const graphMarkdown = await generateAndCacheGraph(
                   key,
                   "detailed",
                   [ts], // Single entry for favorites
                   favoriteName,
-                  getUIThresholds().DEFAULT_FORECAST_HOURS,
+                  getUIThresholds().DEFAULT_FORECAST_HOURS
                 );
 
                 setPreWarmedGraphs((prev) => ({ ...prev, [key]: graphMarkdown }));
@@ -182,43 +181,31 @@ export function useFavorites(): UseFavoritesReturn {
   }, []);
 
   // Add favorite location
-  const addFavoriteLocation = useCallback(
-    async (location: FavoriteLocation) => {
-      const wasAdded = await addFavorite(location);
-      if (wasAdded) {
-        await refreshFavorites();
-      }
-      return wasAdded;
-    },
-    [refreshFavorites],
-  );
+  const addFavoriteLocation = useCallback(async (location: FavoriteLocation) => {
+    const wasAdded = await addFavorite(location);
+    if (wasAdded) {
+      await refreshFavorites();
+    }
+    return wasAdded;
+  }, [refreshFavorites]);
 
   // Remove favorite location
-  const removeFavoriteLocation = useCallback(
-    async (location: FavoriteLocation) => {
-      await removeFavorite(location);
-      await refreshFavorites();
-    },
-    [refreshFavorites],
-  );
+  const removeFavoriteLocation = useCallback(async (location: FavoriteLocation) => {
+    await removeFavorite(location);
+    await refreshFavorites();
+  }, [refreshFavorites]);
 
   // Move favorite up
-  const moveFavoriteUpAction = useCallback(
-    async (location: FavoriteLocation) => {
-      await moveFavoriteUp(location);
-      await refreshFavorites();
-    },
-    [refreshFavorites],
-  );
+  const moveFavoriteUpAction = useCallback(async (location: FavoriteLocation) => {
+    await moveFavoriteUp(location);
+    await refreshFavorites();
+  }, [refreshFavorites]);
 
   // Move favorite down
-  const moveFavoriteDownAction = useCallback(
-    async (location: FavoriteLocation) => {
-      await moveFavoriteDown(location);
-      await refreshFavorites();
-    },
-    [refreshFavorites],
-  );
+  const moveFavoriteDownAction = useCallback(async (location: FavoriteLocation) => {
+    await moveFavoriteDown(location);
+    await refreshFavorites();
+  }, [refreshFavorites]);
 
   // Check if location is favorite
   const isLocationFavorite = useCallback(
