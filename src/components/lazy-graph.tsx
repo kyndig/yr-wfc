@@ -6,13 +6,13 @@ import { TimeseriesEntry } from "../weather-client";
 import { SunTimes } from "../sunrise-client";
 
 // Lazy load the graph generation function
-const LazyGraphGenerator = lazy(() => 
-  import("../graph-utils").then(module => ({
-    default: function LazyGraphRenderer({ 
-      name, 
-      series, 
-      hours, 
-      options 
+const LazyGraphGenerator = lazy(() =>
+  import("../graph-utils").then((module) => ({
+    default: function LazyGraphRenderer({
+      name,
+      series,
+      hours,
+      options,
     }: {
       name: string;
       series: TimeseriesEntry[];
@@ -25,8 +25,8 @@ const LazyGraphGenerator = lazy(() =>
     }) {
       const result = module.buildGraphMarkdown(name, series, hours, options);
       return <Detail markdown={result.markdown} />;
-    }
-  }))
+    },
+  })),
 );
 
 interface LazyGraphProps {
@@ -60,11 +60,7 @@ export function LazyGraph({ name, series, hours, options, fallback }: LazyGraphP
         markdown={fallback || "Loading graph..."}
         actions={
           <ActionPanel>
-            <Action
-              title="Refresh Graph"
-              icon={Icon.ArrowClockwise}
-              onAction={() => window.location.reload()}
-            />
+            <Action title="Refresh Graph" icon={Icon.ArrowClockwise} onAction={() => window.location.reload()} />
           </ActionPanel>
         }
       />
@@ -72,32 +68,20 @@ export function LazyGraph({ name, series, hours, options, fallback }: LazyGraphP
   }
 
   return (
-    <ErrorBoundary
-      componentName="Lazy Graph"
-      fallback={<GraphErrorFallback componentName="Lazy Graph" />}
-    >
+    <ErrorBoundary componentName="Lazy Graph" fallback={<GraphErrorFallback componentName="Lazy Graph" />}>
       <Suspense
         fallback={
           <Detail
             markdown={fallback || "Loading graph..."}
             actions={
               <ActionPanel>
-                <Action
-                  title="Refresh Graph"
-                  icon={Icon.ArrowClockwise}
-                  onAction={() => window.location.reload()}
-                />
+                <Action title="Refresh Graph" icon={Icon.ArrowClockwise} onAction={() => window.location.reload()} />
               </ActionPanel>
             }
           />
         }
       >
-        <LazyGraphGenerator
-          name={name}
-          series={series}
-          hours={hours}
-          options={options}
-        />
+        <LazyGraphGenerator name={name} series={series} hours={hours} options={options} />
       </Suspense>
     </ErrorBoundary>
   );

@@ -12,7 +12,6 @@ import { getWeather, type TimeseriesEntry } from "./weather-client";
 import { isFirstTimeUser, markAsNotFirstTime } from "./storage";
 
 import { iconForSymbol } from "./weather-emoji";
-import { formatTemp } from "./weather-utils";
 
 import { useNetworkTest } from "./hooks/useNetworkTest";
 import { useSearch } from "./hooks/useSearch";
@@ -85,10 +84,13 @@ export default function Command() {
 
   // Periodic cache cleanup to prevent memory bloat
   useEffect(() => {
-    const cleanupInterval = setInterval(() => {
-      // Clean up graphs older than 24 hours
-      graphCache.cleanupCache(24 * 60 * 60 * 1000);
-    }, 60 * 60 * 1000); // Run every hour
+    const cleanupInterval = setInterval(
+      () => {
+        // Clean up graphs older than 24 hours
+        graphCache.cleanupCache(24 * 60 * 60 * 1000);
+      },
+      60 * 60 * 1000,
+    ); // Run every hour
 
     return () => clearInterval(cleanupInterval);
   }, [graphCache]);
@@ -107,7 +109,7 @@ export default function Command() {
 
   // Determine if we should show loading state - only true during initial load
   const shouldShowLoading = favorites.isInitialLoad || search.isLoading;
-  
+
   // Show background loading indicator for favorites
   const showBackgroundLoading = favorites.isBackgroundLoading && !favorites.isInitialLoad;
 
@@ -363,11 +365,7 @@ export default function Command() {
           {shouldShowFavorites && (
             <ErrorBoundary componentName="Favorites" fallback={<FavoritesErrorFallback componentName="Favorites" />}>
               <AccessibleSection
-                title={
-                  showBackgroundLoading 
-                    ? "Favorites (Loading weather data...)" 
-                    : "Favorites"
-                }
+                title={showBackgroundLoading ? "Favorites (Loading weather data...)" : "Favorites"}
                 itemCount={favorites.favorites.length}
                 context={showBackgroundLoading ? "Loading weather data in background" : undefined}
               >

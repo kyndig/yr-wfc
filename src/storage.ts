@@ -42,14 +42,14 @@ function sameLocation(a: FavoriteLocation, b: FavoriteLocation): boolean {
     console.log(`sameLocation: Exact ID match`, { a: a.name, b: b.name, id: a.id });
     return true;
   }
-  
+
   // Check coordinate proximity (within ~1km)
   const coordinatesMatch = Math.abs(a.lat - b.lat) < 0.01 && Math.abs(a.lon - b.lon) < 0.01;
-  
+
   // Check name similarity for city-level matching
   const nameSimilarity = calculateNameSimilarity(a.name, b.name);
   const nameMatch = nameSimilarity > 0.7; // 70% similarity threshold
-  
+
   // Only log when there's a potential match or interesting case
   if (coordinatesMatch || nameSimilarity > 0.3) {
     console.log(`sameLocation check:`, {
@@ -59,10 +59,10 @@ function sameLocation(a: FavoriteLocation, b: FavoriteLocation): boolean {
       nameSimilarity: nameSimilarity.toFixed(3),
       nameMatch,
       latDiff: Math.abs(a.lat - b.lat),
-      lonDiff: Math.abs(a.lon - b.lon)
+      lonDiff: Math.abs(a.lon - b.lon),
     });
   }
-  
+
   // Match if both coordinates are close AND names are similar
   return coordinatesMatch && nameMatch;
 }
@@ -72,25 +72,25 @@ function calculateNameSimilarity(name1: string, name2: string): number {
   const normalize = (name: string) => {
     return name
       .toLowerCase()
-      .replace(/,\s*(norge|norway|sverige|sweden|danmark|denmark|finland|suomi|island|iceland)$/i, '')
-      .replace(/,\s*[^,]+$/, '') // Remove last comma part (often administrative division)
+      .replace(/,\s*(norge|norway|sverige|sweden|danmark|denmark|finland|suomi|island|iceland)$/i, "")
+      .replace(/,\s*[^,]+$/, "") // Remove last comma part (often administrative division)
       .trim()
       .split(/\s+/)
-      .filter(word => word.length > 2); // Filter out short words
+      .filter((word) => word.length > 2); // Filter out short words
   };
-  
+
   const words1 = normalize(name1);
   const words2 = normalize(name2);
-  
+
   if (words1.length === 0 || words2.length === 0) return 0;
-  
+
   // Calculate Jaccard similarity (intersection over union)
   const set1 = new Set(words1);
   const set2 = new Set(words2);
-  
-  const intersection = new Set([...set1].filter(x => set2.has(x)));
+
+  const intersection = new Set([...set1].filter((x) => set2.has(x)));
   const union = new Set([...set1, ...set2]);
-  
+
   return intersection.size / union.size;
 }
 

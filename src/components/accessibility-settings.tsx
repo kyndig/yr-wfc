@@ -53,18 +53,15 @@ export function useAccessibilitySettings() {
     }
   };
 
-  const updateSetting = async <K extends keyof AccessibilitySettings>(
-    key: K,
-    value: AccessibilitySettings[K]
-  ) => {
+  const updateSetting = async <K extends keyof AccessibilitySettings>(key: K, value: AccessibilitySettings[K]) => {
     const newSettings = { ...settings, [key]: value };
     const success = await saveSettings(newSettings);
-    
+
     if (success) {
       showToast({
         style: Toast.Style.Success,
         title: "Accessibility Setting Updated",
-        message: `${key} has been ${value ? 'enabled' : 'disabled'}`,
+        message: `${key} has been ${value ? "enabled" : "disabled"}`,
       });
     } else {
       showToast({
@@ -73,13 +70,13 @@ export function useAccessibilitySettings() {
         message: "Please try again",
       });
     }
-    
+
     return success;
   };
 
   const resetSettings = async () => {
     const success = await saveSettings(DEFAULT_SETTINGS);
-    
+
     if (success) {
       showToast({
         style: Toast.Style.Success,
@@ -87,7 +84,7 @@ export function useAccessibilitySettings() {
         message: "Accessibility settings have been reset to defaults",
       });
     }
-    
+
     return success;
   };
 
@@ -105,10 +102,7 @@ export function AccessibilitySettingsPanel() {
   if (isLoading) {
     return (
       <List.Section title="Accessibility Settings">
-        <List.Item
-          title="Loading settings..."
-          icon={Icon.Gear}
-        />
+        <List.Item title="Loading settings..." icon={Icon.Gear} />
       </List.Section>
     );
   }
@@ -132,15 +126,11 @@ export function AccessibilitySettingsPanel() {
               icon={settings.enableScreenReaderMode ? Icon.Eye : Icon.EyeSlash}
               onAction={() => updateSetting("enableScreenReaderMode", !settings.enableScreenReaderMode)}
             />
-            <Action
-              title="Reset All Settings"
-              icon={Icon.Trash}
-              onAction={resetSettings}
-            />
+            <Action title="Reset All Settings" icon={Icon.Trash} onAction={resetSettings} />
           </ActionPanel>
         }
       />
-      
+
       <List.Item
         title="Verbose Descriptions"
         subtitle={settings.verboseDescriptions ? "Detailed weather descriptions" : "Brief descriptions"}
@@ -161,7 +151,7 @@ export function AccessibilitySettingsPanel() {
           </ActionPanel>
         }
       />
-      
+
       <List.Item
         title="Announce Loading States"
         subtitle={settings.announceLoadingStates ? "Loading states are announced" : "Loading states are silent"}
@@ -182,7 +172,7 @@ export function AccessibilitySettingsPanel() {
           </ActionPanel>
         }
       />
-      
+
       <List.Item
         title="Announce Errors"
         subtitle={settings.announceErrors ? "Errors are announced" : "Errors are silent"}
@@ -203,7 +193,7 @@ export function AccessibilitySettingsPanel() {
           </ActionPanel>
         }
       />
-      
+
       <List.Item
         title="Announce Weather Changes"
         subtitle={settings.announceWeatherChanges ? "Weather updates are announced" : "Weather updates are silent"}
@@ -224,7 +214,7 @@ export function AccessibilitySettingsPanel() {
           </ActionPanel>
         }
       />
-      
+
       <List.Item
         title="Keyboard Shortcuts"
         subtitle="View available keyboard shortcuts"

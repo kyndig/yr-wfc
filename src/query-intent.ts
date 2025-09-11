@@ -105,9 +105,11 @@ function thisOrNextOccurrence(weekday: number, now = new Date()): Date {
   }
   const target = new Date(base);
   target.setDate(base.getDate() + delta);
-  
-  console.log(`thisOrNextOccurrence: weekday=${weekday}, current=${current}, delta=${delta}, target=${target.toDateString()}`);
-  
+
+  console.log(
+    `thisOrNextOccurrence: weekday=${weekday}, current=${current}, delta=${delta}, target=${target.toDateString()}`,
+  );
+
   return target;
 }
 
@@ -164,7 +166,9 @@ export function parseQueryIntent(input: string, now = new Date()): QueryIntent {
     const dw = dayTokenToWeekday[t];
     if (typeof dw === "number") {
       weekday = dw;
-      console.log(`Found weekday token: "${t}" -> ${dw} (${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dw]})`);
+      console.log(
+        `Found weekday token: "${t}" -> ${dw} (${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][dw]})`,
+      );
       continue;
     }
   }
