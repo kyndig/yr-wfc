@@ -77,8 +77,9 @@ A modern, feature-rich [Raycast](https://www.raycast.com) extension for displayi
 ### Search & Favorites
 - **Cmd+F**: Add location to favorites
 - **Cmd+Shift+F**: Remove location from favorites
+- **Cmd+Shift+ArrowUp**: Move favorite up in list
+- **Cmd+Shift+ArrowDown**: Move favorite down in list
 - **Enter**: Show current weather (search results) or open forecast (favorites)
-- **Cmd+K**: Configure command preferences
 
 ### View Navigation
 - **D**: Switch to data table view (from Forecast view)
@@ -89,6 +90,10 @@ A modern, feature-rich [Raycast](https://www.raycast.com) extension for displayi
 - **Cmd+9**: Show 9-day summary forecast
   - In regular forecasts: Switch to summary mode
   - In date query forecasts: Navigate to full 9-day forecast
+
+### Error Handling
+- **Cmd+R**: Retry weather load (when errors occur)
+- **Cmd+Shift+R**: Reset component (when errors persist)
 
 ### Detailed Views
 - **Forecast View**: Combined hourly data with graphs and data tables (includes sunrise/sunset indicators)
