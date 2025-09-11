@@ -7,6 +7,7 @@ import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, type FavoriteLocation } from "./storage";
 import { withErrorBoundary } from "./components/error-boundary";
 import { WeatherErrorFallback } from "./components/error-fallbacks";
+import { FavoriteToggleAction } from "./components/FavoriteToggleAction";
 import { getUIThresholds } from "./config/weather-config";
 import { formatDate, formatTime } from "./utils/date-utils";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
@@ -159,15 +160,17 @@ function ForecastView(props: {
         }
         const content = view === "graph" ? graph : listMarkdown;
 
-        // Add temperature, precipitation, and sunrise/sunset summary for detailed forecast
+        // Add temperature, precipitation, and sunrise/sunset summary for both detailed and summary forecasts
         let summaryInfo = "";
-        if (mode === "detailed") {
+        if (mode === "detailed" || mode === "summary") {
           const summaryParts: string[] = [];
 
           // Temperature range
           if (items.length > 0) {
-            const temps = items
-              .slice(0, getUIThresholds().DETAILED_FORECAST_HOURS)
+            const dataToAnalyze =
+              mode === "detailed" ? items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS) : reduced;
+
+            const temps = dataToAnalyze
               .map((s) => s.data?.instant?.details?.air_temperature)
               .filter((t): t is number => typeof t === "number" && Number.isFinite(t));
 
@@ -182,8 +185,10 @@ function ForecastView(props: {
 
           // Precipitation
           if (items.length > 0) {
-            const precips = items
-              .slice(0, getUIThresholds().DETAILED_FORECAST_HOURS)
+            const dataToAnalyze =
+              mode === "detailed" ? items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS) : reduced;
+
+            const precips = dataToAnalyze
               .map((s) => precipitationAmount(s))
               .filter((p): p is number => typeof p === "number" && Number.isFinite(p));
 
@@ -194,7 +199,7 @@ function ForecastView(props: {
             }
           }
 
-          // Sunrise/sunset
+          // Sunrise/sunset (only for the first date in the forecast as daylight changes)
           if (Object.keys(sunByDate).length > 0) {
             const firstDate = Object.keys(sunByDate)[0];
             const sunTimes = sunByDate[firstDate];
