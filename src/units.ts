@@ -4,12 +4,12 @@ import { convertTemperature, convertSpeed, convertPrecipitation } from "./config
 export type Units = "metric" | "imperial";
 
 export function getUnits(): Units {
-  const prefs = getPreferenceValues<Preferences.Yr>();
+  const prefs = getPreferenceValues<{ units?: Units }>();
   return (prefs.units as Units) ?? "metric";
 }
 
 export function getFeatureFlags(): { showWindDirection: boolean; showSunTimes: boolean } {
-  const prefs = getPreferenceValues<Preferences.Yr>();
+  const prefs = getPreferenceValues<{ showWindDirection?: boolean; showSunTimes?: boolean }>();
   return {
     showWindDirection: prefs.showWindDirection ?? true,
     showSunTimes: prefs.showSunTimes ?? true,
