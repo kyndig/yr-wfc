@@ -1,4 +1,4 @@
-import { Action, ActionPanel, showToast, Toast } from "@raycast/api";
+import { Action, ActionPanel, showToast, Toast, Icon } from "@raycast/api";
 import ForecastView from "../forecast";
 import { getWeather } from "../weather-client";
 import { TimeseriesEntry } from "../weather-client";
@@ -38,6 +38,40 @@ export class LocationUtils {
             />
           }
         />
+        
+        {/* Date-specific forecast actions - single day view for specific dates */}
+        {targetDate && (
+          <>
+            <Action.Push
+              title="View Tomorrow's Weather"
+              icon={Icon.Clock}
+              target={
+                <ForecastView
+                  name={name}
+                  lat={lat}
+                  lon={lon}
+                  onShowWelcome={onShowWelcome}
+                  targetDate={targetDate.toISOString().split("T")[0]}
+                  onFavoriteChange={onFavoriteChange}
+                />
+              }
+            />
+            <Action.Push
+              title="View Full Forecast"
+              icon={Icon.Calendar}
+              target={
+                <ForecastView
+                  name={name}
+                  lat={lat}
+                  lon={lon}
+                  onShowWelcome={onShowWelcome}
+                  onFavoriteChange={onFavoriteChange}
+                />
+              }
+            />
+          </>
+        )}
+        
         <Action
           title="Show Current Weather"
           onAction={async () => {

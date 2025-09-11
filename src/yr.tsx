@@ -37,6 +37,11 @@ export default function Command() {
     favoriteIds.refreshFavoriteIds(search.safeLocations);
   }, [search.safeLocations, favoriteIds.refreshFavoriteIds]);
 
+  // Update favorite IDs when favorites change
+  useEffect(() => {
+    favoriteIds.refreshFavoriteIds(search.safeLocations);
+  }, [favorites.favorites, favoriteIds.refreshFavoriteIds, search.safeLocations]);
+
   // Debug: Log network test results and show user-friendly notifications
   useEffect(() => {
     if (networkTest.error) {
