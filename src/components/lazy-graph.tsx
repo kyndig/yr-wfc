@@ -59,7 +59,7 @@ export function LazyGraph({ name, series, hours, options, fallback }: LazyGraphP
     return (
       <Detail
         markdown={fallback || "Loading graph..."}
-        actions={ActionPanelBuilders.createRefreshActions(() => window.location.reload(), "Refresh Graph")}
+        actions={ActionPanelBuilders.createRefreshActions(() => setIsLoading(true), "Refresh Graph")}
       />
     );
   }
@@ -70,7 +70,7 @@ export function LazyGraph({ name, series, hours, options, fallback }: LazyGraphP
         fallback={
           <Detail
             markdown={fallback || "Loading graph..."}
-            actions={ActionPanelBuilders.createRefreshActions(() => window.location.reload(), "Refresh Graph")}
+            actions={ActionPanelBuilders.createRefreshActions(() => setIsLoading(true), "Refresh Graph")}
           />
         }
       >
