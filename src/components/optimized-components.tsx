@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { List, Icon } from "@raycast/api";
+import { List, Icon, ActionPanel, Action } from "@raycast/api";
 import { TimeseriesEntry } from "../weather-client";
 import { SunTimes } from "../sunrise-client";
 import { formatTemp } from "../weather-utils";
@@ -108,14 +108,14 @@ export const OptimizedFavoriteItem = memo<OptimizedFavoriteItemProps>(
         icon={icon}
         accessories={accessories}
         actions={
-          <List.Item.Actions>
-            <List.Item.Action title="Open Forecast" icon={Icon.Clock} onAction={onOpenForecast} />
-            <List.Item.Action title="Show Current Weather" icon={Icon.Wind} onAction={onShowCurrentWeather} />
-            <List.Item.Action title="Remove from Favorites" icon={Icon.StarDisabled} onAction={onRemoveFavorite} />
-            <List.Item.Action title="Move up" icon={Icon.ArrowUp} onAction={onMoveUp} />
-            <List.Item.Action title="Move Down" icon={Icon.ArrowDown} onAction={onMoveDown} />
-            <List.Item.Action title="Show Welcome Message" icon={Icon.Info} onAction={onShowWelcome} />
-          </List.Item.Actions>
+          <ActionPanel>
+            <Action title="Open Forecast" icon={Icon.Clock} onAction={onOpenForecast} />
+            <Action title="Show Current Weather" icon={Icon.Wind} onAction={onShowCurrentWeather} />
+            <Action title="Remove from Favorites" icon={Icon.StarDisabled} onAction={onRemoveFavorite} />
+            <Action title="Move up" icon={Icon.ArrowUp} onAction={onMoveUp} />
+            <Action title="Move Down" icon={Icon.ArrowDown} onAction={onMoveDown} />
+            <Action title="Show Welcome Message" icon={Icon.Info} onAction={onShowWelcome} />
+          </ActionPanel>
         }
       />
     );
@@ -178,15 +178,15 @@ export const OptimizedSearchResult = memo<OptimizedSearchResultProps>(
         icon={icon}
         accessories={accessories}
         actions={
-          <List.Item.Actions>
-            <List.Item.Action title="Open Forecast" onAction={onOpenForecast} />
-            <List.Item.Action
+          <ActionPanel>
+            <Action title="Open Forecast" onAction={onOpenForecast} />
+            <Action
               title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
               icon={isFavorite ? Icon.StarDisabled : Icon.Star}
               onAction={onToggleFavorite}
             />
-            <List.Item.Action title="Show Welcome Message" icon={Icon.Info} onAction={onShowWelcome} />
-          </List.Item.Actions>
+            <Action title="Show Welcome Message" icon={Icon.Info} onAction={onShowWelcome} />
+          </ActionPanel>
         }
       />
     );
