@@ -49,7 +49,7 @@ ${props.targetDate ? `**Date:** ${props.targetDate}` : ""}
 
 *This may take a moment as we load the graph generation libraries...*
             `}
-            actions={ActionPanelBuilders.createRefreshActions(() => window.location.reload(), "Refresh Forecast")}
+            actions={ActionPanelBuilders.createRefreshActions(() => {}, "Refresh Forecast")}
           />
         }
       >
