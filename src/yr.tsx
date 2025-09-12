@@ -34,7 +34,7 @@ export default function Command() {
   const favoriteIds = useFavoriteIds();
   const networkTest = useNetworkTest();
   const graphCache = useGraphCache();
-  const { preloadForecast } = useForecastPreloader();
+  useForecastPreloader();
 
   // Update favorite IDs when search results change
   useEffect(() => {
@@ -375,7 +375,6 @@ export default function Command() {
                           <Action.Push
                             title="Open Forecast"
                             icon={Icon.Clock}
-                            onHover={preloadForecast}
                             target={
                               <LazyForecastView
                                 name={fav.name}
