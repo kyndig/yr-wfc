@@ -98,10 +98,10 @@ export class ActionPanelBuilders {
    * Create forecast actions
    * Used for forecast-related components
    */
-  static createForecastActions(onOpenForecast: () => void, onShowWelcome?: () => void, preloadForecast?: () => void) {
+  static createForecastActions(onOpenForecast: () => void, onShowWelcome?: () => void) {
     return (
       <ActionPanel>
-        <Action.Push title="Open Forecast" icon={Icon.Clock} onHover={preloadForecast} target={onOpenForecast()} />
+        <Action title="Open Forecast" icon={Icon.Clock} onAction={onOpenForecast} />
         {onShowWelcome && (
           <Action
             title="Show Welcome Message"
