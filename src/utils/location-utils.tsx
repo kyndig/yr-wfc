@@ -41,7 +41,7 @@ export class LocationUtils {
             />
           }
         />
-        
+
         {/* Date-specific forecast actions - single day view for specific dates */}
         {targetDate && (
           <>
@@ -76,7 +76,7 @@ export class LocationUtils {
             />
           </>
         )}
-        
+
         <Action
           title="Show Current Weather"
           onAction={async () => {
@@ -128,37 +128,65 @@ export class LocationUtils {
    */
   static calculateLocationPrecision(location: LocationResult): number {
     const { addresstype, type, class: osmClass, address } = location;
-    
+
     // Base score starts at 0
     let score = 0;
-    
+
     // Address type scoring (more specific = higher score)
     switch (addresstype) {
-      case 'house': score += 100; break;
-      case 'building': score += 90; break;
-      case 'street': score += 80; break;
-      case 'neighbourhood': score += 70; break;
-      case 'suburb': score += 60; break;
-      case 'city': score += 50; break;
-      case 'town': score += 45; break;
-      case 'village': score += 40; break;
-      case 'hamlet': score += 35; break;
-      case 'municipality': score += 20; break;
-      case 'county': score += 10; break;
-      case 'state': score += 5; break;
-      case 'country': score += 1; break;
-      default: score += 30; break; // Unknown types get medium score
+      case "house":
+        score += 100;
+        break;
+      case "building":
+        score += 90;
+        break;
+      case "street":
+        score += 80;
+        break;
+      case "neighbourhood":
+        score += 70;
+        break;
+      case "suburb":
+        score += 60;
+        break;
+      case "city":
+        score += 50;
+        break;
+      case "town":
+        score += 45;
+        break;
+      case "village":
+        score += 40;
+        break;
+      case "hamlet":
+        score += 35;
+        break;
+      case "municipality":
+        score += 20;
+        break;
+      case "county":
+        score += 10;
+        break;
+      case "state":
+        score += 5;
+        break;
+      case "country":
+        score += 1;
+        break;
+      default:
+        score += 30;
+        break; // Unknown types get medium score
     }
-    
+
     // OSM class and type adjustments
-    if (osmClass === 'place') {
+    if (osmClass === "place") {
       // Places are generally more specific than boundaries
       score += 10;
-    } else if (osmClass === 'boundary' && type === 'administrative') {
+    } else if (osmClass === "boundary" && type === "administrative") {
       // Administrative boundaries are less specific
       score -= 5;
     }
-    
+
     // Bonus for having specific address components
     if (address) {
       if (address.postcode) score += 5; // Has postal code = more specific
@@ -166,7 +194,7 @@ export class LocationUtils {
         score += 3; // City within municipality = more specific
       }
     }
-    
+
     return score;
   }
 
@@ -177,7 +205,7 @@ export class LocationUtils {
     return [...locations].sort((a, b) => {
       const scoreA = LocationUtils.calculateLocationPrecision(a);
       const scoreB = LocationUtils.calculateLocationPrecision(b);
-      
+
       // Higher score first (more precise)
       return scoreB - scoreA;
     });
@@ -188,49 +216,49 @@ export class LocationUtils {
    */
   static getLocationEmoji(location: LocationResult): string {
     const { addresstype, type, class: osmClass } = location;
-    
+
     // Use addresstype as primary indicator, fall back to type/class
     const locationType = addresstype || type;
-    
+
     switch (locationType) {
-      case 'house':
-      case 'building':
-        return '🏠';
-      
-      case 'neighbourhood':
-      case 'suburb':
-        return '🏘️';
-      
-      case 'city':
-        return '🏙️';
-      
-      case 'town':
-        return '🏘️';
-      
-      case 'village':
-        return '🏘️';
-      
-      case 'hamlet':
-        return '🏘️';
-      
-      case 'municipality':
-        return '🏛️';
-      
-      case 'county':
-      case 'state':
-        return '🗺️';
-      
-      case 'country':
-        return '🌍';
-      
+      case "house":
+      case "building":
+        return "🏠";
+
+      case "neighbourhood":
+      case "suburb":
+        return "🏘️";
+
+      case "city":
+        return "🏙️";
+
+      case "town":
+        return "🏘️";
+
+      case "village":
+        return "🏘️";
+
+      case "hamlet":
+        return "🏘️";
+
+      case "municipality":
+        return "🏛️";
+
+      case "county":
+      case "state":
+        return "🗺️";
+
+      case "country":
+        return "🌍";
+
       default:
         // Fallback based on OSM class/type
-        if (osmClass === 'place') {
-          return '📍';
-        } else if (osmClass === 'boundary' && type === 'administrative') {
-          return '🏛️';
+        if (osmClass === "place") {
+          return "📍";
+        } else if (osmClass === "boundary" && type === "administrative") {
+          return "🏛️";
         } else {
-          return '📍';
+          return "📍";
         }
     }
   }
@@ -241,16 +269,16 @@ export class LocationUtils {
    */
   static formatLocationName(location: LocationResult): string {
     const { address, addresstype, type, class: osmClass } = location;
-    
+
     if (!address) {
       return location.displayName;
     }
 
     const { city, town, municipality, county, state, country } = address;
-    
+
     // Determine the primary name based on address type and available data
-    let primaryName = city || town || municipality;
-    
+    const primaryName = city || town || municipality;
+
     if (!primaryName) {
       return location.displayName;
     }
@@ -266,13 +294,13 @@ export class LocationUtils {
 
     // Build the concise name
     let conciseName = primaryName + typeQualifier;
-    
+
     // Add regional context (county/state)
     const region = county || state;
     if (region && region !== primaryName) {
       conciseName += `, ${region}`;
     }
-    
+
     // Add country
     if (country) {
       conciseName += `, ${country}`;

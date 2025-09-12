@@ -4,7 +4,7 @@ import { buildGraphMarkdown } from "./graph-utils";
 import { reduceToDayPeriods, buildWeatherTable, filterToDate } from "./weather-utils";
 import { useWeatherData } from "./hooks/useWeatherData";
 import { generateNoForecastDataMessage } from "./utils/error-messages";
-import { addFavorite, removeFavorite, isFavorite as checkIsFavorite, getFavorites, isSameLocation, type FavoriteLocation } from "./storage";
+import { addFavorite, removeFavorite, getFavorites, isSameLocation, type FavoriteLocation } from "./storage";
 import { withErrorBoundary } from "./components/error-boundary";
 import { WeatherErrorFallback } from "./components/error-fallbacks";
 import { FavoriteToggleAction } from "./components/FavoriteToggleAction";
@@ -37,8 +37,8 @@ function ForecastView(props: {
   useEffect(() => {
     const checkFavoriteStatus = async () => {
       const existingFavorites = await getFavorites();
-      const existingFavorite = existingFavorites.find(fav => 
-        isSameLocation(fav, { name, lat, lon, id: `${lat.toFixed(3)},${lon.toFixed(3)}` })
+      const existingFavorite = existingFavorites.find((fav) =>
+        isSameLocation(fav, { name, lat, lon, id: `${lat.toFixed(3)},${lon.toFixed(3)}` }),
       );
       setIsFavorite(!!existingFavorite);
     };
@@ -104,11 +104,13 @@ function ForecastView(props: {
   useEffect(() => {
     if (items.length > 0) {
       const locationKey = LocationUtils.getLocationKey(`${lat},${lon}`, lat, lon);
-      
+
       // Use displaySeries for graph generation to respect target date filtering
-      const dataForDetailedGraph = targetDate ? displaySeries : items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS);
+      const dataForDetailedGraph = targetDate
+        ? displaySeries
+        : items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS);
       const dataForSummaryGraph = targetDate ? displaySeries : reduced;
-      
+
       // Generate graphs using persistent cache
       const generateGraphs = async () => {
         try {
@@ -120,7 +122,7 @@ function ForecastView(props: {
               name,
               targetDate ? displaySeries.length : getUIThresholds().DETAILED_FORECAST_HOURS,
               sunByDate,
-              targetDate
+              targetDate,
             ),
             generateAndCacheGraph(
               locationKey,
@@ -129,8 +131,8 @@ function ForecastView(props: {
               name,
               dataForSummaryGraph.length,
               undefined, // No sunrise/sunset data for summary
-              targetDate
-            )
+              targetDate,
+            ),
           ]);
 
           setGraphCache({
@@ -139,7 +141,7 @@ function ForecastView(props: {
           });
         } catch (error) {
           console.warn("Failed to generate cached graphs, falling back to direct generation:", error);
-          
+
           // Fallback to direct generation if caching fails
           const detailedGraph = buildGraphMarkdown(
             name,
@@ -176,12 +178,12 @@ function ForecastView(props: {
   // Get cached graph based on current mode, with preCachedGraph as fallback
   const graph = useMemo(() => {
     if (displaySeries.length === 0 && showNoData) return "";
-    
+
     // Use preCachedGraph if available and we don't have a cached version yet
     if (preCachedGraph && !graphCache[mode]) {
       return preCachedGraph;
     }
-    
+
     return mode === "detailed" ? graphCache.detailed : graphCache.summary;
   }, [mode, graphCache, displaySeries.length, showNoData, preCachedGraph]);
 
@@ -215,20 +217,20 @@ function ForecastView(props: {
         if (mode === "detailed" || mode === "summary") {
           const summaryParts: string[] = [];
           let dataCoverageInfo = "";
-          
+
           // Add data coverage information for target dates (on its own line)
           if (targetDate && displaySeries.length > 0) {
             const firstTime = new Date(displaySeries[0].time);
             const lastTime = new Date(displaySeries[displaySeries.length - 1].time);
             const firstLocal = new Date(firstTime.getTime() + new Date().getTimezoneOffset() * 60000);
             const lastLocal = new Date(lastTime.getTime() + new Date().getTimezoneOffset() * 60000);
-            
+
             const startHour = firstLocal.getHours();
             const endHour = lastLocal.getHours();
             const hoursCovered = displaySeries.length;
-            
+
             if (hoursCovered < 24) {
-              dataCoverageInfo = `\n\n📊 Data coverage: ${startHour.toString().padStart(2, '0')}:00-${endHour.toString().padStart(2, '0')}:00 (${hoursCovered}h) - Future forecasts have limited hourly data`;
+              dataCoverageInfo = `\n\n📊 Data coverage: ${startHour.toString().padStart(2, "0")}:00-${endHour.toString().padStart(2, "0")}:00 (${hoursCovered}h) - Future forecasts have limited hourly data`;
             }
           }
 
@@ -274,7 +276,7 @@ function ForecastView(props: {
           if (summaryParts.length > 0) {
             summaryInfo = `\n\n${summaryParts.join(" • ")}`;
           }
-          
+
           // Add data coverage info on its own line
           summaryInfo += dataCoverageInfo;
         }
@@ -301,17 +303,15 @@ function ForecastView(props: {
       } else {
         // Check if there's already a favorite with the same location
         const existingFavorites = await getFavorites();
-        const existingFavorite = existingFavorites.find(fav => 
-          isSameLocation(fav, favLocation)
-        );
-        
+        const existingFavorite = existingFavorites.find((fav) => isSameLocation(fav, favLocation));
+
         if (existingFavorite) {
           // Update the existing favorite's name to the current name
           await removeFavorite(existingFavorite);
-          const updatedFavorite: FavoriteLocation = { 
-            ...existingFavorite, 
+          const updatedFavorite: FavoriteLocation = {
+            ...existingFavorite,
             name: name,
-            id: id // Use the new ID format
+            id: id, // Use the new ID format
           };
           await addFavorite(updatedFavorite);
           await showToast({
@@ -337,7 +337,7 @@ function ForecastView(props: {
             return; // Don't update isFavorite state or call onFavoriteChange
           }
         }
-        
+
         setIsFavorite(true);
         onFavoriteChange?.(); // Notify parent component
       }
@@ -393,17 +393,9 @@ function ForecastView(props: {
           ) : (
             <>
               {mode === "detailed" ? (
-                <Action
-                  title="Show 9-Day Summary"
-                  icon={Icon.Calendar}
-                  onAction={() => setMode("summary")}
-                />
+                <Action title="Show 9-Day Summary" icon={Icon.Calendar} onAction={() => setMode("summary")} />
               ) : (
-                <Action
-                  title="Show 48-Hour Detailed"
-                  icon={Icon.Clock}
-                  onAction={() => setMode("detailed")}
-                />
+                <Action title="Show 48-Hour Detailed" icon={Icon.Clock} onAction={() => setMode("detailed")} />
               )}
               <Action
                 title={mode === "detailed" ? "Show 9-Day Summary" : "Show 48-Hour Detailed"}

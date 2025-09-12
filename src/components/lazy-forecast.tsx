@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
-import { Detail, Action, ActionPanel, Icon } from "@raycast/api";
+import { Detail } from "@raycast/api";
+import { ActionPanelBuilders } from "../utils/action-panel-builders";
 import { ErrorBoundary } from "./error-boundary";
 import { FavoritesErrorFallback } from "./error-fallbacks";
 import { useBundleAnalyzer } from "../utils/bundle-analyzer";
@@ -33,10 +34,7 @@ export function LazyForecastView(props: LazyForecastProps) {
   }, [startTiming, endTiming]);
 
   return (
-    <ErrorBoundary
-      componentName="Lazy Forecast"
-      fallback={<FavoritesErrorFallback componentName="Lazy Forecast" />}
-    >
+    <ErrorBoundary componentName="Lazy Forecast" fallback={<FavoritesErrorFallback componentName="Lazy Forecast" />}>
       <Suspense
         fallback={
           <Detail
@@ -51,22 +49,7 @@ ${props.targetDate ? `**Date:** ${props.targetDate}` : ""}
 
 *This may take a moment as we load the graph generation libraries...*
             `}
-            actions={
-              <ActionPanel>
-                <Action
-                  title="Refresh Forecast"
-                  icon={Icon.ArrowClockwise}
-                  onAction={() => window.location.reload()}
-                />
-                {props.onShowWelcome && (
-                  <Action
-                    title="Show Welcome Message"
-                    icon={Icon.Info}
-                    onAction={props.onShowWelcome}
-                  />
-                )}
-              </ActionPanel>
-            }
+            actions={ActionPanelBuilders.createRefreshActions(() => window.location.reload(), "Refresh Forecast")}
           />
         }
       >

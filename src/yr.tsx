@@ -22,6 +22,7 @@ import { ToastMessages } from "./utils/toast-utils";
 import { LocationUtils } from "./utils/location-utils";
 import { WeatherFormatters } from "./utils/weather-formatters";
 import { DebugLogger } from "./utils/debug-utils";
+import { ActionPanelBuilders } from "./utils/action-panel-builders";
 
 export default function Command() {
   // UI state
@@ -81,10 +82,13 @@ export default function Command() {
 
   // Periodic cache cleanup to prevent memory bloat
   useEffect(() => {
-    const cleanupInterval = setInterval(() => {
-      // Clean up graphs older than 24 hours
-      graphCache.cleanupCache(24 * 60 * 60 * 1000);
-    }, 60 * 60 * 1000); // Run every hour
+    const cleanupInterval = setInterval(
+      () => {
+        // Clean up graphs older than 24 hours
+        graphCache.cleanupCache(24 * 60 * 60 * 1000);
+      },
+      60 * 60 * 1000,
+    ); // Run every hour
 
     return () => clearInterval(cleanupInterval);
   }, [graphCache]);
@@ -103,7 +107,7 @@ export default function Command() {
 
   // Determine if we should show loading state - only true during initial load
   const shouldShowLoading = favorites.isInitialLoad || search.isLoading;
-  
+
   // Show background loading indicator for favorites
   const showBackgroundLoading = favorites.isBackgroundLoading && !favorites.isInitialLoad;
 
@@ -123,22 +127,10 @@ export default function Command() {
           : "Search for a location or try 'Oslo fredag', 'London tomorrow'..."
       }
       throttle
-      actions={
-        <ActionPanel>
-          <Action
-            title="Show Welcome Message"
-            icon={Icon.Info}
-            onAction={() => setShowWelcomeMessage(true)}
-            shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
-          />
-          <Action
-            title="Hide Welcome Message"
-            icon={Icon.Info}
-            onAction={() => setShowWelcomeMessage(false)}
-            shortcut={{ modifiers: ["cmd", "shift", "alt"], key: "w" }}
-          />
-        </ActionPanel>
-      }
+      actions={ActionPanelBuilders.createWelcomeToggleActions(
+        () => setShowWelcomeMessage(true),
+        () => setShowWelcomeMessage(false),
+      )}
     >
       {/* Welcome message - shown when manually triggered, regardless of favorites/search state */}
       {showWelcomeMessage && !search.searchText.trim() && <WelcomeMessage showActions={false} />}
@@ -183,16 +175,7 @@ export default function Command() {
                     tooltip: "Characters needed",
                   },
                 ]}
-                actions={
-                  <ActionPanel>
-                    <Action
-                      title="Show Welcome Message"
-                      icon={Icon.Info}
-                      onAction={() => setShowWelcomeMessage(true)}
-                      shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
-                    />
-                  </ActionPanel>
-                }
+                actions={ActionPanelBuilders.createWelcomeActions(() => setShowWelcomeMessage(true))}
               />
             )}
 
@@ -213,35 +196,11 @@ export default function Command() {
                     tooltip: networkTest.nominatim ? "Location API: Connected" : "Location API: Failed",
                   },
                 ]}
-                actions={
-                  <ActionPanel>
-                    <Action
-                      title="Retry Network Tests"
-                      icon={Icon.ArrowClockwise}
-                      onAction={() => {
-                        // Network tests will re-run when the component re-mounts
-                        // Show a toast message to indicate retry action
-                        ToastMessages.networkTestsRetry();
-                      }}
-                    />
-                    <Action
-                      title="Show Error Details"
-                      icon={Icon.Info}
-                      onAction={async () => {
-                        await ToastMessages.networkTestErrors(
-                          networkTest.error || "Unknown network connectivity issues",
-                        );
-                      }}
-                    />
-
-                    <Action
-                      title="Show Welcome Message"
-                      icon={Icon.Info}
-                      onAction={() => setShowWelcomeMessage(true)}
-                      shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
-                    />
-                  </ActionPanel>
-                }
+                actions={ActionPanelBuilders.createNetworkRetryActions(() => {
+                  // Network tests will re-run when the component re-mounts
+                  // Show a toast message to indicate retry action
+                  ToastMessages.networkTestsRetry();
+                })}
               />
             </List.Section>
           )}
@@ -260,16 +219,7 @@ export default function Command() {
                     icon: Icon.ArrowClockwise,
                   },
                 ]}
-                actions={
-                  <ActionPanel>
-                    <Action
-                      title="Show Welcome Message"
-                      icon={Icon.Info}
-                      onAction={() => setShowWelcomeMessage(true)}
-                      shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
-                    />
-                  </ActionPanel>
-                }
+                actions={ActionPanelBuilders.createWelcomeActions(() => setShowWelcomeMessage(true))}
               />
             </List.Section>
           )}
@@ -355,13 +305,7 @@ export default function Command() {
           {/* Show favorites only when not actively searching or when no search results */}
           {shouldShowFavorites && (
             <ErrorBoundary componentName="Favorites" fallback={<FavoritesErrorFallback componentName="Favorites" />}>
-              <List.Section 
-                title={
-                  showBackgroundLoading 
-                    ? "Favorites (Loading weather data...)" 
-                    : "Favorites"
-                }
-              >
+              <List.Section title={showBackgroundLoading ? "Favorites (Loading weather data...)" : "Favorites"}>
                 {favorites.favorites.map((fav) => {
                   const key = LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon);
 

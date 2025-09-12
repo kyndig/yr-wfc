@@ -21,7 +21,7 @@ function generateGraphCacheKey(
   locationKey: string,
   mode: "detailed" | "summary",
   targetDate?: string,
-  dataHash?: string
+  dataHash?: string,
 ): string {
   const baseKey = `graph:${locationKey}:${mode}`;
   if (targetDate) {
@@ -40,7 +40,7 @@ function generateDataHash(
   series: TimeseriesEntry[],
   name: string,
   hours: number,
-  sunByDate?: Record<string, SunTimes>
+  sunByDate?: Record<string, SunTimes>,
 ): string {
   // Create a simple hash based on key data points
   const keyData = {
@@ -51,9 +51,11 @@ function generateDataHash(
     lastTime: series[series.length - 1]?.time,
     sunByDateKeys: sunByDate ? Object.keys(sunByDate).sort() : [],
   };
-  
+
   // Simple hash function - in production you might want to use a proper hash library
-  return btoa(JSON.stringify(keyData)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+  return btoa(JSON.stringify(keyData))
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .substring(0, 16);
 }
 
 /**
@@ -66,27 +68,27 @@ export async function getCachedGraph(
   name: string,
   hours: number,
   sunByDate?: Record<string, SunTimes>,
-  targetDate?: string
+  targetDate?: string,
 ): Promise<string | undefined> {
   try {
     const cacheThresholds = getCacheThresholds();
     const dataHash = generateDataHash(series, name, hours, sunByDate);
     const cacheKey = generateGraphCacheKey(locationKey, mode, targetDate, dataHash);
-    
+
     const cached = await getCached<GraphCacheEntry>(cacheKey, cacheThresholds.GRAPH);
-    
+
     if (!cached) return undefined;
-    
+
     // Check version compatibility
     if (cached.version !== cacheThresholds.GRAPH_VERSION) {
       return undefined;
     }
-    
+
     // Check if data has changed
     if (cached.dataHash !== dataHash) {
       return undefined;
     }
-    
+
     return cached.markdown;
   } catch (error) {
     console.warn("Failed to get cached graph:", error);
@@ -105,20 +107,20 @@ export async function setCachedGraph(
   hours: number,
   markdown: string,
   sunByDate?: Record<string, SunTimes>,
-  targetDate?: string
+  targetDate?: string,
 ): Promise<void> {
   try {
     const cacheThresholds = getCacheThresholds();
     const dataHash = generateDataHash(series, name, hours, sunByDate);
     const cacheKey = generateGraphCacheKey(locationKey, mode, targetDate, dataHash);
-    
+
     const cacheEntry: GraphCacheEntry = {
       markdown,
       version: cacheThresholds.GRAPH_VERSION,
       dataHash,
       generatedAt: Date.now(),
     };
-    
+
     await setCached(cacheKey, cacheEntry);
   } catch (error) {
     console.warn("Failed to cache graph:", error);
@@ -135,25 +137,25 @@ export async function generateAndCacheGraph(
   name: string,
   hours: number,
   sunByDate?: Record<string, SunTimes>,
-  targetDate?: string
+  targetDate?: string,
 ): Promise<string> {
   // Try to get from cache first
   const cached = await getCachedGraph(locationKey, mode, series, name, hours, sunByDate, targetDate);
   if (cached) {
     return cached;
   }
-  
+
   // Generate new graph
-  const title = targetDate ? "1-day forecast" : (mode === "detailed" ? "48h forecast" : "9-day summary");
+  const title = targetDate ? "1-day forecast" : mode === "detailed" ? "48h forecast" : "9-day summary";
   const result = buildGraphMarkdown(name, series, hours, {
     title,
     smooth: true,
     sunByDate: mode === "detailed" ? sunByDate : undefined,
   });
-  
+
   // Cache the result
   await setCachedGraph(locationKey, mode, series, name, hours, result.markdown, sunByDate, targetDate);
-  
+
   return result.markdown;
 }
 

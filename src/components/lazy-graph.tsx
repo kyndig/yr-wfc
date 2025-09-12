@@ -1,18 +1,19 @@
 import { lazy, Suspense, useState, useEffect } from "react";
-import { Detail, Action, ActionPanel, Icon } from "@raycast/api";
+import { Detail } from "@raycast/api";
+import { ActionPanelBuilders } from "../utils/action-panel-builders";
 import { ErrorBoundary } from "./error-boundary";
 import { GraphErrorFallback } from "./error-fallbacks";
 import { TimeseriesEntry } from "../weather-client";
 import { SunTimes } from "../sunrise-client";
 
 // Lazy load the graph generation function
-const LazyGraphGenerator = lazy(() => 
-  import("../graph-utils").then(module => ({
-    default: function LazyGraphRenderer({ 
-      name, 
-      series, 
-      hours, 
-      options 
+const LazyGraphGenerator = lazy(() =>
+  import("../graph-utils").then((module) => ({
+    default: function LazyGraphRenderer({
+      name,
+      series,
+      hours,
+      options,
     }: {
       name: string;
       series: TimeseriesEntry[];
@@ -25,8 +26,8 @@ const LazyGraphGenerator = lazy(() =>
     }) {
       const result = module.buildGraphMarkdown(name, series, hours, options);
       return <Detail markdown={result.markdown} />;
-    }
-  }))
+    },
+  })),
 );
 
 interface LazyGraphProps {
@@ -58,46 +59,22 @@ export function LazyGraph({ name, series, hours, options, fallback }: LazyGraphP
     return (
       <Detail
         markdown={fallback || "Loading graph..."}
-        actions={
-          <ActionPanel>
-            <Action
-              title="Refresh Graph"
-              icon={Icon.ArrowClockwise}
-              onAction={() => window.location.reload()}
-            />
-          </ActionPanel>
-        }
+        actions={ActionPanelBuilders.createRefreshActions(() => window.location.reload(), "Refresh Graph")}
       />
     );
   }
 
   return (
-    <ErrorBoundary
-      componentName="Lazy Graph"
-      fallback={<GraphErrorFallback componentName="Lazy Graph" />}
-    >
+    <ErrorBoundary componentName="Lazy Graph" fallback={<GraphErrorFallback componentName="Lazy Graph" />}>
       <Suspense
         fallback={
           <Detail
             markdown={fallback || "Loading graph..."}
-            actions={
-              <ActionPanel>
-                <Action
-                  title="Refresh Graph"
-                  icon={Icon.ArrowClockwise}
-                  onAction={() => window.location.reload()}
-                />
-              </ActionPanel>
-            }
+            actions={ActionPanelBuilders.createRefreshActions(() => window.location.reload(), "Refresh Graph")}
           />
         }
       >
-        <LazyGraphGenerator
-          name={name}
-          series={series}
-          hours={hours}
-          options={options}
-        />
+        <LazyGraphGenerator name={name} series={series} hours={hours} options={options} />
       </Suspense>
     </ErrorBoundary>
   );
