@@ -1,8 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from "react";
 import { Detail } from "@raycast/api";
 import { ActionPanelBuilders } from "../utils/action-panel-builders";
-import { ErrorBoundary } from "./error-boundary";
-import { GraphErrorFallback } from "./error-fallbacks";
 import { TimeseriesEntry } from "../weather-client";
 import { SunTimes } from "../sunrise-client";
 
@@ -65,18 +63,16 @@ export function LazyGraph({ name, series, hours, options, fallback }: LazyGraphP
   }
 
   return (
-    <ErrorBoundary componentName="Lazy Graph" fallback={<GraphErrorFallback componentName="Lazy Graph" />}>
-      <Suspense
-        fallback={
-          <Detail
-            markdown={fallback || "Loading graph..."}
-            actions={ActionPanelBuilders.createRefreshActions(() => setIsLoading(true), "Refresh Graph")}
-          />
-        }
-      >
-        <LazyGraphGenerator name={name} series={series} hours={hours} options={options} />
-      </Suspense>
-    </ErrorBoundary>
+    <Suspense
+      fallback={
+        <Detail
+          markdown={fallback || "Loading graph..."}
+          actions={ActionPanelBuilders.createRefreshActions(() => setIsLoading(true), "Refresh Graph")}
+        />
+      }
+    >
+      <LazyGraphGenerator name={name} series={series} hours={hours} options={options} />
+    </Suspense>
   );
 }
 

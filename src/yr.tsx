@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Action, ActionPanel, List, Icon, showToast, Toast } from "@raycast/api";
 import { LazyForecastView, useForecastPreloader } from "./components/lazy-forecast";
 import WelcomeMessage from "./components/welcome-message";
-import { ErrorBoundary } from "./components/error-boundary";
-import { SearchErrorFallback, FavoritesErrorFallback } from "./components/error-fallbacks";
 
 import { getWeather, type TimeseriesEntry } from "./weather-client";
 import { isFirstTimeUser, markAsNotFirstTime } from "./storage";
@@ -226,41 +224,38 @@ export default function Command() {
 
           {/* Show search results first when actively searching */}
           {search.safeLocations.length > 0 && (
-            <ErrorBoundary
-              componentName="Search Results"
-              fallback={<SearchErrorFallback componentName="Search Results" />}
+            <List.Section
+              title={
+                search.queryIntent.targetDate
+                  ? `📅 Search Results for ${search.queryIntent.targetDate.toLocaleDateString()} (${search.safeLocations.length})`
+                  : `Search Results (${search.safeLocations.length})`
+              }
             >
-              <List.Section
-                title={
-                  search.queryIntent.targetDate
-                    ? `📅 Search Results for ${search.queryIntent.targetDate.toLocaleDateString()} (${search.safeLocations.length})`
-                    : `Search Results (${search.safeLocations.length})`
-                }
-              >
-                {search.safeLocations.map((loc) => (
-                  <List.Item
-                    key={loc.id}
-                    title={LocationUtils.formatLocationName(loc)}
-                    subtitle={
-                      search.queryIntent.targetDate
-                        ? `Tap to view weather for ${search.queryIntent.targetDate.toLocaleDateString()}`
-                        : undefined
-                    }
-                    icon={search.queryIntent.targetDate ? "📅" : LocationUtils.getLocationEmoji(loc)}
-                    accessories={[
-                      {
-                        text: search.queryIntent.targetDate
-                          ? search.queryIntent.targetDate.toLocaleDateString()
-                          : `${loc.lat.toFixed(getUIThresholds().COORDINATE_PRECISION)}, ${loc.lon.toFixed(getUIThresholds().COORDINATE_PRECISION)}`,
-                        icon: search.queryIntent.targetDate ? Icon.Calendar : undefined,
-                      },
-                    ]}
-                    actions={createLocationActions(
-                      loc.displayName,
-                      loc.lat,
-                      loc.lon,
-                      favoriteIds.favoriteIds[loc.id],
-                      async () => {
+              {search.safeLocations.map((loc) => (
+                <List.Item
+                  key={loc.id}
+                  title={LocationUtils.formatLocationName(loc)}
+                  subtitle={
+                    search.queryIntent.targetDate
+                      ? `Tap to view weather for ${search.queryIntent.targetDate.toLocaleDateString()}`
+                      : undefined
+                  }
+                  icon={search.queryIntent.targetDate ? "📅" : LocationUtils.getLocationEmoji(loc)}
+                  accessories={[
+                    {
+                      text: search.queryIntent.targetDate
+                        ? search.queryIntent.targetDate.toLocaleDateString()
+                        : `${loc.lat.toFixed(getUIThresholds().COORDINATE_PRECISION)}, ${loc.lon.toFixed(getUIThresholds().COORDINATE_PRECISION)}`,
+                      icon: search.queryIntent.targetDate ? Icon.Calendar : undefined,
+                    },
+                  ]}
+                  actions={createLocationActions(
+                    loc.displayName,
+                    loc.lat,
+                    loc.lon,
+                    favoriteIds.favoriteIds[loc.id],
+                    async () => {
+                      try {
                         if (favoriteIds.favoriteIds[loc.id]) {
                           const fav = LocationUtils.createFavoriteFromSearchResult(
                             loc.id,
@@ -280,16 +275,23 @@ export default function Command() {
                           await favorites.addFavoriteLocation(fav);
                           await ToastMessages.favoriteAdded(loc.displayName);
                         }
-                      },
-                      () => setShowWelcomeMessage(true),
-                      search.queryIntent.targetDate,
-                      undefined, // onFavoriteChange - not needed for search results
-                      undefined, // preCachedGraph - not available for search results
-                    )}
-                  />
-                ))}
-              </List.Section>
-            </ErrorBoundary>
+                      } catch (error) {
+                        DebugLogger.error("Error handling favorite toggle:", error);
+                        showToast({
+                          style: Toast.Style.Failure,
+                          title: "Error",
+                          message: "Failed to update favorite. Please try again.",
+                        });
+                      }
+                    },
+                    () => setShowWelcomeMessage(true),
+                    search.queryIntent.targetDate,
+                    undefined, // onFavoriteChange - not needed for search results
+                    undefined, // preCachedGraph - not available for search results
+                  )}
+                />
+              ))}
+            </List.Section>
           )}
 
           {/* Show "no results" message only when search has completed and returned no results */}
@@ -304,8 +306,7 @@ export default function Command() {
 
           {/* Show favorites only when not actively searching or when no search results */}
           {shouldShowFavorites && (
-            <ErrorBoundary componentName="Favorites" fallback={<FavoritesErrorFallback componentName="Favorites" />}>
-              <List.Section title={showBackgroundLoading ? "Favorites (Loading weather data...)" : "Favorites"}>
+            <List.Section title={showBackgroundLoading ? "Favorites (Loading weather data...)" : "Favorites"}>
                 {favorites.favorites.map((fav) => {
                   const key = LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon);
 
@@ -407,8 +408,17 @@ export default function Command() {
                             icon={Icon.StarDisabled}
                             shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
                             onAction={async () => {
-                              await favorites.removeFavoriteLocation(fav);
-                              await ToastMessages.favoriteRemoved(fav.name);
+                              try {
+                                await favorites.removeFavoriteLocation(fav);
+                                await ToastMessages.favoriteRemoved(fav.name);
+                              } catch (error) {
+                                DebugLogger.error("Error removing favorite:", error);
+                                showToast({
+                                  style: Toast.Style.Failure,
+                                  title: "Error",
+                                  message: "Failed to remove favorite. Please try again.",
+                                });
+                              }
                             }}
                           />
                           <Action
@@ -440,7 +450,6 @@ export default function Command() {
                   );
                 })}
               </List.Section>
-            </ErrorBoundary>
           )}
         </>
       )}

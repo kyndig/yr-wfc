@@ -1,8 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Detail } from "@raycast/api";
 import { ActionPanelBuilders } from "../utils/action-panel-builders";
-import { ErrorBoundary } from "./error-boundary";
-import { FavoritesErrorFallback } from "./error-fallbacks";
 import { useBundleAnalyzer } from "../utils/bundle-analyzer";
 
 // Lazy load the ForecastView component to defer D3 loading
@@ -34,11 +32,10 @@ export function LazyForecastView(props: LazyForecastProps) {
   }, [startTiming, endTiming]);
 
   return (
-    <ErrorBoundary componentName="Lazy Forecast" fallback={<FavoritesErrorFallback componentName="Lazy Forecast" />}>
-      <Suspense
-        fallback={
-          <Detail
-            markdown={`
+    <Suspense
+      fallback={
+        <Detail
+          markdown={`
 # ${props.name}
 ## Loading forecast...
 
@@ -48,14 +45,13 @@ Please wait while we load the weather forecast and generate the interactive grap
 ${props.targetDate ? `**Date:** ${props.targetDate}` : ""}
 
 *This may take a moment as we load the graph generation libraries...*
-            `}
-            actions={ActionPanelBuilders.createRefreshActions(() => {}, "Refresh Forecast")}
-          />
-        }
-      >
-        <LazyForecastComponent {...props} />
-      </Suspense>
-    </ErrorBoundary>
+          `}
+          actions={ActionPanelBuilders.createRefreshActions(() => {}, "Refresh Forecast")}
+        />
+      }
+    >
+      <LazyForecastComponent {...props} />
+    </Suspense>
   );
 }
 

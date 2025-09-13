@@ -5,8 +5,6 @@ import { reduceToDayPeriods, buildWeatherTable, filterToDate } from "./weather-u
 import { useWeatherData } from "./hooks/useWeatherData";
 import { generateNoForecastDataMessage } from "./utils/error-messages";
 import { addFavorite, removeFavorite, getFavorites, isSameLocation, type FavoriteLocation } from "./storage";
-import { withErrorBoundary } from "./components/error-boundary";
-import { WeatherErrorFallback } from "./components/error-fallbacks";
 import { FavoriteToggleAction } from "./components/FavoriteToggleAction";
 import { getUIThresholds } from "./config/weather-config";
 import { formatDate, formatTime } from "./utils/date-utils";
@@ -439,8 +437,4 @@ function ForecastView(props: {
   );
 }
 
-// Export with error boundary
-export default withErrorBoundary(ForecastView, {
-  componentName: "Forecast View",
-  fallback: <WeatherErrorFallback componentName="Forecast View" />,
-});
+export default ForecastView;

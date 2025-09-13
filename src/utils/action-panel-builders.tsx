@@ -6,41 +6,6 @@ import { Action, ActionPanel, Icon, showToast, Toast } from "@raycast/api";
  */
 
 export class ActionPanelBuilders {
-  /**
-   * Create error handling actions (Retry, Reset, Show Error Details)
-   * Used in error boundaries and error fallbacks
-   */
-  static createErrorActions(onRetry: () => void, onReset: () => void, error?: Error) {
-    return (
-      <ActionPanel>
-        <Action
-          title="Retry"
-          icon={Icon.ArrowClockwise}
-          onAction={onRetry}
-          shortcut={{ modifiers: ["cmd"], key: "r" }}
-        />
-        <Action
-          title="Reset"
-          icon={Icon.Trash}
-          onAction={onReset}
-          shortcut={{ modifiers: ["cmd", "shift"], key: "r" }}
-        />
-        {error && (
-          <Action
-            title="Show Error Details"
-            icon={Icon.Info}
-            onAction={() => {
-              showToast({
-                style: Toast.Style.Failure,
-                title: "Error Details",
-                message: error.message,
-              });
-            }}
-          />
-        )}
-      </ActionPanel>
-    );
-  }
 
   /**
    * Create welcome message actions
@@ -137,21 +102,4 @@ export class ActionPanelBuilders {
     );
   }
 
-  /**
-   * Create test actions for development
-   * Used in test components and development tools
-   */
-  static createTestActions(
-    onTest: () => void,
-    onReset: () => void,
-    testTitle: string = "Test",
-    resetTitle: string = "Reset",
-  ) {
-    return (
-      <ActionPanel>
-        <Action title={testTitle} icon={Icon.ExclamationMark} onAction={onTest} />
-        <Action title={resetTitle} icon={Icon.ArrowClockwise} onAction={onReset} />
-      </ActionPanel>
-    );
-  }
 }
