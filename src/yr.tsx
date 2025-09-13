@@ -307,149 +307,149 @@ export default function Command() {
           {/* Show favorites only when not actively searching or when no search results */}
           {shouldShowFavorites && (
             <List.Section title={showBackgroundLoading ? "Favorites (Loading weather data...)" : "Favorites"}>
-                {favorites.favorites.map((fav) => {
-                  const key = LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon);
+              {favorites.favorites.map((fav) => {
+                const key = LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon);
 
-                  return (
-                    <List.Item
-                      key={key}
-                      title={fav.name}
-                      subtitle={(() => {
-                        if (!fav.id) return "Invalid favorite";
-                        const weather = favorites.getFavoriteWeather(fav.id, fav.lat, fav.lon);
-                        const error = favorites.hasFavoriteError(fav.id, fav.lat, fav.lon);
-                        const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
+                return (
+                  <List.Item
+                    key={key}
+                    title={fav.name}
+                    subtitle={(() => {
+                      if (!fav.id) return "Invalid favorite";
+                      const weather = favorites.getFavoriteWeather(fav.id, fav.lat, fav.lon);
+                      const error = favorites.hasFavoriteError(fav.id, fav.lat, fav.lon);
+                      const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
 
-                        if (weather) {
-                          const temp = formatTemp(weather);
-                          return temp || "⚠️ Temperature unavailable";
-                        }
-
-                        if (error) {
-                          return "⚠️ Data fetch failed";
-                        }
-
-                        if (loading) {
-                          return "Loading weather...";
-                        }
-
-                        // Show coordinates when no weather data yet (lazy loading)
-                        return `${fav.lat.toFixed(2)}, ${fav.lon.toFixed(2)}`;
-                      })()}
-                      icon={(() => {
-                        if (!fav.id) return "❌";
-                        const weather = favorites.getFavoriteWeather(fav.id, fav.lat, fav.lon);
-                        const error = favorites.hasFavoriteError(fav.id, fav.lat, fav.lon);
-                        const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
-
-                        if (weather) {
-                          return iconForSymbol(weather);
-                        }
-                        if (error) {
-                          return "⚠️";
-                        }
-                        if (loading) {
-                          return "⏳";
-                        }
-                        // Show neutral location icon when no weather data yet (lazy loading)
-                        return "📍";
-                      })()}
-                      accessories={(() => {
-                        if (!fav.id) return undefined;
-                        const weather = favorites.getFavoriteWeather(fav.id, fav.lat, fav.lon);
-                        const sunTimes = favorites.getFavoriteSunTimes(fav.id, fav.lat, fav.lon);
-                        const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
-
-                        if (weather) {
-                          return formatAccessories(weather, sunTimes);
-                        }
-
-                        if (loading) {
-                          return [{ text: "Loading...", icon: Icon.ArrowClockwise }];
-                        }
-
-                        // No accessories when no weather data yet (lazy loading)
-                        return undefined;
-                      })()}
-                      actions={
-                        <ActionPanel>
-                          <Action.Push
-                            title="Open Forecast"
-                            icon={Icon.Clock}
-                            target={
-                              <LazyForecastView
-                                name={fav.name}
-                                lat={fav.lat}
-                                lon={fav.lon}
-                                preCachedGraph={favorites.preWarmedGraphs[key]}
-                                onFavoriteChange={favorites.refreshFavorites}
-                                onShowWelcome={() => setShowWelcomeMessage(true)}
-                              />
-                            }
-                          />
-                          <Action
-                            title="Show Current Weather"
-                            icon={Icon.Wind}
-                            onAction={async () => {
-                              try {
-                                const ts: TimeseriesEntry = await getWeather(fav.lat, fav.lon);
-                                await showToast({
-                                  style: Toast.Style.Success,
-                                  title: `Now at ${fav.name}`,
-                                  message: WeatherFormatters.formatWeatherToast(ts),
-                                });
-                              } catch (error) {
-                                await ToastMessages.weatherLoadFailed(error);
-                              }
-                            }}
-                          />
-                          <Action
-                            title="Remove from Favorites"
-                            icon={Icon.StarDisabled}
-                            shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
-                            onAction={async () => {
-                              try {
-                                await favorites.removeFavoriteLocation(fav);
-                                await ToastMessages.favoriteRemoved(fav.name);
-                              } catch (error) {
-                                DebugLogger.error("Error removing favorite:", error);
-                                showToast({
-                                  style: Toast.Style.Failure,
-                                  title: "Error",
-                                  message: "Failed to remove favorite. Please try again.",
-                                });
-                              }
-                            }}
-                          />
-                          <Action
-                            title="Move up"
-                            icon={Icon.ArrowUp}
-                            shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
-                            onAction={async () => {
-                              await favorites.moveFavoriteUp(fav);
-                            }}
-                          />
-                          <Action
-                            title="Move Down"
-                            icon={Icon.ArrowDown}
-                            shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
-                            onAction={async () => {
-                              await favorites.moveFavoriteDown(fav);
-                            }}
-                          />
-
-                          <Action
-                            title="Show Welcome Message"
-                            icon={Icon.Info}
-                            onAction={() => setShowWelcomeMessage(true)}
-                            shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
-                          />
-                        </ActionPanel>
+                      if (weather) {
+                        const temp = formatTemp(weather);
+                        return temp || "⚠️ Temperature unavailable";
                       }
-                    />
-                  );
-                })}
-              </List.Section>
+
+                      if (error) {
+                        return "⚠️ Data fetch failed";
+                      }
+
+                      if (loading) {
+                        return "Loading weather...";
+                      }
+
+                      // Show coordinates when no weather data yet (lazy loading)
+                      return `${fav.lat.toFixed(2)}, ${fav.lon.toFixed(2)}`;
+                    })()}
+                    icon={(() => {
+                      if (!fav.id) return "❌";
+                      const weather = favorites.getFavoriteWeather(fav.id, fav.lat, fav.lon);
+                      const error = favorites.hasFavoriteError(fav.id, fav.lat, fav.lon);
+                      const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
+
+                      if (weather) {
+                        return iconForSymbol(weather);
+                      }
+                      if (error) {
+                        return "⚠️";
+                      }
+                      if (loading) {
+                        return "⏳";
+                      }
+                      // Show neutral location icon when no weather data yet (lazy loading)
+                      return "📍";
+                    })()}
+                    accessories={(() => {
+                      if (!fav.id) return undefined;
+                      const weather = favorites.getFavoriteWeather(fav.id, fav.lat, fav.lon);
+                      const sunTimes = favorites.getFavoriteSunTimes(fav.id, fav.lat, fav.lon);
+                      const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
+
+                      if (weather) {
+                        return formatAccessories(weather, sunTimes);
+                      }
+
+                      if (loading) {
+                        return [{ text: "Loading...", icon: Icon.ArrowClockwise }];
+                      }
+
+                      // No accessories when no weather data yet (lazy loading)
+                      return undefined;
+                    })()}
+                    actions={
+                      <ActionPanel>
+                        <Action.Push
+                          title="Open Forecast"
+                          icon={Icon.Clock}
+                          target={
+                            <LazyForecastView
+                              name={fav.name}
+                              lat={fav.lat}
+                              lon={fav.lon}
+                              preCachedGraph={favorites.preWarmedGraphs[key]}
+                              onFavoriteChange={favorites.refreshFavorites}
+                              onShowWelcome={() => setShowWelcomeMessage(true)}
+                            />
+                          }
+                        />
+                        <Action
+                          title="Show Current Weather"
+                          icon={Icon.Wind}
+                          onAction={async () => {
+                            try {
+                              const ts: TimeseriesEntry = await getWeather(fav.lat, fav.lon);
+                              await showToast({
+                                style: Toast.Style.Success,
+                                title: `Now at ${fav.name}`,
+                                message: WeatherFormatters.formatWeatherToast(ts),
+                              });
+                            } catch (error) {
+                              await ToastMessages.weatherLoadFailed(error);
+                            }
+                          }}
+                        />
+                        <Action
+                          title="Remove from Favorites"
+                          icon={Icon.StarDisabled}
+                          shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
+                          onAction={async () => {
+                            try {
+                              await favorites.removeFavoriteLocation(fav);
+                              await ToastMessages.favoriteRemoved(fav.name);
+                            } catch (error) {
+                              DebugLogger.error("Error removing favorite:", error);
+                              showToast({
+                                style: Toast.Style.Failure,
+                                title: "Error",
+                                message: "Failed to remove favorite. Please try again.",
+                              });
+                            }
+                          }}
+                        />
+                        <Action
+                          title="Move up"
+                          icon={Icon.ArrowUp}
+                          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
+                          onAction={async () => {
+                            await favorites.moveFavoriteUp(fav);
+                          }}
+                        />
+                        <Action
+                          title="Move Down"
+                          icon={Icon.ArrowDown}
+                          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
+                          onAction={async () => {
+                            await favorites.moveFavoriteDown(fav);
+                          }}
+                        />
+
+                        <Action
+                          title="Show Welcome Message"
+                          icon={Icon.Info}
+                          onAction={() => setShowWelcomeMessage(true)}
+                          shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+                        />
+                      </ActionPanel>
+                    }
+                  />
+                );
+              })}
+            </List.Section>
           )}
         </>
       )}

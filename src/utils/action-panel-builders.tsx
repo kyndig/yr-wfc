@@ -6,7 +6,6 @@ import { Action, ActionPanel, Icon, showToast, Toast } from "@raycast/api";
  */
 
 export class ActionPanelBuilders {
-
   /**
    * Create welcome message actions
    * Used in various components to show welcome message
@@ -101,5 +100,4 @@ export class ActionPanelBuilders {
       </ActionPanel>
     );
   }
-
 }
