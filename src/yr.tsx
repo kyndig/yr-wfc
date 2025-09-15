@@ -7,7 +7,6 @@ import { getWeather, type TimeseriesEntry } from "./weather-client";
 import { isFirstTimeUser, markAsNotFirstTime } from "./storage";
 
 import { iconForSymbol } from "./weather-emoji";
-import { formatTemp } from "./weather-utils";
 
 import { useNetworkTest } from "./hooks/useNetworkTest";
 import { useSearch } from "./hooks/useSearch";
@@ -321,8 +320,8 @@ export default function Command() {
                       const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
 
                       if (weather) {
-                        const temp = formatTemp(weather);
-                        return temp || "⚠️ Temperature unavailable";
+                        // No subtitle when weather data is available - temperature is shown in chips
+                        return undefined;
                       }
 
                       if (error) {
