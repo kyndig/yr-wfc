@@ -13,3 +13,13 @@ compiled_raycast_rust
 # misc
 .DS_Store
 BUNDLE_OPTIMIZATION.md
+TESTING.md
+
+# Test files and coverage (excluded from production builds)
+/tests/
+coverage/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+jest.config.js

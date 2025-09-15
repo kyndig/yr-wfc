@@ -2,10 +2,10 @@ import { memo, useMemo } from "react";
 import { List, Icon, ActionPanel, Action } from "@raycast/api";
 import { TimeseriesEntry } from "../weather-client";
 import { SunTimes } from "../sunrise-client";
-import { formatTemp } from "../weather-utils";
 import { iconForSymbol } from "../weather-emoji";
 import { LocationUtils } from "../utils/location-utils";
 import { getUIThresholds } from "../config/weather-config";
+import { WeatherFormatters } from "../utils/weather-formatters";
 
 interface OptimizedFavoriteItemProps {
   favorite: {
@@ -34,6 +34,7 @@ export const OptimizedFavoriteItem = memo<OptimizedFavoriteItemProps>(
   ({
     favorite,
     weather,
+    sunTimes,
     error,
     loading,
     onOpenForecast,
@@ -50,8 +51,8 @@ export const OptimizedFavoriteItem = memo<OptimizedFavoriteItemProps>(
       if (!favorite.id) return "Invalid favorite";
 
       if (weather) {
-        const temp = formatTemp(weather);
-        return temp || "⚠️ Temperature unavailable";
+        // No subtitle when weather data is available - temperature is shown in chips
+        return undefined;
       }
 
       if (error) {
@@ -88,8 +89,8 @@ export const OptimizedFavoriteItem = memo<OptimizedFavoriteItemProps>(
       if (!favorite.id) return undefined;
 
       if (weather) {
-        // This would need the formatAccessories function - simplified for now
-        return [{ text: "Weather data available" }];
+        // Use the same formatAccessories function as the main component
+        return WeatherFormatters.formatAccessories(weather, sunTimes);
       }
 
       if (loading) {
@@ -98,7 +99,7 @@ export const OptimizedFavoriteItem = memo<OptimizedFavoriteItemProps>(
 
       // No accessories when no weather data yet (lazy loading)
       return undefined;
-    }, [favorite.id, weather, loading]);
+    }, [favorite.id, weather, loading, sunTimes]);
 
     return (
       <List.Item

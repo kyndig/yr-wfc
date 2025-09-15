@@ -60,6 +60,19 @@ export class WeatherFormatters {
     const units = getUnits();
     const flags = getFeatureFlags();
 
+    // Temperature - show if we have valid temperature data
+    const temp = TemperatureFormatter.format(ts);
+    if (temp && typeof details.air_temperature === "number") {
+      acc.push({ tag: `🌡️ ${temp}`, tooltip: "Temperature" });
+    }
+
+    // Precipitation - show if we have valid precipitation data (including 0mm)
+    const precip = precipitationAmount(ts);
+    const p = formatPrecip(precip, units);
+    if (p && typeof precip === "number") {
+      acc.push({ tag: `☔ ${p}`, tooltip: "Precipitation" });
+    }
+
     // Wind speed - only show if we have meaningful wind data (> 0)
     const wind = formatWindSpeed(details.wind_speed, units);
     if (wind && details.wind_speed && details.wind_speed > 0) {
@@ -78,13 +91,6 @@ export class WeatherFormatters {
         tag: `🧭 ${dir.arrow} ${dir.name}`,
         tooltip: `Direction ${Math.round(details.wind_from_direction)}°`,
       });
-    }
-
-    // Precipitation - show if we have valid precipitation data (including 0mm)
-    const precip = precipitationAmount(ts);
-    const p = formatPrecip(precip, units);
-    if (p && typeof precip === "number") {
-      acc.push({ tag: `☔ ${p}`, tooltip: "Precipitation" });
     }
 
     // Sun times - only show if we have valid sunrise/sunset data
