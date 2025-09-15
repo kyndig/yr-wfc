@@ -319,7 +319,7 @@ export const GRAPH_THRESHOLDS = {
      * Sunrise/sunset line dash pattern
      * Used for: Vertical lines marking sun events
      */
-    SUN_EVENT_DASH: "2 4",
+    SUN_EVENT_DASH: "4 6",
 
     /**
      * Precipitation line dash pattern
@@ -373,12 +373,12 @@ export const GRAPH_THRESHOLDS = {
     /**
      * Sunrise line color
      */
-    SUNRISE: "#ff6b35",
+    SUNRISE: "#ff4500",
 
     /**
      * Sunset line color
      */
-    SUNSET: "#6b46c1",
+    SUNSET: "#8b008b",
 
     /**
      * Grid line color
@@ -519,7 +519,7 @@ export const CACHE_THRESHOLDS = {
    * Graph cache version
    * Increment this to invalidate all cached graphs when graph format changes
    */
-  GRAPH_VERSION: "1.0.0",
+  GRAPH_VERSION: "1.2.0",
 } as const;
 
 /**

@@ -3,6 +3,8 @@ import { getCacheThresholds } from "./config/weather-config";
 import { TimeseriesEntry } from "./weather-client";
 import { SunTimes } from "./sunrise-client";
 import { buildGraphMarkdown } from "./graph-utils";
+import { CacheKeyGenerator } from "./utils/cache-manager";
+import { DebugLogger } from "./utils/debug-utils";
 
 /**
  * Graph cache entry with versioning support
@@ -15,7 +17,7 @@ type GraphCacheEntry = {
 };
 
 /**
- * Graph cache key generator
+ * Graph cache key generator (now using unified CacheKeyGenerator)
  */
 function generateGraphCacheKey(
   locationKey: string,
@@ -23,14 +25,7 @@ function generateGraphCacheKey(
   targetDate?: string,
   dataHash?: string,
 ): string {
-  const baseKey = `graph:${locationKey}:${mode}`;
-  if (targetDate) {
-    return `${baseKey}:${targetDate}`;
-  }
-  if (dataHash) {
-    return `${baseKey}:${dataHash}`;
-  }
-  return baseKey;
+  return CacheKeyGenerator.graph(locationKey, mode, targetDate, dataHash);
 }
 
 /**
@@ -49,13 +44,22 @@ function generateDataHash(
     hours,
     firstTime: series[0]?.time,
     lastTime: series[series.length - 1]?.time,
-    sunByDateKeys: sunByDate ? Object.keys(sunByDate).sort() : [],
+    sunByDate: sunByDate ? JSON.stringify(sunByDate) : "empty",
   };
 
-  // Simple hash function - in production you might want to use a proper hash library
-  return btoa(JSON.stringify(keyData))
+  // Create a more robust hash that includes sunrise/sunset data
+  const dataString = JSON.stringify(keyData);
+  const hash = btoa(dataString)
     .replace(/[^a-zA-Z0-9]/g, "")
-    .substring(0, 16);
+    .substring(0, 40); // Increased to 40 chars to ensure uniqueness
+
+  DebugLogger.debug(
+    "Generated cache hash:",
+    hash,
+    "for sunByDate:",
+    sunByDate ? Object.keys(sunByDate).length + " dates" : "empty",
+  );
+  return hash;
 }
 
 /**
@@ -91,7 +95,7 @@ export async function getCachedGraph(
 
     return cached.markdown;
   } catch (error) {
-    console.warn("Failed to get cached graph:", error);
+    DebugLogger.warn("Failed to get cached graph:", error);
     return undefined;
   }
 }
@@ -123,7 +127,7 @@ export async function setCachedGraph(
 
     await setCached(cacheKey, cacheEntry);
   } catch (error) {
-    console.warn("Failed to cache graph:", error);
+    DebugLogger.warn("Failed to cache graph:", error);
   }
 }
 
@@ -138,19 +142,30 @@ export async function generateAndCacheGraph(
   hours: number,
   sunByDate?: Record<string, SunTimes>,
   targetDate?: string,
+  forceRegenerate?: boolean,
 ): Promise<string> {
-  // Try to get from cache first
-  const cached = await getCachedGraph(locationKey, mode, series, name, hours, sunByDate, targetDate);
-  if (cached) {
-    return cached;
+  // Try to get from cache first (unless forcing regeneration)
+  if (!forceRegenerate) {
+    const cached = await getCachedGraph(locationKey, mode, series, name, hours, sunByDate, targetDate);
+    if (cached) {
+      DebugLogger.debug("Using cached graph for", mode, "with sunByDate:", sunByDate);
+      return cached;
+    }
+  } else {
+    DebugLogger.debug("Bypassing cache due to forceRegenerate flag");
   }
 
   // Generate new graph
   const title = targetDate ? "1-day forecast" : mode === "detailed" ? "48h forecast" : "9-day summary";
+  DebugLogger.debug("🚀 GENERATING NEW GRAPH with sunByDate:", sunByDate, "mode:", mode);
+
+  // Ensure we always have a valid sunByDate object, even if empty
+  const safeSunByDate = sunByDate || {};
+
   const result = buildGraphMarkdown(name, series, hours, {
     title,
     smooth: true,
-    sunByDate: mode === "detailed" ? sunByDate : undefined,
+    sunByDate: mode === "detailed" || targetDate ? safeSunByDate : undefined,
   });
 
   // Cache the result
@@ -167,9 +182,9 @@ export async function clearLocationGraphCache(locationKey: string): Promise<void
     // Note: This is a simplified implementation
     // In a more sophisticated system, you'd track cache keys and remove them individually
     // For now, we rely on TTL expiration
-    console.log(`Graph cache for location ${locationKey} will expire naturally`);
+    DebugLogger.debug(`Graph cache for location ${locationKey} will expire naturally`);
   } catch (error) {
-    console.warn("Failed to clear location graph cache:", error);
+    DebugLogger.warn("Failed to clear location graph cache:", error);
   }
 }
 
@@ -180,9 +195,9 @@ export async function invalidateLocationGraphCache(locationKey: string): Promise
   try {
     // Note: This is a simplified implementation
     // In a more sophisticated system, you'd track cache keys and remove them individually
-    console.log(`Graph cache for location ${locationKey} will be invalidated on next access`);
+    DebugLogger.debug(`Graph cache for location ${locationKey} will be invalidated on next access`);
   } catch (error) {
-    console.warn("Failed to invalidate location graph cache:", error);
+    DebugLogger.warn("Failed to invalidate location graph cache:", error);
   }
 }
 
@@ -193,9 +208,9 @@ export async function invalidateModeGraphCache(mode: "detailed" | "summary"): Pr
   try {
     // Note: This is a simplified implementation
     // In a more sophisticated system, you'd track cache keys by mode and remove them
-    console.log(`Graph cache for mode ${mode} will be invalidated on next access`);
+    DebugLogger.debug(`Graph cache for mode ${mode} will be invalidated on next access`);
   } catch (error) {
-    console.warn("Failed to invalidate mode graph cache:", error);
+    DebugLogger.warn("Failed to invalidate mode graph cache:", error);
   }
 }
 
@@ -206,9 +221,9 @@ export async function invalidateDateGraphCache(targetDate: string): Promise<void
   try {
     // Note: This is a simplified implementation
     // In a more sophisticated system, you'd track cache keys by date and remove them
-    console.log(`Graph cache for date ${targetDate} will be invalidated on next access`);
+    DebugLogger.debug(`Graph cache for date ${targetDate} will be invalidated on next access`);
   } catch (error) {
-    console.warn("Failed to invalidate date graph cache:", error);
+    DebugLogger.warn("Failed to invalidate date graph cache:", error);
   }
 }
 
@@ -220,9 +235,9 @@ export async function clearAllGraphCache(): Promise<void> {
     // Note: This is a simplified implementation
     // In a more sophisticated system, you'd track all cache keys and remove them
     // For now, we rely on version checking in getCachedGraph
-    console.log("All graph caches will be invalidated due to version change");
+    DebugLogger.debug("All graph caches will be invalidated due to version change");
   } catch (error) {
-    console.warn("Failed to clear all graph cache:", error);
+    DebugLogger.warn("Failed to clear all graph cache:", error);
   }
 }
 
@@ -236,10 +251,10 @@ export async function cleanupOldGraphCache(maxAgeMs: number = 24 * 60 * 60 * 100
     // In a more sophisticated system, you'd iterate through all cache keys
     // and remove those older than maxAgeMs
     // For now, we rely on TTL expiration in the cache system
-    console.log(`Graph cache cleanup would remove entries older than ${maxAgeMs}ms`);
+    DebugLogger.debug(`Graph cache cleanup would remove entries older than ${maxAgeMs}ms`);
     return 0; // Return number of entries cleaned up
   } catch (error) {
-    console.warn("Failed to cleanup old graph cache:", error);
+    DebugLogger.warn("Failed to cleanup old graph cache:", error);
     return 0;
   }
 }
@@ -263,7 +278,7 @@ export async function getGraphCacheStats(): Promise<{
       totalSize: 0,
     };
   } catch (error) {
-    console.warn("Failed to get graph cache stats:", error);
+    DebugLogger.warn("Failed to get graph cache stats:", error);
     return {
       totalEntries: 0,
       oldestEntry: null,

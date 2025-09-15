@@ -10,6 +10,7 @@ export function useWeatherData(lat: number, lon: number, preGenerateGraph = fals
   const [series, setSeries] = useState<TimeseriesEntry[]>([]);
   const [showNoData, setShowNoData] = useState(false);
   const [preRenderedGraph, setPreRenderedGraph] = useState<string>("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const cancelledRef = useRef(false);
@@ -81,12 +82,17 @@ export function useWeatherData(lat: number, lon: number, preGenerateGraph = fals
         noDataTimeoutRef.current = null;
       }
     };
-  }, [lat, lon]);
+  }, [lat, lon, refreshTrigger]);
+
+  const refresh = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
 
   return {
     series,
     loading,
     showNoData,
     preRenderedGraph,
+    refresh,
   };
 }

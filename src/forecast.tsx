@@ -13,6 +13,8 @@ import { formatTemperatureCelsius, formatPrecip } from "./units";
 import { precipitationAmount } from "./utils-forecast";
 import { generateAndCacheGraph } from "./graph-cache";
 import { LocationUtils } from "./utils/location-utils";
+import { CacheClearingUtility } from "./utils/cache-manager";
+import { DebugLogger } from "./utils/debug-utils";
 
 function ForecastView(props: {
   name: string;
@@ -29,7 +31,13 @@ function ForecastView(props: {
   const [view, setView] = useState<"graph" | "data">("graph");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [sunByDate, setSunByDate] = useState<Record<string, SunTimes>>({});
-  const { series: items, loading, showNoData, preRenderedGraph } = useWeatherData(lat, lon, true);
+  const {
+    series: items,
+    loading,
+    showNoData,
+    preRenderedGraph,
+    refresh: refreshWeatherData,
+  } = useWeatherData(lat, lon, true);
 
   // Check if current location is in favorites (using coordinate + name matching)
   useEffect(() => {
@@ -48,33 +56,115 @@ function ForecastView(props: {
     let cancelled = false;
     async function fetchSun() {
       if (items.length === 0) return;
-      const subset = items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS);
-      const dates = Array.from(new Set(subset.map((s) => new Date(s.time)).map((d) => d.toISOString().slice(0, 10))));
-      const entries = await Promise.all(
+
+      // For target date (1-day view), fetch sunrise/sunset for that specific date
+      // For detailed mode (48h), fetch for the first 48 hours
+      let dates: string[];
+      if (targetDate) {
+        dates = [targetDate];
+        DebugLogger.debug(`Fetching sunrise/sunset for target date:`, dates);
+      } else {
+        const subset = items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS);
+        dates = Array.from(new Set(subset.map((s) => new Date(s.time)).map((d) => d.toISOString().slice(0, 10))));
+        DebugLogger.debug(`Forecast dates for sunrise/sunset:`, dates);
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      const entries = await Promise.allSettled(
         dates.map(async (date: string) => {
           try {
-            const v = await getSunTimes(lat, lon, date);
-            return [date, v] as const;
+            DebugLogger.debug(`Fetching sunrise/sunset for ${date} at ${lat}, ${lon}`);
+
+            // Add timeout to prevent hanging on slow API responses
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              setTimeout(() => reject(new Error(`Timeout fetching sunrise/sunset for ${date}`)), 10000);
+            });
+
+            // Try with retry logic for robustness
+            let v: SunTimes = {};
+            let lastError: Error | null = null;
+
+            for (let attempt = 1; attempt <= 2; attempt++) {
+              try {
+                v = await Promise.race([getSunTimes(lat, lon, date), timeoutPromise]);
+                DebugLogger.debug(`Got sunrise/sunset for ${date} (attempt ${attempt}):`, v);
+
+                // Validate the response
+                if (v && (v.sunrise || v.sunset)) {
+                  successCount++;
+                  return [date, v] as const;
+                } else if (attempt === 1) {
+                  // Only retry if first attempt returned empty data
+                  DebugLogger.warn(`Empty sunrise/sunset data for ${date}, retrying...`);
+                  await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s before retry
+                  continue;
+                }
+              } catch (error) {
+                lastError = error as Error;
+                if (attempt === 1) {
+                  DebugLogger.warn(`Attempt ${attempt} failed for ${date}, retrying...`, error);
+                  await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s before retry
+                }
+              }
+            }
+
+            // If we get here, both attempts failed or returned empty data
+            DebugLogger.warn(`Failed to get sunrise/sunset data for ${date} after 2 attempts:`, lastError);
+            errorCount++;
+            return [date, {} as SunTimes];
           } catch (error) {
-            console.warn(`Failed to fetch sunrise/sunset for ${date}:`, error);
+            DebugLogger.warn(`Failed to fetch sunrise/sunset for ${date}:`, error);
+            errorCount++;
             return [date, {} as SunTimes];
           }
         }),
       );
+
       if (!cancelled) {
         const map: Record<string, SunTimes> = {};
         for (const entry of entries) {
-          const [date, sunTimes] = entry as [string, SunTimes];
-          map[date] = sunTimes;
+          if (entry.status === "fulfilled") {
+            const [date, sunTimes] = entry.value as [string, SunTimes];
+            map[date] = sunTimes;
+          } else {
+            DebugLogger.warn("Promise rejected for sunrise/sunset:", entry.reason);
+            errorCount++;
+          }
         }
+
+        // Log summary of sunrise/sunset data fetch
+        DebugLogger.debug(`sunByDate data fetched for location: ${successCount} successful, ${errorCount} failed`, map);
+
+        // Always set the data, even if some requests failed
+        // This ensures graph generation proceeds with partial data
         setSunByDate(map);
+
+        // Clear graph cache when sunrise/sunset data changes to force regeneration
+        if (successCount > 0) {
+          DebugLogger.debug("Clearing graph cache due to sunrise/sunset data change");
+          setGraphCache({ detailed: "", summary: "" });
+          await CacheClearingUtility.clearCachesForSunriseSunsetChange();
+        }
+
+        // Show user feedback if there were issues (but don't block the UI)
+        if (errorCount > 0 && successCount === 0) {
+          DebugLogger.warn(
+            `⚠️ All sunrise/sunset requests failed for ${name}. Graph will render without sunrise/sunset indicators.`,
+          );
+        } else if (errorCount > 0) {
+          DebugLogger.warn(
+            `⚠️ Partial sunrise/sunset data for ${name}: ${successCount}/${dates.length} successful. Some indicators may be missing.`,
+          );
+        }
       }
     }
     fetchSun();
     return () => {
       cancelled = true;
     };
-  }, [items, lat, lon]);
+  }, [items, lat, lon, targetDate]);
 
   // Filter data based on targetDate if provided, otherwise use mode-based filtering
   const filteredItems = useMemo(() => {
@@ -100,7 +190,30 @@ function ForecastView(props: {
 
   // Generate and cache graphs when data changes
   useEffect(() => {
+    DebugLogger.debug(
+      "Graph generation triggered with items.length:",
+      items.length,
+      "sunByDate keys:",
+      Object.keys(sunByDate).length,
+    );
+
+    // Generate graphs if we have weather data
+    // For detailed mode, prefer to wait for sunrise/sunset data if it's being fetched
     if (items.length > 0) {
+      // Check if we're in detailed mode and sunrise/sunset data might still be loading
+      const isDetailedMode = !targetDate && mode === "detailed";
+      const hasSunData = Object.keys(sunByDate).length > 0;
+
+      if (isDetailedMode && !hasSunData) {
+        DebugLogger.debug("Detailed mode without sunrise/sunset data - waiting for data to load");
+        return; // Wait for sunrise/sunset data
+      }
+
+      // Force regeneration if we have sunrise/sunset data
+      const shouldForceRegenerate = hasSunData;
+      if (shouldForceRegenerate) {
+        DebugLogger.debug("Forcing graph regeneration with sunrise/sunset data");
+      }
       const locationKey = LocationUtils.getLocationKey(`${lat},${lon}`, lat, lon);
 
       // Use displaySeries for graph generation to respect target date filtering
@@ -121,6 +234,7 @@ function ForecastView(props: {
               targetDate ? displaySeries.length : getUIThresholds().DETAILED_FORECAST_HOURS,
               sunByDate,
               targetDate,
+              shouldForceRegenerate,
             ),
             generateAndCacheGraph(
               locationKey,
@@ -128,8 +242,9 @@ function ForecastView(props: {
               dataForSummaryGraph,
               name,
               dataForSummaryGraph.length,
-              undefined, // No sunrise/sunset data for summary
+              targetDate ? sunByDate : undefined, // Show sunrise/sunset for 1-day, not for 9-day summary
               targetDate,
+              shouldForceRegenerate,
             ),
           ]);
 
@@ -138,7 +253,7 @@ function ForecastView(props: {
             summary: summaryGraph,
           });
         } catch (error) {
-          console.warn("Failed to generate cached graphs, falling back to direct generation:", error);
+          DebugLogger.warn("Failed to generate cached graphs, falling back to direct generation:", error);
 
           // Fallback to direct generation if caching fails
           const detailedGraph = buildGraphMarkdown(
@@ -155,6 +270,7 @@ function ForecastView(props: {
           const summaryGraph = buildGraphMarkdown(name, dataForSummaryGraph, dataForSummaryGraph.length, {
             title: targetDate ? "1-day forecast" : "9-day summary",
             smooth: true,
+            sunByDate: targetDate ? sunByDate : undefined, // Show sunrise/sunset for 1-day, not for 9-day summary
           }).markdown;
 
           setGraphCache({
@@ -171,7 +287,20 @@ function ForecastView(props: {
   // Clear graph cache when component mounts to ensure fresh styling
   useEffect(() => {
     setGraphCache({ detailed: "", summary: "" });
+    // Also clear the persistent cache to ensure fresh graphs with sunrise/sunset data
+    CacheClearingUtility.clearAllCaches().then(() => {
+      DebugLogger.debug("All caches cleared on mount");
+    });
   }, []);
+
+  // Force cache invalidation when sunByDate changes to ensure fresh graphs
+  useEffect(() => {
+    if (Object.keys(sunByDate).length > 0) {
+      setGraphCache({ detailed: "", summary: "" });
+      // Also clear persistent cache when sunByDate changes
+      CacheClearingUtility.clearCachesForSunriseSunsetChange();
+    }
+  }, [sunByDate]);
 
   // Get cached graph based on current mode, with preCachedGraph as fallback
   const graph = useMemo(() => {
@@ -203,7 +332,7 @@ function ForecastView(props: {
         let titleText;
         if (targetDate) {
           const dateLabel = formatDate(targetDate, "LONG_DAY");
-          console.log(`Date display: targetDate="${targetDate}", dateLabel="${dateLabel}"`);
+          DebugLogger.debug(`Date display: targetDate="${targetDate}", dateLabel="${dateLabel}"`);
           titleText = `# ${name} – ${dateLabel} (1-day)${view === "data" ? " (Data)" : ""}`;
         } else {
           titleText = `# ${name} – ${mode === "detailed" ? "48-Hour Forecast" : "9-Day Summary"}${view === "data" ? " (Data)" : ""}`;
@@ -282,6 +411,34 @@ function ForecastView(props: {
         return [titleText, summaryInfo, content].join("\n");
       })()
     : "";
+
+  // Handle refresh with cache clear
+  const handleRefreshWithCacheClear = async () => {
+    try {
+      // Clear graph cache
+      setGraphCache({ detailed: "", summary: "" });
+
+      // Clear persistent cache
+      await CacheClearingUtility.clearAllCaches();
+
+      // Force reload weather data
+      refreshWeatherData();
+      setSunByDate({});
+
+      // Show success toast
+      await showToast({
+        style: Toast.Style.Success,
+        title: "Refreshed",
+        message: "All data and caches have been cleared and reloaded",
+      });
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Refresh Failed",
+        message: String(error),
+      });
+    }
+  };
 
   const handleFavoriteToggle = async () => {
     // Generate a consistent ID for locations that don't have one from search results
@@ -420,6 +577,13 @@ function ForecastView(props: {
               onAction={() => setView("graph")}
             />
           )}
+
+          <Action
+            title="Refresh & Clear Cache"
+            icon={Icon.ArrowClockwise}
+            shortcut={{ modifiers: ["cmd"], key: "r" }}
+            onAction={handleRefreshWithCacheClear}
+          />
 
           <FavoriteToggleAction isFavorite={isFavorite} onToggle={handleFavoriteToggle} />
 

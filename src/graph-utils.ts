@@ -50,6 +50,7 @@ export function buildGraphMarkdown(
 
   const xMin = times[0] ?? 0;
   const xMax = times[times.length - 1] ?? 1;
+  console.log(`DEBUG: Graph time range: ${new Date(xMin)} to ${new Date(xMax)}`);
   const xScale = scaleLinear()
     .domain([xMin, xMax])
     .range([margin.LEFT, margin.LEFT + innerWidth]);
@@ -132,6 +133,7 @@ export function buildGraphMarkdown(
   // Sunrise/Sunset lines per day from opts.sunByDate
   const sunLines = (() => {
     const map = opts?.sunByDate ?? {};
+    console.log("DEBUG: graph-utils received sunByDate:", map);
     const parts: string[] = [];
 
     for (const [, st] of Object.entries(map)) {
@@ -142,19 +144,25 @@ export function buildGraphMarkdown(
         const x = xScale(sr);
         parts.push(
           `<g>
-            <line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${margin.TOP}" y2="${height - margin.BOTTOM}" stroke="${graphConfig.COLORS.SUNRISE}" stroke-dasharray="${graphConfig.STYLING.SUN_EVENT_DASH}" stroke-width="2" />
-            <text x="${x.toFixed(1)}" y="${margin.TOP + graphConfig.POSITIONING.SUN_LABEL_OFFSET}" font-size="16" text-anchor="middle" fill="${graphConfig.COLORS.SUNRISE}" font-weight="bold">🌅</text>
+            <line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${margin.TOP}" y2="${height - margin.BOTTOM}" stroke="${graphConfig.COLORS.SUNRISE}" stroke-dasharray="${graphConfig.STYLING.SUN_EVENT_DASH}" stroke-width="2" opacity="0.8" />
+            <text x="${x.toFixed(1)}" y="${margin.TOP + graphConfig.POSITIONING.SUN_LABEL_OFFSET}" font-size="20" text-anchor="middle" fill="${graphConfig.COLORS.SUNRISE}" font-weight="bold">🌅</text>
           </g>`,
         );
+        console.log("DEBUG: Generated sunrise line with stroke-width=2");
+      } else {
+        console.log("DEBUG: Sunrise not in range:", { sr, xMin, xMax, sunriseTime: sr ? new Date(sr) : "undefined" });
       }
       if (ss && ss >= xMin && ss <= xMax) {
         const x = xScale(ss);
         parts.push(
           `<g>
-            <line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${margin.TOP}" y2="${height - margin.BOTTOM}" stroke="${graphConfig.COLORS.SUNSET}" stroke-dasharray="${graphConfig.STYLING.SUN_EVENT_DASH}" stroke-width="2" />
-            <text x="${x.toFixed(1)}" y="${margin.TOP + graphConfig.POSITIONING.SUN_LABEL_OFFSET}" font-size="16" text-anchor="middle" fill="${graphConfig.COLORS.SUNSET}" font-weight="bold">🌇</text>
+            <line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${margin.TOP}" y2="${height - margin.BOTTOM}" stroke="${graphConfig.COLORS.SUNSET}" stroke-dasharray="${graphConfig.STYLING.SUN_EVENT_DASH}" stroke-width="2" opacity="0.8" />
+            <text x="${x.toFixed(1)}" y="${margin.TOP + graphConfig.POSITIONING.SUN_LABEL_OFFSET}" font-size="20" text-anchor="middle" fill="${graphConfig.COLORS.SUNSET}" font-weight="bold">🌇</text>
           </g>`,
         );
+        console.log("DEBUG: Generated sunset line with stroke-width=2");
+      } else {
+        console.log("DEBUG: Sunset not in range:", { ss, xMin, xMax, sunsetTime: ss ? new Date(ss) : "undefined" });
       }
     }
     return parts.join("\n");

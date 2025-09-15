@@ -14,11 +14,12 @@ import { useFavorites } from "./hooks/useFavorites";
 import { useFavoriteIds } from "./hooks/useFavoriteIds";
 import { useGraphCache } from "./hooks/useGraphCache";
 import { getUIThresholds } from "./config/weather-config";
+import { CacheClearingUtility } from "./utils/cache-manager";
+import { DebugLogger } from "./utils/debug-utils";
 
 import { ToastMessages } from "./utils/toast-utils";
 import { LocationUtils } from "./utils/location-utils";
 import { WeatherFormatters } from "./utils/weather-formatters";
-import { DebugLogger } from "./utils/debug-utils";
 import { ActionPanelBuilders } from "./utils/action-panel-builders";
 
 export default function Command() {
@@ -90,6 +91,30 @@ export default function Command() {
     return () => clearInterval(cleanupInterval);
   }, [graphCache]);
 
+  // Handle cache clearing on refresh
+  const handleRefreshWithCacheClear = async () => {
+    try {
+      // Clear all caches using unified utility
+      await CacheClearingUtility.clearAllCaches();
+
+      // Refresh favorites data
+      await favorites.refreshFavorites();
+
+      // Show success toast
+      await showToast({
+        style: Toast.Style.Success,
+        title: "Refreshed",
+        message: "All data and caches have been cleared and reloaded",
+      });
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Refresh Failed",
+        message: String(error),
+      });
+    }
+  };
+
   const showEmpty =
     favorites.favoritesLoaded &&
     favorites.favorites.length === 0 &&
@@ -124,10 +149,28 @@ export default function Command() {
           : "Search for a location or try 'Oslo fredag', 'London tomorrow'..."
       }
       throttle
-      actions={ActionPanelBuilders.createWelcomeToggleActions(
-        () => setShowWelcomeMessage(true),
-        () => setShowWelcomeMessage(false),
-      )}
+      actions={
+        <ActionPanel>
+          <Action
+            title="Refresh & Clear Cache"
+            icon={Icon.ArrowClockwise}
+            shortcut={{ modifiers: ["cmd"], key: "r" }}
+            onAction={handleRefreshWithCacheClear}
+          />
+          <Action
+            title="Show Welcome Message"
+            icon={Icon.Info}
+            shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+            onAction={() => setShowWelcomeMessage(true)}
+          />
+          <Action
+            title="Hide Welcome Message"
+            icon={Icon.Info}
+            shortcut={{ modifiers: ["cmd", "shift", "alt"], key: "w" }}
+            onAction={() => setShowWelcomeMessage(false)}
+          />
+        </ActionPanel>
+      }
     >
       {/* Welcome message - shown when manually triggered, regardless of favorites/search state */}
       {showWelcomeMessage && !search.searchText.trim() && <WelcomeMessage showActions={false} />}
