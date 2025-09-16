@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getForecast, type TimeseriesEntry } from "../weather-client";
+import { getForecastWithMetadata, type TimeseriesEntry, type WeatherDataWithMetadata } from "../weather-client";
 import { DebugLogger } from "../utils/debug-utils";
 import { buildGraphMarkdown } from "../graph-utils";
 
@@ -11,6 +11,7 @@ export function useWeatherData(lat: number, lon: number, preGenerateGraph = fals
   const [showNoData, setShowNoData] = useState(false);
   const [preRenderedGraph, setPreRenderedGraph] = useState<string>("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [metadata, setMetadata] = useState<WeatherDataWithMetadata["metadata"] | null>(null);
 
   const [loading, setLoading] = useState(true);
   const cancelledRef = useRef(false);
@@ -25,13 +26,15 @@ export function useWeatherData(lat: number, lon: number, preGenerateGraph = fals
       setShowNoData(false);
 
       try {
-        const result = await getForecast(lat, lon);
+        const result = await getForecastWithMetadata(lat, lon);
         if (!cancelled) {
-          setSeries(result);
+          const forecastData = Array.isArray(result.data) ? result.data : [result.data];
+          setSeries(forecastData);
+          setMetadata(result.metadata);
 
           // Pre-generate graph if requested and we have data
-          if (preGenerateGraph && result.length > 0) {
-            const graphMarkdown = buildGraphMarkdown("Location", result, 48, {
+          if (preGenerateGraph && forecastData.length > 0) {
+            const graphMarkdown = buildGraphMarkdown("Location", forecastData, 48, {
               title: "48h forecast",
               smooth: true,
             }).markdown;
@@ -39,7 +42,7 @@ export function useWeatherData(lat: number, lon: number, preGenerateGraph = fals
           }
 
           // Only show no data if we actually have no data after fetching
-          if (result.length === 0) {
+          if (forecastData.length === 0) {
             setShowNoData(true);
           }
         }
@@ -93,6 +96,7 @@ export function useWeatherData(lat: number, lon: number, preGenerateGraph = fals
     loading,
     showNoData,
     preRenderedGraph,
+    metadata,
     refresh,
   };
 }
