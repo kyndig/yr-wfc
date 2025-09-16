@@ -2,9 +2,9 @@
 
 A modern, feature-rich [Raycast](https://www.raycast.com) extension for displaying weather forecasts from [The Norwegian Institute of Meteorology (MET)](https://www.met.no). Get accurate weather information with an intuitive interface, smart search, and beautiful visualizations. 
 
-**Maintainer:** Kynd  
+**Maintainer:** [Kynd](https://www.kynd.no)
 **Contact:** weather@kynd.no  
-**Issues & Feedback:** [GitHub Issues](https://github.com/kyndig/yr-weather-raycast/issues)
+**Issues & Feedback:** [GitHub Issues](https://github.com/kyndig/raycast-wfc/issues)
 
 ## ✨ Features
 
@@ -25,12 +25,17 @@ A modern, feature-rich [Raycast](https://www.raycast.com) extension for displayi
 - **Keyboard Shortcuts**: Quick actions for power users
 - **Units Support**: Metric (default) or Imperial units
 - **Clock Format**: Choose between 12-hour and 24-hour time display (24h is default because I like it better)
+- **Enhanced Search**: Improved search naming and emojis for better readability
+- **Data Summary**: Enhanced data summary with resolution feedback and update timestamps
+- **Smart Visualizations**: Sunrise/sunset data points visible in all graphs
 
 ### 🚀 Technicalities
 - **Fast Performance**: Intelligent caching reduces API calls
 - **Error Handling**: Graceful fallbacks and user-friendly error messages
 - **Network Testing**: Built-in connectivity diagnostics
 - **Debug Mode**: Optional console output for troubleshooting
+- **Data Filtering**: Fixed data filtering and resolution feedback
+- **Graph Enhancements**: Sunrise/sunset data points now visible in all graphs
 
 ## 🚀 Getting Started
 
@@ -122,6 +127,7 @@ Access preferences via `Yr` command → `Cmd+K` → Configure Command:
 - **Show Sunrise/Sunset**: Include sun times in location displays
 - **Debug Mode**: Enable console output for terminal troubleshooting
 
+
 ## 🔧 Debug Mode
 
 Enable debug mode in preferences to see detailed console output for:
@@ -172,7 +178,7 @@ We welcome contributions! Please open an issue or submit a pull request on GitHu
 
 ## 📞 Support
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/kyndig/yr-weather-raycast/issues)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/kyndig/raycast-wfc/issues)
 - **Email**: weather@kynd.no
 - **Documentation**: Check this README and inline code comments
 
