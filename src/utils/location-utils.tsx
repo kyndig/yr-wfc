@@ -15,9 +15,7 @@ export class LocationUtils {
    * Create consistent location actions for both search results and favorites
    */
   static createLocationActions(
-    name: string,
-    lat: number,
-    lon: number,
+    location: LocationResult,
     isFavorite: boolean,
     onFavoriteToggle: () => void,
     onShowWelcome?: () => void,
@@ -25,13 +23,14 @@ export class LocationUtils {
     onFavoriteChange?: () => void,
     preCachedGraph?: string,
   ) {
+    const { displayName: name, lat, lon } = location;
     return (
       <ActionPanel>
         <Action.Push
           title="Open Forecast"
           target={
             <LazyForecastView
-              name={name}
+              location={location}
               lat={lat}
               lon={lon}
               preCachedGraph={preCachedGraph}
@@ -50,7 +49,7 @@ export class LocationUtils {
               icon={Icon.Clock}
               target={
                 <LazyForecastView
-                  name={name}
+                  location={location}
                   lat={lat}
                   lon={lon}
                   preCachedGraph={preCachedGraph}
@@ -65,7 +64,7 @@ export class LocationUtils {
               icon={Icon.Calendar}
               target={
                 <LazyForecastView
-                  name={name}
+                  location={location}
                   lat={lat}
                   lon={lon}
                   preCachedGraph={preCachedGraph}
