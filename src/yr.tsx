@@ -7,6 +7,7 @@ import { getWeather, type TimeseriesEntry } from "./weather-client";
 import { isFirstTimeUser, markAsNotFirstTime } from "./storage";
 
 import { iconForSymbol } from "./weather-emoji";
+import { formatTemp } from "./weather-utils";
 
 import { useNetworkTest } from "./hooks/useNetworkTest";
 import { useSearch } from "./hooks/useSearch";
@@ -292,9 +293,7 @@ export default function Command() {
                     },
                   ]}
                   actions={createLocationActions(
-                    loc.displayName,
-                    loc.lat,
-                    loc.lon,
+                    loc,
                     favoriteIds.favoriteIds[loc.id],
                     async () => {
                       try {
@@ -363,8 +362,8 @@ export default function Command() {
                       const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
 
                       if (weather) {
-                        // No subtitle when weather data is available - temperature is shown in chips
-                        return undefined;
+                        const temp = formatTemp(weather);
+                        return temp || "⚠️ Temperature unavailable";
                       }
 
                       if (error) {
