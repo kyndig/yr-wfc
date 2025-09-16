@@ -175,3 +175,36 @@ export function formatTimeRange(
   const endTime = formatTime(end, timeFormat);
   return `${startTime} - ${endTime}`;
 }
+
+/**
+ * Format a timestamp for "last updated" display
+ * Shows relative time if recent (e.g., "5 minutes ago") or formatted date/time if older
+ */
+export function formatLastUpdated(timestamp: string | Date): string {
+  const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  // Show relative time for recent updates (using abbreviations)
+  if (diffMinutes < 1) return "now";
+  if (diffMinutes < 60) return `${diffMinutes} min${diffMinutes === 1 ? "" : "s"} ago`;
+  if (diffHours < 24) return `${diffHours} hr${diffHours === 1 ? "" : "s"} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+
+  // For older updates, show formatted date and time
+  const clockFormat = getClockFormat();
+  const timeFormat = clockFormat === "12h" ? "STANDARD" : "MILITARY";
+  const timeStr = formatTime(date, timeFormat);
+
+  if (isToday(date)) {
+    return `Today at ${timeStr}`;
+  } else if (isTomorrow(date)) {
+    return `Tomorrow at ${timeStr}`;
+  } else {
+    const dateStr = formatDate(date, "SHORT_DAY");
+    return `${dateStr} at ${timeStr}`;
+  }
+}
