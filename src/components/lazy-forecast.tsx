@@ -2,12 +2,14 @@ import { lazy, Suspense, useEffect } from "react";
 import { Detail } from "@raycast/api";
 import { ActionPanelBuilders } from "../utils/action-panel-builders";
 import { useBundleAnalyzer } from "../utils/bundle-analyzer";
+import { LocationResult } from "../location-search";
 
 // Lazy load the ForecastView component to defer D3 loading
 const LazyForecastComponent = lazy(() => import("../forecast"));
 
 interface LazyForecastProps {
-  name: string;
+  location?: LocationResult;
+  name?: string; // For backward compatibility with favorites
   lat: number;
   lon: number;
   preCachedGraph?: string;
@@ -36,7 +38,7 @@ export function LazyForecastView(props: LazyForecastProps) {
       fallback={
         <Detail
           markdown={`
-# ${props.name}
+# ${props.location?.displayName || props.name || "Unknown Location"}
 ## Loading forecast...
 
 Please wait while we load the weather forecast and generate the interactive graph...
