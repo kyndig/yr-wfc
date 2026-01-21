@@ -2,6 +2,8 @@
  * Bundle analysis utilities for tracking performance improvements
  */
 
+import { DebugLogger } from "./debug-utils";
+
 interface BundleMetrics {
   timestamp: number;
   component: string;
@@ -149,13 +151,13 @@ export function useBundleAnalyzer(component: string) {
  */
 export function logPerformanceSummary(): void {
   const summary = bundleAnalyzer.getSummary();
-  console.log("Bundle Performance Summary:", summary);
+  DebugLogger.info("Bundle Performance Summary:", summary);
 
   if (summary.slowestComponent) {
-    console.log(`Slowest component: ${summary.slowestComponent} (${summary.averageLoadTime.toFixed(2)}ms)`);
+    DebugLogger.info(`Slowest component: ${summary.slowestComponent} (${summary.averageLoadTime.toFixed(2)}ms)`);
   }
 
   if (summary.cacheHitRate > 0) {
-    console.log(`Cache hit rate: ${(summary.cacheHitRate * 100).toFixed(1)}%`);
+    DebugLogger.info(`Cache hit rate: ${(summary.cacheHitRate * 100).toFixed(1)}%`);
   }
 }

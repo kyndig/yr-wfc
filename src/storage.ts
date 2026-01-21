@@ -1,4 +1,6 @@
 import { LocalStorage } from "@raycast/api";
+import { DebugLogger } from "./utils/debug-utils";
+import { locationKeyFromIdOrCoords } from "./utils/location-key";
 
 export type FavoriteLocation = {
   id?: string;
@@ -16,7 +18,7 @@ export async function getFavorites(): Promise<FavoriteLocation[]> {
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed
+    const loaded = parsed
       .map((p) => {
         const obj = p as Partial<FavoriteLocation>;
         return {
@@ -27,6 +29,35 @@ export async function getFavorites(): Promise<FavoriteLocation[]> {
         } as FavoriteLocation;
       })
       .filter((f) => Number.isFinite(f.lat) && Number.isFinite(f.lon));
+
+    // One-time migration:
+    // - ensure every favorite has a canonical id
+    // - de-duplicate by canonical id (keep first occurrence deterministically)
+    const deduped: FavoriteLocation[] = [];
+    const seen = new Set<string>();
+    let changed = false;
+
+    for (const fav of loaded) {
+      const canonicalId = locationKeyFromIdOrCoords(fav.id, fav.lat, fav.lon);
+      if (fav.id !== canonicalId) changed = true;
+      const key = canonicalId;
+      if (seen.has(key)) {
+        changed = true;
+        DebugLogger.warn("Duplicate favorite collapsed during migration", {
+          keptId: key,
+          droppedName: fav.name,
+        });
+        continue;
+      }
+      seen.add(key);
+      deduped.push({ ...fav, id: canonicalId });
+    }
+
+    if (changed) {
+      await setFavorites(deduped);
+    }
+
+    return deduped;
   } catch {
     return [];
   }
@@ -37,61 +68,10 @@ async function setFavorites(list: FavoriteLocation[]) {
 }
 
 function sameLocation(a: FavoriteLocation, b: FavoriteLocation): boolean {
-  // Check for exact ID match first (most reliable)
-  if (a.id && b.id && a.id === b.id) {
-    console.log(`sameLocation: Exact ID match`, { a: a.name, b: b.name, id: a.id });
-    return true;
-  }
-
-  // Check coordinate proximity (within ~1km)
-  const coordinatesMatch = Math.abs(a.lat - b.lat) < 0.01 && Math.abs(a.lon - b.lon) < 0.01;
-
-  // Check name similarity for city-level matching
-  const nameSimilarity = calculateNameSimilarity(a.name, b.name);
-  const nameMatch = nameSimilarity > 0.7; // 70% similarity threshold
-
-  // Only log when there's a potential match or interesting case
-  if (coordinatesMatch || nameSimilarity > 0.3) {
-    console.log(`sameLocation check:`, {
-      a: { name: a.name, lat: a.lat, lon: a.lon, id: a.id },
-      b: { name: b.name, lat: b.lat, lon: b.lon, id: b.id },
-      coordinatesMatch,
-      nameSimilarity: nameSimilarity.toFixed(3),
-      nameMatch,
-      latDiff: Math.abs(a.lat - b.lat),
-      lonDiff: Math.abs(a.lon - b.lon),
-    });
-  }
-
-  // Match if both coordinates are close AND names are similar
-  return coordinatesMatch && nameMatch;
-}
-
-function calculateNameSimilarity(name1: string, name2: string): number {
-  // Normalize names: lowercase, remove common suffixes, split into words
-  const normalize = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/,\s*(norge|norway|sverige|sweden|danmark|denmark|finland|suomi|island|iceland)$/i, "")
-      .replace(/,\s*[^,]+$/, "") // Remove last comma part (often administrative division)
-      .trim()
-      .split(/\s+/)
-      .filter((word) => word.length > 2); // Filter out short words
-  };
-
-  const words1 = normalize(name1);
-  const words2 = normalize(name2);
-
-  if (words1.length === 0 || words2.length === 0) return 0;
-
-  // Calculate Jaccard similarity (intersection over union)
-  const set1 = new Set(words1);
-  const set2 = new Set(words2);
-
-  const intersection = new Set([...set1].filter((x) => set2.has(x)));
-  const union = new Set([...set1, ...set2]);
-
-  return intersection.size / union.size;
+  // Canonical identity only — avoids merging nearby-but-distinct locations.
+  const aKey = locationKeyFromIdOrCoords(a.id, a.lat, a.lon);
+  const bKey = locationKeyFromIdOrCoords(b.id, b.lat, b.lon);
+  return aKey === bKey;
 }
 
 // Export the sameLocation function for use in other components
@@ -101,8 +81,9 @@ export function isSameLocation(a: FavoriteLocation, b: FavoriteLocation): boolea
 
 export async function addFavorite(fav: FavoriteLocation): Promise<boolean> {
   const list = await getFavorites();
-  if (!list.some((f) => sameLocation(f, fav))) {
-    list.push(fav);
+  const canonical = { ...fav, id: locationKeyFromIdOrCoords(fav.id, fav.lat, fav.lon) };
+  if (!list.some((f) => sameLocation(f, canonical))) {
+    list.push(canonical);
     await setFavorites(list);
     return true; // Successfully added
   }
@@ -111,18 +92,21 @@ export async function addFavorite(fav: FavoriteLocation): Promise<boolean> {
 
 export async function removeFavorite(fav: FavoriteLocation): Promise<void> {
   const list = await getFavorites();
-  const filtered = list.filter((f) => !sameLocation(f, fav));
+  const canonical = { ...fav, id: locationKeyFromIdOrCoords(fav.id, fav.lat, fav.lon) };
+  const filtered = list.filter((f) => !sameLocation(f, canonical));
   await setFavorites(filtered);
 }
 
 export async function isFavorite(fav: FavoriteLocation): Promise<boolean> {
   const list = await getFavorites();
-  return list.some((f) => sameLocation(f, fav));
+  const canonical = { ...fav, id: locationKeyFromIdOrCoords(fav.id, fav.lat, fav.lon) };
+  return list.some((f) => sameLocation(f, canonical));
 }
 
 export async function moveFavoriteUp(fav: FavoriteLocation): Promise<void> {
   const list = await getFavorites();
-  const index = list.findIndex((f) => sameLocation(f, fav));
+  const canonical = { ...fav, id: locationKeyFromIdOrCoords(fav.id, fav.lat, fav.lon) };
+  const index = list.findIndex((f) => sameLocation(f, canonical));
   if (index > 0) {
     // Swap with the item above
     [list[index], list[index - 1]] = [list[index - 1], list[index]];
@@ -132,7 +116,8 @@ export async function moveFavoriteUp(fav: FavoriteLocation): Promise<void> {
 
 export async function moveFavoriteDown(fav: FavoriteLocation): Promise<void> {
   const list = await getFavorites();
-  const index = list.findIndex((f) => sameLocation(f, fav));
+  const canonical = { ...fav, id: locationKeyFromIdOrCoords(fav.id, fav.lat, fav.lon) };
+  const index = list.findIndex((f) => sameLocation(f, canonical));
   if (index >= 0 && index < list.length - 1) {
     // Swap with the item below
     [list[index], list[index + 1]] = [list[index + 1], list[index]];

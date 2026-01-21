@@ -9,16 +9,15 @@ import { SunTimes } from "../sunrise-client";
  * Analyze data coverage quality and detect issues
  * Returns a warning string if data quality issues are detected
  */
-function analyzeDataCoverage(displaySeries: TimeseriesEntry[]): string | null {
+export function analyzeDataCoverage(displaySeries: TimeseriesEntry[]): string | null {
   if (displaySeries.length < 2) return null;
 
   const firstTime = new Date(displaySeries[0].time);
   const lastTime = new Date(displaySeries[displaySeries.length - 1].time);
-  const firstLocal = new Date(firstTime.getTime() + new Date().getTimezoneOffset() * 60000);
-  const lastLocal = new Date(lastTime.getTime() + new Date().getTimezoneOffset() * 60000);
-
-  const startHour = firstLocal.getHours();
-  const endHour = lastLocal.getHours();
+  // Use local hours for user-facing coverage windows.
+  // Avoid manual timezone offset math (breaks around DST and can flip direction).
+  const startHour = firstTime.getHours();
+  const endHour = lastTime.getHours();
 
   // Calculate actual hours covered
   const actualHoursCovered = Math.round((lastTime.getTime() - firstTime.getTime()) / (1000 * 60 * 60));

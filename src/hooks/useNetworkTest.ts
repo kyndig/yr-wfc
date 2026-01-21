@@ -13,18 +13,13 @@ type NetworkTestConfig = {
  */
 export function useNetworkTest() {
   const [testResults, setTestResults] = useState<{
-    httpbin: boolean;
     metApi: boolean;
     nominatim: boolean;
     error: string | undefined;
-  }>({ httpbin: false, metApi: false, nominatim: false, error: undefined });
+  }>({ metApi: false, nominatim: false, error: undefined });
 
   const runTests = useCallback(async () => {
     const testConfigs: NetworkTestConfig[] = [
-      {
-        name: "httpbin",
-        url: "https://httpbin.org/get",
-      },
       {
         name: "metApi",
         url: "https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=59.9139&lon=10.7522",
@@ -56,8 +51,7 @@ export function useNetworkTest() {
     const testResults = await Promise.all(testPromises);
 
     // Build final results object from collected results
-    const results: { httpbin: boolean; metApi: boolean; nominatim: boolean; error: string | undefined } = {
-      httpbin: false,
+    const results: { metApi: boolean; nominatim: boolean; error: string | undefined } = {
       metApi: false,
       nominatim: false,
       error: undefined,
@@ -67,8 +61,7 @@ export function useNetworkTest() {
 
     // Process each test result
     for (const result of testResults) {
-      if (result.name === "httpbin") results.httpbin = result.success;
-      else if (result.name === "metApi") results.metApi = result.success;
+      if (result.name === "metApi") results.metApi = result.success;
       else if (result.name === "nominatim") results.nominatim = result.success;
 
       if (result.error) {

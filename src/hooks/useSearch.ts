@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { showToast, Toast } from "@raycast/api";
 import { searchLocations, type LocationResult } from "../location-search";
 import { parseQueryIntent, type QueryIntent } from "../query-intent";
@@ -37,6 +37,7 @@ export function useSearch(): UseSearchReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [queryIntent, setQueryIntent] = useState<QueryIntent>({});
   const [searchError, setSearchError] = useState<string | null>(null);
+  const activeSearchControllerRef = useRef<AbortController | null>(null);
 
   // Search function with query intent parsing (no debouncing here)
   const performSearch = useCallback(async (...args: unknown[]): Promise<void> => {
@@ -87,10 +88,17 @@ export function useSearch(): UseSearchReturn {
     setSearchError(null);
 
     try {
-      const results = await searchLocations(locationQuery);
+      activeSearchControllerRef.current?.abort();
+      const controller = new AbortController();
+      activeSearchControllerRef.current = controller;
+
+      const results = await searchLocations(locationQuery, { signal: controller.signal });
       const sortedResults = LocationUtils.sortLocationsByPrecision(results);
       setLocations(sortedResults);
     } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
       DebugLogger.error("Search failed:", error);
       setLocations([]);
       setSearchError(error instanceof Error ? error.message : "Search failed");

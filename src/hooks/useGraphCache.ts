@@ -7,6 +7,7 @@ import {
   invalidateDateGraphCache,
   getGraphCacheStats,
 } from "../graph-cache";
+import { DebugLogger } from "../utils/debug-utils";
 
 /**
  * Hook for managing graph cache operations
@@ -18,9 +19,9 @@ export function useGraphCache() {
   const clearAllCache = useCallback(async () => {
     try {
       await clearAllGraphCache();
-      console.log("All graph caches cleared");
+      DebugLogger.info("All graph caches cleared");
     } catch (error) {
-      console.error("Failed to clear all graph caches:", error);
+      DebugLogger.error("Failed to clear all graph caches:", error);
     }
   }, []);
 
@@ -30,10 +31,10 @@ export function useGraphCache() {
   const cleanupCache = useCallback(async (maxAgeMs?: number) => {
     try {
       const cleanedCount = await cleanupOldGraphCache(maxAgeMs);
-      console.log(`Cleaned up ${cleanedCount} old graph cache entries`);
+      DebugLogger.info(`Cleaned up ${cleanedCount} old graph cache entries`);
       return cleanedCount;
     } catch (error) {
-      console.error("Failed to cleanup graph caches:", error);
+      DebugLogger.error("Failed to cleanup graph caches:", error);
       return 0;
     }
   }, []);
@@ -44,9 +45,9 @@ export function useGraphCache() {
   const invalidateLocation = useCallback(async (locationKey: string) => {
     try {
       await invalidateLocationGraphCache(locationKey);
-      console.log(`Invalidated graph cache for location: ${locationKey}`);
+      DebugLogger.info(`Invalidated graph cache for location: ${locationKey}`);
     } catch (error) {
-      console.error("Failed to invalidate location graph cache:", error);
+      DebugLogger.error("Failed to invalidate location graph cache:", error);
     }
   }, []);
 
@@ -56,9 +57,9 @@ export function useGraphCache() {
   const invalidateMode = useCallback(async (mode: "detailed" | "summary") => {
     try {
       await invalidateModeGraphCache(mode);
-      console.log(`Invalidated graph cache for mode: ${mode}`);
+      DebugLogger.info(`Invalidated graph cache for mode: ${mode}`);
     } catch (error) {
-      console.error("Failed to invalidate mode graph cache:", error);
+      DebugLogger.error("Failed to invalidate mode graph cache:", error);
     }
   }, []);
 
@@ -68,9 +69,9 @@ export function useGraphCache() {
   const invalidateDate = useCallback(async (targetDate: string) => {
     try {
       await invalidateDateGraphCache(targetDate);
-      console.log(`Invalidated graph cache for date: ${targetDate}`);
+      DebugLogger.info(`Invalidated graph cache for date: ${targetDate}`);
     } catch (error) {
-      console.error("Failed to invalidate date graph cache:", error);
+      DebugLogger.error("Failed to invalidate date graph cache:", error);
     }
   }, []);
 
@@ -80,10 +81,10 @@ export function useGraphCache() {
   const getStats = useCallback(async () => {
     try {
       const stats = await getGraphCacheStats();
-      console.log("Graph cache stats:", stats);
+      DebugLogger.debug("Graph cache stats:", stats);
       return stats;
     } catch (error) {
-      console.error("Failed to get graph cache stats:", error);
+      DebugLogger.error("Failed to get graph cache stats:", error);
       return {
         totalEntries: 0,
         oldestEntry: null,

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { type LocationResult } from "../location-search";
-import { isFavorite } from "../storage";
+import { getFavorites } from "../storage";
 import { LocationUtils } from "../utils/location-utils";
 
 export interface UseFavoriteIdsReturn {
@@ -31,15 +31,13 @@ export function useFavoriteIds(): UseFavoriteIdsReturn {
       return;
     }
 
+    const favorites = await getFavorites();
+    const favoriteKeySet = new Set(favorites.map((f) => LocationUtils.getLocationKey(f.id, f.lat, f.lon)));
+
     const map: Record<string, boolean> = {};
     for (const location of locations) {
-      const favLike = LocationUtils.createFavoriteFromSearchResult(
-        location.id,
-        location.displayName,
-        location.lat,
-        location.lon,
-      );
-      map[location.id] = await isFavorite(favLike);
+      const key = LocationUtils.getLocationKey(location.id, location.lat, location.lon);
+      map[location.id] = favoriteKeySet.has(key);
     }
     setFavoriteIds(map);
   }, []);

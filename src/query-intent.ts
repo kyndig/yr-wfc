@@ -1,3 +1,5 @@
+import { DebugLogger } from "./utils/debug-utils";
+
 export type QueryIntent = {
   locationQuery?: string;
   targetDate?: Date;
@@ -106,7 +108,7 @@ function thisOrNextOccurrence(weekday: number, now = new Date()): Date {
   const target = new Date(base);
   target.setDate(base.getDate() + delta);
 
-  console.log(
+  DebugLogger.debug(
     `thisOrNextOccurrence: weekday=${weekday}, current=${current}, delta=${delta}, target=${target.toDateString()}`,
   );
 
@@ -166,7 +168,7 @@ export function parseQueryIntent(input: string, now = new Date()): QueryIntent {
     const dw = dayTokenToWeekday[t];
     if (typeof dw === "number") {
       weekday = dw;
-      console.log(
+      DebugLogger.debug(
         `Found weekday token: "${t}" -> ${dw} (${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][dw]})`,
       );
       continue;

@@ -1,10 +1,11 @@
-import { getCached, setCached } from "./cache";
+import { clearCachedByPrefix, getCached, setCached } from "./cache";
 import { getCacheThresholds } from "./config/weather-config";
 import { TimeseriesEntry } from "./weather-client";
 import { SunTimes } from "./sunrise-client";
 import { buildGraphMarkdown } from "./graph-utils";
 import { CacheKeyGenerator } from "./utils/cache-manager";
 import { DebugLogger } from "./utils/debug-utils";
+import { environment, LocalStorage } from "@raycast/api";
 
 /**
  * Graph cache entry with versioning support
@@ -25,7 +26,8 @@ function generateGraphCacheKey(
   targetDate?: string,
   dataHash?: string,
 ): string {
-  return CacheKeyGenerator.graph(locationKey, mode, targetDate, dataHash);
+  const paletteId = environment.appearance === "dark" ? "dark" : "light";
+  return CacheKeyGenerator.graph(locationKey, mode, targetDate, dataHash, paletteId);
 }
 
 /**
@@ -179,10 +181,8 @@ export async function generateAndCacheGraph(
  */
 export async function clearLocationGraphCache(locationKey: string): Promise<void> {
   try {
-    // Note: This is a simplified implementation
-    // In a more sophisticated system, you'd track cache keys and remove them individually
-    // For now, we rely on TTL expiration
-    DebugLogger.debug(`Graph cache for location ${locationKey} will expire naturally`);
+    const removed = await clearCachedByPrefix(`graph:${locationKey}:`);
+    DebugLogger.debug(`Cleared ${removed} graph cache entries for location ${locationKey}`);
   } catch (error) {
     DebugLogger.warn("Failed to clear location graph cache:", error);
   }
@@ -193,9 +193,8 @@ export async function clearLocationGraphCache(locationKey: string): Promise<void
  */
 export async function invalidateLocationGraphCache(locationKey: string): Promise<void> {
   try {
-    // Note: This is a simplified implementation
-    // In a more sophisticated system, you'd track cache keys and remove them individually
-    DebugLogger.debug(`Graph cache for location ${locationKey} will be invalidated on next access`);
+    // For graphs, invalidation means removing persisted entries so they regenerate.
+    await clearLocationGraphCache(locationKey);
   } catch (error) {
     DebugLogger.warn("Failed to invalidate location graph cache:", error);
   }
@@ -206,9 +205,18 @@ export async function invalidateLocationGraphCache(locationKey: string): Promise
  */
 export async function invalidateModeGraphCache(mode: "detailed" | "summary"): Promise<void> {
   try {
-    // Note: This is a simplified implementation
-    // In a more sophisticated system, you'd track cache keys by mode and remove them
-    DebugLogger.debug(`Graph cache for mode ${mode} will be invalidated on next access`);
+    const all = await LocalStorage.allItems();
+    const removedKeys: string[] = [];
+    for (const storageKey of Object.keys(all)) {
+      if (!storageKey.startsWith("cache:graph:")) continue;
+      const internalKey = storageKey.slice("cache:".length);
+      // internalKey: graph:<locationKey>:<mode>[:...]
+      if (internalKey.includes(`:${mode}`)) {
+        removedKeys.push(internalKey);
+        await LocalStorage.removeItem(storageKey);
+      }
+    }
+    DebugLogger.debug(`Cleared ${removedKeys.length} graph cache entries for mode ${mode}`);
   } catch (error) {
     DebugLogger.warn("Failed to invalidate mode graph cache:", error);
   }
@@ -219,9 +227,17 @@ export async function invalidateModeGraphCache(mode: "detailed" | "summary"): Pr
  */
 export async function invalidateDateGraphCache(targetDate: string): Promise<void> {
   try {
-    // Note: This is a simplified implementation
-    // In a more sophisticated system, you'd track cache keys by date and remove them
-    DebugLogger.debug(`Graph cache for date ${targetDate} will be invalidated on next access`);
+    const all = await LocalStorage.allItems();
+    let removedCount = 0;
+    for (const storageKey of Object.keys(all)) {
+      if (!storageKey.startsWith("cache:graph:")) continue;
+      const internalKey = storageKey.slice("cache:".length);
+      if (internalKey.endsWith(`:${targetDate}`) || internalKey.includes(`:${targetDate}:`)) {
+        await LocalStorage.removeItem(storageKey);
+        removedCount++;
+      }
+    }
+    DebugLogger.debug(`Cleared ${removedCount} graph cache entries for date ${targetDate}`);
   } catch (error) {
     DebugLogger.warn("Failed to invalidate date graph cache:", error);
   }
@@ -232,10 +248,8 @@ export async function invalidateDateGraphCache(targetDate: string): Promise<void
  */
 export async function clearAllGraphCache(): Promise<void> {
   try {
-    // Note: This is a simplified implementation
-    // In a more sophisticated system, you'd track all cache keys and remove them
-    // For now, we rely on version checking in getCachedGraph
-    DebugLogger.debug("All graph caches will be invalidated due to version change");
+    const removed = await clearCachedByPrefix("graph:");
+    DebugLogger.debug(`Cleared ${removed} graph cache entries`);
   } catch (error) {
     DebugLogger.warn("Failed to clear all graph cache:", error);
   }
@@ -247,12 +261,30 @@ export async function clearAllGraphCache(): Promise<void> {
  */
 export async function cleanupOldGraphCache(maxAgeMs: number = 24 * 60 * 60 * 1000): Promise<number> {
   try {
-    // Note: This is a simplified implementation
-    // In a more sophisticated system, you'd iterate through all cache keys
-    // and remove those older than maxAgeMs
-    // For now, we rely on TTL expiration in the cache system
-    DebugLogger.debug(`Graph cache cleanup would remove entries older than ${maxAgeMs}ms`);
-    return 0; // Return number of entries cleaned up
+    const all = await LocalStorage.allItems();
+    const now = Date.now();
+    let removedCount = 0;
+
+    for (const storageKey of Object.keys(all)) {
+      if (!storageKey.startsWith("cache:graph:")) continue;
+      const raw = all[storageKey];
+      if (typeof raw !== "string") continue;
+      try {
+        const parsed = JSON.parse(raw) as { savedAtMs?: number };
+        const savedAtMs = parsed?.savedAtMs;
+        if (typeof savedAtMs === "number" && now - savedAtMs > maxAgeMs) {
+          await LocalStorage.removeItem(storageKey);
+          removedCount++;
+        }
+      } catch {
+        // If we can't parse, remove it to keep storage clean.
+        await LocalStorage.removeItem(storageKey);
+        removedCount++;
+      }
+    }
+
+    DebugLogger.debug(`Graph cache cleanup removed ${removedCount} entries older than ${maxAgeMs}ms`);
+    return removedCount;
   } catch (error) {
     DebugLogger.warn("Failed to cleanup old graph cache:", error);
     return 0;
@@ -269,13 +301,33 @@ export async function getGraphCacheStats(): Promise<{
   totalSize: number;
 }> {
   try {
-    // Note: This is a simplified implementation
-    // In a more sophisticated system, you'd track cache metadata
+    const all = await LocalStorage.allItems();
+    const entries = Object.entries(all).filter(([k]) => k.startsWith("cache:graph:"));
+    let totalSize = 0;
+    let oldest: number | null = null;
+    let newest: number | null = null;
+
+    for (const [, raw] of entries) {
+      if (typeof raw === "string") {
+        totalSize += raw.length;
+        try {
+          const parsed = JSON.parse(raw) as { savedAtMs?: number };
+          const savedAtMs = parsed?.savedAtMs;
+          if (typeof savedAtMs === "number") {
+            oldest = oldest === null ? savedAtMs : Math.min(oldest, savedAtMs);
+            newest = newest === null ? savedAtMs : Math.max(newest, savedAtMs);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
     return {
-      totalEntries: 0,
-      oldestEntry: null,
-      newestEntry: null,
-      totalSize: 0,
+      totalEntries: entries.length,
+      oldestEntry: oldest,
+      newestEntry: newest,
+      totalSize,
     };
   } catch (error) {
     DebugLogger.warn("Failed to get graph cache stats:", error);
