@@ -33,11 +33,59 @@ export class ApiClient {
     const shouldRetryStatus = (status: number) => status === 429 || (status >= 500 && status <= 599);
     type HttpError = Error & { status?: number };
 
+    const abortError = (): Error => {
+      const err = new Error("Aborted");
+      err.name = "AbortError";
+      return err;
+    };
+
+    const throwIfAborted = () => {
+      if (signal?.aborted) throw abortError();
+    };
+
+    const sleep = async (ms: number): Promise<void> => {
+      if (ms <= 0) return;
+      if (!signal) {
+        await new Promise<void>((resolve) => setTimeout(resolve, ms));
+        return;
+      }
+
+      const abortSignal = signal;
+      if (abortSignal.aborted) throw abortError();
+      await new Promise<void>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          cleanup();
+          resolve();
+        }, ms);
+
+        function onAbort() {
+          cleanup();
+          reject(abortError());
+        }
+
+        function cleanup() {
+          clearTimeout(timeoutId);
+          abortSignal.removeEventListener("abort", onAbort);
+        }
+
+        abortSignal.addEventListener("abort", onAbort);
+      });
+    };
+
     let lastError: unknown;
     for (let attempt = 0; attempt <= retries; attempt++) {
+      // If the caller already cancelled, do not start/retry.
+      throwIfAborted();
+
       const controller = new AbortController();
       const onAbort = () => controller.abort();
       signal?.addEventListener("abort", onAbort);
+      // Abort can happen between the check above and listener registration.
+      // Adding a listener to an already-aborted signal won't trigger the callback.
+      if (signal?.aborted) {
+        signal.removeEventListener("abort", onAbort);
+        throw abortError();
+      }
 
       const timeout = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -69,7 +117,7 @@ export class ApiClient {
 
       // Backoff before retrying
       const delay = retryDelayMs * Math.pow(2, attempt);
-      await new Promise((r) => setTimeout(r, delay));
+      await sleep(delay);
     }
 
     throw lastError instanceof Error ? lastError : new Error(String(lastError));
