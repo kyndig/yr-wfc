@@ -117,12 +117,4 @@ export class WeatherFormatters {
 
     return acc.length ? acc : undefined;
   }
-
-  /**
-   * Format temperature from TimeseriesEntry
-   * @deprecated Use TemperatureFormatter.format instead
-   */
-  static formatTemp(ts: TimeseriesEntry | undefined): string | undefined {
-    return TemperatureFormatter.format(ts);
-  }
 }

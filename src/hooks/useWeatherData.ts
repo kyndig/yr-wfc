@@ -20,13 +20,14 @@ export function useWeatherData(lat: number, lon: number, preGenerateGraph = fals
   useEffect(() => {
     let cancelled = false;
     cancelledRef.current = cancelled;
+    const controller = new AbortController();
 
     async function fetchData() {
       setLoading(true);
       setShowNoData(false);
 
       try {
-        const result = await getForecastWithMetadata(lat, lon);
+        const result = await getForecastWithMetadata(lat, lon, { signal: controller.signal, timeoutMs: 10000 });
         if (!cancelled) {
           const forecastData = Array.isArray(result.data) ? result.data : [result.data];
           setSeries(forecastData);
@@ -80,6 +81,7 @@ export function useWeatherData(lat: number, lon: number, preGenerateGraph = fals
     return () => {
       cancelled = true;
       cancelledRef.current = true;
+      controller.abort();
       if (noDataTimeoutRef.current) {
         clearTimeout(noDataTimeoutRef.current);
         noDataTimeoutRef.current = null;

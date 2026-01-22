@@ -4,7 +4,13 @@ import { buildGraphMarkdown } from "./graph-utils";
 import { reduceToDayPeriods, buildWeatherTable, filterToDate } from "./weather-utils";
 import { useWeatherData } from "./hooks/useWeatherData";
 import { generateNoForecastDataMessage } from "./utils/error-messages";
-import { addFavorite, removeFavorite, getFavorites, isSameLocation, type FavoriteLocation } from "./storage";
+import {
+  addFavorite,
+  removeFavorite,
+  getFavorites,
+  isFavorite as isFavoriteLocation,
+  type FavoriteLocation,
+} from "./storage";
 import { FavoriteToggleAction } from "./components/FavoriteToggleAction";
 import { getUIThresholds } from "./config/weather-config";
 import { formatDate } from "./utils/date-utils";
@@ -58,14 +64,13 @@ function ForecastView(props: {
   // Check if current location is in favorites (using coordinate + name matching)
   useEffect(() => {
     const checkFavoriteStatus = async () => {
-      const existingFavorites = await getFavorites();
-      const existingFavorite = existingFavorites.find((fav) =>
-        isSameLocation(fav, { name: originalName, lat, lon, id: `${lat.toFixed(3)},${lon.toFixed(3)}` }),
-      );
-      setIsFavorite(!!existingFavorite);
+      const canonicalId = LocationUtils.getLocationKey(location?.id, lat, lon);
+      const favLike: FavoriteLocation = { id: canonicalId, name: originalName, lat, lon };
+      const isFav = await isFavoriteLocation(favLike);
+      setIsFavorite(isFav);
     };
     checkFavoriteStatus();
-  }, [lat, lon, originalName]);
+  }, [lat, lon, originalName, location?.id]);
 
   // Fetch sunrise/sunset for visible dates once forecast is loaded
   useEffect(() => {
@@ -230,7 +235,7 @@ function ForecastView(props: {
       if (shouldForceRegenerate) {
         DebugLogger.debug("Forcing graph regeneration with sunrise/sunset data");
       }
-      const locationKey = LocationUtils.getLocationKey(`${lat},${lon}`, lat, lon);
+      const locationKey = LocationUtils.getLocationKey(location?.id, lat, lon);
 
       // Use displaySeries for graph generation to respect target date filtering
       const dataForDetailedGraph = targetDate
@@ -303,10 +308,6 @@ function ForecastView(props: {
   // Clear graph cache when component mounts to ensure fresh styling
   useEffect(() => {
     setGraphCache({ detailed: "", summary: "" });
-    // Also clear the persistent cache to ensure fresh graphs with sunrise/sunset data
-    CacheClearingUtility.clearAllCaches().then(() => {
-      DebugLogger.debug("All caches cleared on mount");
-    });
   }, []);
 
   // Force cache invalidation when sunByDate changes to ensure fresh graphs
@@ -401,8 +402,7 @@ function ForecastView(props: {
   };
 
   const handleFavoriteToggle = async () => {
-    // Generate a consistent ID for locations that don't have one from search results
-    const id = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+    const id = LocationUtils.getLocationKey(location?.id, lat, lon);
     const favLocation: FavoriteLocation = { id, name: originalName, lat, lon };
 
     try {
@@ -418,22 +418,31 @@ function ForecastView(props: {
       } else {
         // Check if there's already a favorite with the same location
         const existingFavorites = await getFavorites();
-        const existingFavorite = existingFavorites.find((fav) => isSameLocation(fav, favLocation));
+        const existingFavorite = existingFavorites.find((fav) => fav.id === id);
 
         if (existingFavorite) {
           // Update the existing favorite's name to the current name
-          await removeFavorite(existingFavorite);
-          const updatedFavorite: FavoriteLocation = {
-            ...existingFavorite,
-            name: originalName,
-            id: id, // Use the new ID format
-          };
-          await addFavorite(updatedFavorite);
-          await showToast({
-            style: Toast.Style.Success,
-            title: "Updated Favorite",
-            message: `Updated existing favorite to "${name}"`,
-          });
+          if (existingFavorite.name !== originalName) {
+            await removeFavorite(existingFavorite);
+            const updatedFavorite: FavoriteLocation = {
+              ...existingFavorite,
+              name: originalName,
+              id,
+            };
+            await addFavorite(updatedFavorite);
+            await showToast({
+              style: Toast.Style.Success,
+              title: "Updated Favorite",
+              message: `Updated existing favorite to "${name}"`,
+            });
+          } else {
+            await showToast({
+              style: Toast.Style.Animated,
+              title: "⭐ Already a Favorite Location!",
+              message: `${name} is already in your favorites`,
+            });
+            return; // Don't update isFavorite state or call onFavoriteChange
+          }
         } else {
           // Add new favorite (storage layer will prevent duplicates)
           const wasAdded = await addFavorite(favLocation);

@@ -18,61 +18,46 @@ export function directionFromDegrees(degrees: number): { arrow: string; name: st
 }
 
 /**
- * Format temperature from TimeseriesEntry
- * @deprecated Use TemperatureFormatter.format instead
- */
-export function formatTemp(ts: TimeseriesEntry | undefined): string | undefined {
-  return TemperatureFormatter.format(ts);
-}
-
-/**
  * Filter forecast series to a specific date with extended context
  * Handles timezone conversion between local date and UTC API data
  * Includes the last data point of the previous day and first data point of the next day
  * for a more complete visualization
  */
 export function filterToDate(series: TimeseriesEntry[], targetDate: Date): TimeseriesEntry[] {
-  // Create date range in local timezone
-  const target = new Date(targetDate);
-  target.setHours(0, 0, 0, 0);
-  const nextDay = new Date(target);
-  nextDay.setDate(nextDay.getDate() + 1);
+  // Coherent strategy:
+  // - interpret the user's requested date in LOCAL time
+  // - compare API timestamps by converting them to Date objects (which render in local time)
+  // - avoid manual timezone offset math (error-prone around DST)
+  const startLocal = new Date(targetDate);
+  startLocal.setHours(0, 0, 0, 0);
 
-  // Convert to UTC for comparison with API data
-  const targetUTC = new Date(target.getTime() - target.getTimezoneOffset() * 60000);
-  const nextDayUTC = new Date(nextDay.getTime() - nextDay.getTimezoneOffset() * 60000);
+  const endLocal = new Date(startLocal);
+  endLocal.setDate(endLocal.getDate() + 1);
 
-  // Find the last data point of the previous day and first data point of the next day
-  const previousDay = new Date(target);
-  previousDay.setDate(previousDay.getDate() - 1);
-  const previousDayUTC = new Date(previousDay.getTime() - previousDay.getTimezoneOffset() * 60000);
+  const prevStartLocal = new Date(startLocal);
+  prevStartLocal.setDate(prevStartLocal.getDate() - 1);
 
-  const dayAfter = new Date(nextDay);
-  dayAfter.setDate(dayAfter.getDate() + 1);
-  const dayAfterUTC = new Date(dayAfter.getTime() - dayAfter.getTimezoneOffset() * 60000);
+  const nextEndLocal = new Date(endLocal);
+  nextEndLocal.setDate(nextEndLocal.getDate() + 1);
 
-  // Filter data for the target day plus context points
   const targetDayData = series.filter((s) => {
     const d = new Date(s.time);
-    return d >= targetUTC && d < nextDayUTC;
+    return d >= startLocal && d < endLocal;
   });
 
-  // Find the last data point of the previous day
   const previousDayData = series.filter((s) => {
     const d = new Date(s.time);
-    return d >= previousDayUTC && d < targetUTC;
+    return d >= prevStartLocal && d < startLocal;
   });
   const lastPreviousDay = previousDayData.length > 0 ? previousDayData[previousDayData.length - 1] : null;
 
-  // Find the first data point of the next day
   const nextDayData = series.filter((s) => {
     const d = new Date(s.time);
-    return d >= nextDayUTC && d < dayAfterUTC;
+    return d >= endLocal && d < nextEndLocal;
   });
   const firstNextDay = nextDayData.length > 0 ? nextDayData[0] : null;
 
-  // Combine all data points for a more complete visualization
-  const result = [];
+  const result: TimeseriesEntry[] = [];
   if (lastPreviousDay) result.push(lastPreviousDay);
   result.push(...targetDayData);
   if (firstNextDay) result.push(firstNextDay);

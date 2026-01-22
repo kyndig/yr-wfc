@@ -1,4 +1,4 @@
-import { getCached, setCached } from "../cache";
+import { clearAllCached, clearCachedByPrefix, getCached, setCached } from "../cache";
 import { DebugLogger } from "./debug-utils";
 import { getCacheThresholds } from "../config/weather-config";
 
@@ -9,8 +9,14 @@ export class CacheKeyGenerator {
   /**
    * Generate cache key for graph data
    */
-  static graph(locationKey: string, mode: "detailed" | "summary", targetDate?: string, dataHash?: string): string {
-    const baseKey = `graph:${locationKey}:${mode}`;
+  static graph(
+    locationKey: string,
+    mode: "detailed" | "summary",
+    targetDate?: string,
+    dataHash?: string,
+    paletteId: "light" | "dark" = "light",
+  ): string {
+    const baseKey = `graph:${locationKey}:${mode}:${paletteId}`;
     if (targetDate) {
       return `${baseKey}:${targetDate}`;
     }
@@ -159,11 +165,10 @@ export class CacheClearingUtility {
       // Clear memory cache
       cacheManager.clearMemoryCache();
 
-      // Clear persistent cache
-      const { clearAllGraphCache } = await import("../graph-cache");
-      await clearAllGraphCache();
+      // Clear all persistent cache entries (weather + sunrise + graph)
+      const removed = await clearAllCached();
 
-      DebugLogger.info("All caches cleared successfully");
+      DebugLogger.info("All caches cleared successfully", { removedPersistentEntries: removed });
     } catch (error) {
       DebugLogger.error("Failed to clear all caches:", error);
       throw error;
@@ -180,10 +185,9 @@ export class CacheClearingUtility {
       graphKeys.forEach((key) => cacheManager.clear(key));
 
       // Clear persistent graph cache
-      const { clearAllGraphCache } = await import("../graph-cache");
-      await clearAllGraphCache();
+      const removed = await clearCachedByPrefix("graph:");
 
-      DebugLogger.info("Graph caches cleared successfully");
+      DebugLogger.info("Graph caches cleared successfully", { removedPersistentEntries: removed });
     } catch (error) {
       DebugLogger.error("Failed to clear graph caches:", error);
       throw error;
@@ -196,9 +200,11 @@ export class CacheClearingUtility {
   static async clearCachesForSunriseSunsetChange(): Promise<void> {
     try {
       cacheManager.clearMemoryCache();
-      const { clearAllGraphCache } = await import("../graph-cache");
-      await clearAllGraphCache();
+      const removed = await clearCachedByPrefix("graph:");
       DebugLogger.debug("Caches cleared due to sunrise/sunset data change");
+      DebugLogger.debug("Cleared graph caches due to sunrise/sunset data change", {
+        removedPersistentEntries: removed,
+      });
     } catch (error) {
       DebugLogger.error("Failed to clear caches for sunrise/sunset change:", error);
     }

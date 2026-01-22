@@ -6,6 +6,7 @@ import { FavoriteLocation } from "../storage";
 import { WeatherFormatters } from "./weather-formatters";
 import { FavoriteToggleAction } from "../components/FavoriteToggleAction";
 import { LocationResult } from "../location-search";
+import { locationKeyFromIdOrCoords } from "./location-key";
 
 /**
  * Location utility functions to eliminate duplication
@@ -104,14 +105,16 @@ export class LocationUtils {
    * Create a FavoriteLocation object from search results
    */
   static createFavoriteFromSearchResult(id: string, displayName: string, lat: number, lon: number): FavoriteLocation {
-    return { id, name: displayName, lat, lon };
+    // Store canonical keys in favorites to avoid duplicates and fuzzy matching issues.
+    const canonicalId = locationKeyFromIdOrCoords(id, lat, lon);
+    return { id: canonicalId, name: displayName, lat, lon };
   }
 
   /**
    * Get location key consistently across the app
    */
   static getLocationKey(id: string | undefined, lat: number, lon: number): string {
-    return id ?? `${lat},${lon}`;
+    return locationKeyFromIdOrCoords(id, lat, lon);
   }
 
   /**
