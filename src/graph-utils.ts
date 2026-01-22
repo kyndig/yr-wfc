@@ -158,7 +158,7 @@ export function buildGraphMarkdown(
         const x = xScale(sr);
         parts.push(
           `<g>
-            <line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${margin.TOP}" y2="${height - margin.BOTTOM}" stroke="${graphConfig.COLORS.SUNRISE}" stroke-dasharray="${graphConfig.STYLING.SUN_EVENT_DASH}" stroke-width="2" opacity="0.8" />
+            <line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${margin.TOP}" y2="${height - margin.BOTTOM}" stroke="${colors.SUNRISE}" stroke-dasharray="${graphConfig.STYLING.SUN_EVENT_DASH}" stroke-width="2" opacity="0.8" />
             <text x="${x.toFixed(1)}" y="${margin.TOP + graphConfig.POSITIONING.SUN_LABEL_OFFSET}" font-size="20" text-anchor="middle" fill="${colors.SUNRISE}" font-weight="bold">🌅</text>
           </g>`,
         );
@@ -170,7 +170,7 @@ export function buildGraphMarkdown(
         const x = xScale(ss);
         parts.push(
           `<g>
-            <line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${margin.TOP}" y2="${height - margin.BOTTOM}" stroke="${graphConfig.COLORS.SUNSET}" stroke-dasharray="${graphConfig.STYLING.SUN_EVENT_DASH}" stroke-width="2" opacity="0.8" />
+            <line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${margin.TOP}" y2="${height - margin.BOTTOM}" stroke="${colors.SUNSET}" stroke-dasharray="${graphConfig.STYLING.SUN_EVENT_DASH}" stroke-width="2" opacity="0.8" />
             <text x="${x.toFixed(1)}" y="${margin.TOP + graphConfig.POSITIONING.SUN_LABEL_OFFSET}" font-size="20" text-anchor="middle" fill="${colors.SUNSET}" font-weight="bold">🌇</text>
           </g>`,
         );
