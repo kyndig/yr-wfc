@@ -11,11 +11,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/kyndig/raycast-yr"
+    "url": "https://github.com/kyndig/yr-wfc"
   },
   "homepage": "https://www.kynd.no",
   "bugs": {
-    "url": "https://github.com/kyndig/raycast-yr/issues"
+    "url": "https://github.com/kyndig/yr-wfc/issues"
   },
   "access": "public",
   "license": "MIT",

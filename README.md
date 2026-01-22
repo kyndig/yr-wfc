@@ -1,187 +1,156 @@
 # Yr Weather Forecast
 
-A modern, feature-rich [Raycast](https://www.raycast.com) extension for displaying weather forecasts from [The Norwegian Institute of Meteorology (MET)](https://www.met.no). Get accurate weather information with an intuitive interface, smart search, and beautiful visualizations. 
+Norwegian weather data from MET, wrapped in a Raycast extension. Search locations, save favourites, get 9-day forecasts with graphs. No API keys, no faff.
 
-**Maintainer:** [Kynd](https://www.kynd.no)
+**Maintainer:** [Kynd](https://www.kynd.no)  
 **Contact:** weather@kynd.no  
-**Issues & Feedback:** [GitHub Issues](https://github.com/kyndig/raycast-wfc/issues)
+**Issues & Feedback:** [GitHub Issues](https://github.com/kyndig/yr-wfc/issues)
 
-## ✨ Features
+## Quick Start
 
-### 🌤️ Weather & Forecasts
-- **Accurate Data**: Powered by MET's official weather API
-- **Detailed Views**: Hourly forecasts with temperature, wind, precipitation, and weather conditions
-- **Visual Graphs**: Beautiful SVG charts showing temperature trends and precipitation
-- **Quick Day Access**: Get weather for specific dates with natural language queries
+1. Search for a location (minimum 3 characters)
+2. Press Enter to open the forecast view
+3. Press `D` to toggle between graph and data table views
+4. Press `Cmd+R` to refresh and clear cache
 
-### 🔍 Smart Search & Navigation
-- **Location Search**: Find any city or place worldwide using OpenStreetMap
-- **Quick Day Queries**: "Oslo fredag", "London next monday", "Bergen 25"
-- **Favorites System**: Save your most-used locations for instant access
-- **Smart Search**: Intelligent caching and query parsing
+## Search
 
-### 🎨 UX stuff
-- **Welcome System**: Helpful onboarding for new users
-- **Keyboard Shortcuts**: Quick actions for power users
-- **Units Support**: Metric (default) or Imperial units
-- **Clock Format**: Choose between 12-hour and 24-hour time display (24h is default because I like it better)
-- **Enhanced Search**: Improved search naming and emojis for better readability
-- **Data Summary**: Enhanced data summary with resolution feedback and update timestamps
-- **Smart Visualizations**: Sunrise/sunset data points visible in all graphs
+Search uses OpenStreetMap Nominatim to find locations worldwide. Type city names, addresses, or landmarks.
 
-### 🚀 Technicalities
-- **Fast Performance**: Intelligent caching reduces API calls
-- **Error Handling**: Graceful fallbacks and user-friendly error messages
-- **Network Testing**: Built-in connectivity diagnostics
-- **Debug Mode**: Optional console output for troubleshooting
-- **Data Filtering**: Fixed data filtering and resolution feedback
-- **Graph Enhancements**: Sunrise/sunset data points now visible in all graphs
+### Date Queries
 
-## 🚀 Getting Started
+The search parser recognises date-related tokens alongside location names:
 
-### Installation
-1. Open Raycast and go to Extensions
-2. Search for "Yr Weather Forecast"
-3. Install the extension
-4. Run the `Yr` command to get started
+- **Weekdays**: "Oslo fredag" or "oslo friday" for the upcoming Friday
+- **Next week**: "London next monday" for next Monday
+- **Day of month**: "Bergen 25" for the 25th (within the 9-day forecast window)
+- **Relative dates**: "Paris tomorrow" or "Paris i morgen" (Norwegian)
 
-### First Use
-1. **Search for a location**: Type a city name (minimum 3 characters)
-2. **Quick day search**: Try "Oslo fredag" or "London tomorrow"
-3. **Add to favorites**: Use `Cmd+F` to save frequently used locations
-4. **Explore views**: Press Enter on favorites to see detailed forecasts
-5. **Switch to data view**: Press `D` in any forecast or graph view to see tabular data
+Supported languages: English and Norwegian (Bokmål). Diacritics are normalised, so "søndag" and "sondag" both work.
 
-## 📱 How to Use
+## Favourites
 
-### Main Interface
-- **Search Bar**: Type to find locations worldwide
-- **Favorites Section**: Your saved locations with current weather
-- **Quick Actions**: Add/remove favorites, view forecasts, open graphs
+Save frequently used locations for quick access. Favourites appear at the top of the main view with current weather.
 
-### Search Features
-- **Location Search**: Type city names, addresses, or landmarks
-- **Date Queries**: 
-  - "Oslo fredag" or "oslo friday" for upcoming Friday
-  - "London next monday" for next Monday
-  - "Bergen 25" for the 25th (if available within the 9 day forecast)
-  - "Paris tomorrow" or "Paris i morgen"
+- **Add**: `Cmd+F` (from search results or forecast view)
+- **Remove**: `Cmd+Shift+F` (from search results or forecast view)
+- **Reorder**: `Cmd+Shift+↑` to move up, `Cmd+Shift+↓` to move down
 
-### Navigation
-- **Enter**: Show current weather (search) or open forecast (favorites)
-- **Cmd+F**: Add location to favorites
-- **Cmd+Shift+F**: Remove from favorites
-- **Cmd+Shift+W**: Show welcome message from any view
+Favourites are stored locally and persist between sessions.
 
-## ⌨️ Keyboard Shortcuts
+## Views & Navigation
 
-### Global Shortcuts
-- **Cmd+Shift+W**: Show welcome message from any view
-- **Cmd+Shift+Alt+W**: Hide welcome message
+### Forecast View
 
-### Search & Favorites
-- **Cmd+F**: Add location to favorites
-- **Cmd+Shift+F**: Remove location from favorites
-- **Cmd+Shift+ArrowUp**: Move favorite up in list
-- **Cmd+Shift+ArrowDown**: Move favorite down in list
-- **Enter**: Show current weather (search results) or open forecast (favorites)
+Two forecast modes:
+
+- **48-hour detailed**: Hourly data with graphs showing temperature, precipitation, wind direction, and weather symbols
+- **9-day summary**: Daily overview with representative time periods
+
+Switch between modes with `Cmd+4` (detailed) or `Cmd+9` (summary). In date query views, these shortcuts navigate to the full forecast.
+
+### View Toggles
+
+- **Graph ↔ Data**: Press `D` to switch from graph to data table, `G` to switch back
+- **Data table**: Markdown table with complete weather data for the current location
+
+### One-Day View
+
+When searching with a date query (e.g., "Oslo fredag"), the forecast shows a focused 1-day view. Use `Cmd+4` or `Cmd+9` to navigate to the full 48-hour or 9-day forecast.
+
+## Keyboard Shortcuts
+
+### Global Actions
+
+- `Cmd+R`: Refresh & Clear Cache (clears all caches and reloads data)
+- `Cmd+Shift+W`: Show welcome message
+- `Cmd+Shift+Alt+W`: Hide welcome message
+
+### Search & Favourites
+
+- `Cmd+F`: Add location to favourites
+- `Cmd+Shift+F`: Remove location from favourites
+- `Cmd+Shift+↑`: Move favourite up in list
+- `Cmd+Shift+↓`: Move favourite down in list
+- `Enter`: Open forecast (from search results or favourites)
 
 ### View Navigation
-- **D**: Switch to data table view (from Forecast view)
-- **G**: Switch to graph view (from data table view)
-- **Cmd+4**: Show 48-hour detailed forecast
-  - In regular forecasts: Switch to detailed mode
-  - In date query forecasts: Navigate to full 48-hour forecast
-- **Cmd+9**: Show 9-day summary forecast
-  - In regular forecasts: Switch to summary mode
-  - In date query forecasts: Navigate to full 9-day forecast
 
-### Error Handling
-- **Cmd+R**: Retry weather load (when errors occur)
-- **Cmd+Shift+R**: Reset component (when errors persist)
+- `D`: Switch to data table view (from graph view)
+- `G`: Switch to graph view (from data table view)
+- `Cmd+4`: Show 48-hour detailed forecast
+- `Cmd+9`: Show 9-day summary forecast
 
-### Detailed Views
-- **Forecast View**: Combined hourly data with graphs and data tables (includes sunrise/sunset indicators)
-- **One-Day View**: Focused view for specific dates
-- **Data View**: Markdown table of the current location's data
+## Preferences
 
-### Data View
-The **Data View** provides a comprehensive markdown table showing detailed weather information for the current location. This view is available in the Forecast View.
+Access via `Yr` command → `Cmd+K` → Configure Command:
 
-**Accessing Data View:**
-- **From Forecast View**: Press `D` to switch from graph to data table
-- **Switch back to Graph**: Press `G` from data view
-
-**Data View Features:**
-- Complete weather data in tabular format
-- Temperature, wind, precipitation, and weather conditions
-- Time-stamped entries for easy reference
-
-## ⚙️ Preferences
-
-Access preferences via `Yr` command → `Cmd+K` → Configure Command:
-
-- **Units**: Metric (°C, m/s, mm) or Imperial (°F, mph, in) - pick your poison
-- **Clock Format**: 12-hour (2:30 PM) or 24-hour (14:30) time display
-- **Show Wind Direction**: Display wind arrows and cardinal directions
+- **Units**: Metric (°C, m/s, mm) or Imperial (°F, mph, in)
+- **Clock Format**: 12-hour (2:30 PM) or 24-hour (14:30) — defaults to 24-hour
+- **Show Wind Direction**: Display wind arrows and cardinal directions in main view
 - **Show Sunrise/Sunset**: Include sun times in location displays
-- **Debug Mode**: Enable console output for terminal troubleshooting
+- **Debug Mode**: Enable console output for troubleshooting API calls and network tests
 
+## Data Sources & Caching
 
-## 🔧 Debug Mode
-
-Enable debug mode in preferences to see detailed console output for:
-- API request failures and responses
-- Network connectivity test results
-- Weather data fetching errors
-- Location search failures
-
-Perfect for troubleshooting connectivity issues or understanding API behavior.
-
-## 📊 Data Sources
+### APIs
 
 - **Weather & Forecast**: [MET Locationforecast 2.0](https://developer.yr.no/doc/locationforecast/2.0/)
 - **Sunrise/Sunset**: [MET Sunrise 3.0](https://developer.yr.no/doc/sunrise/3.0/)
 - **Geocoding**: [OpenStreetMap Nominatim](https://nominatim.org/)
 
-All APIs are used in compliance with their respective terms of service.
+All APIs are publicly available and don't require authentication or API keys.
 
-## 🗄️ Caching
+### Cache Durations
 
-- **Forecast Data**: 30 minutes per location
+- **Forecast data**: 30 minutes per location
 - **Sunrise/Sunset**: 6 hours per location/day
-- **Search Results**: Intelligent caching for better performance
+- **Location search**: 1 hour per query
+- **Graphs**: 2 hours per location/mode
 
-## 🔐 Requirements & Privacy
+Caches are stored locally and cleared automatically on expiration or when using `Cmd+R` (Refresh & Clear Cache).
 
-This extension uses publicly available APIs that don't require authentication:
-- **MET APIs**: Free weather data from the Norwegian Meteorological Institute
-- **OpenStreetMap Nominatim**: Free geocoding service for location search
-- **No registration or API keys needed** - just install and use!
+## Privacy
 
-### Privacy & Data Usage
-- **No Personal Data Collection**: The extension doesn't collect, store, or transmit any personal information
-- **Local Storage Only**: All data (favorites, cache) is stored locally on your device
-- **No Tracking**: No analytics, tracking, or user behavior monitoring
-- **Open Source**: Full source code is available for transparency and security review
-- **Data Retention**: Cached weather data is automatically cleared after expiration (30 minutes to 6 hours)
-- **Location Privacy**: Search queries are sent to OpenStreetMap for geocoding, but no personal identifiers are included
+- **Local storage only**: Favourites and cache data are stored on your device
+- **No personal data collection**: The extension doesn't collect, store, or transmit personal information
+- **No tracking**: No analytics or user behaviour monitoring
+- **Location search**: Search queries are sent to OpenStreetMap Nominatim for geocoding; no personal identifiers are included
+- **Open source**: Full source code available for review
 
+## Troubleshooting
 
-## 📄 License
+### Network Status
 
-MIT License - see package.json for details.
+If connectivity issues are detected, a "Network Status" section appears in the main view showing which APIs are reachable (MET weather API and Nominatim geocoding).
 
-## 🤝 Contributing
+### Refresh & Clear Cache
 
-We welcome contributions! Please open an issue or submit a pull request on GitHub.
+Press `Cmd+R` from the main view or forecast view to clear all caches and force a fresh data fetch. This is useful if data seems stale or if you're experiencing errors.
 
-## 📞 Support
+### Debug Mode
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/kyndig/raycast-wfc/issues)
+Enable Debug Mode in preferences to see detailed console output in Raycast's terminal. Useful for diagnosing API failures, network test results, and data fetching errors.
+
+## Support
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/kyndig/yr-wfc/issues)
 - **Email**: weather@kynd.no
-- **Documentation**: Check this README and inline code comments
+
+## Raycast Extensions Monorepo Sync
+
+When updating the extension in the Raycast Extensions monorepo, treat this repository (`kyndig/yr-wfc`) as the source of truth:
+
+1. **Copy source files**: Copy `src/`, `assets/`, `metadata/` directories to the monorepo extension directory
+2. **Update documentation**: Copy updated `README.md` and `CHANGELOG.md` to the monorepo
+3. **Verify manifest**: Ensure the monorepo's `package.json` repository/bugs URLs match the canonical repo (`https://github.com/kyndig/yr-wfc`)
+4. **Preserve placeholders**: Keep `{PR_MERGE_DATE}` placeholder in CHANGELOG (Raycast CI fills this on merge)
+5. **Verify metadata**: Ensure extension listing fields (title/subtitle/description/repo link) in the monorepo match this repo
+
+## License
+
+MIT License — see `package.json` for details.
 
 ---
 
-**Made with 🫶 by [Kynd](https://www.kynd.no)**  
+**Made with 🫶 by [Kynd](https://www.kynd.no)**
