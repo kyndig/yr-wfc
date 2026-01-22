@@ -8,7 +8,7 @@
  * Complies with usage policies for external APIs
  */
 export const API_HEADERS = {
-  "User-Agent": "raycast-yr-extension/1.0 (https://github.com/kyndig/raycast-yr; contact: raycast@kynd.no)",
+  "User-Agent": "raycast-yr-extension/1.0 (https://github.com/kyndig/yr-wfc; contact: raycast@kynd.no)",
 } as const;
 
 /**
