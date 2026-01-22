@@ -12,6 +12,7 @@ compiled_raycast_rust
 
 # misc
 .DS_Store
+.npm-cache/
 BUNDLE_OPTIMIZATION.md
 TESTING.md
 docs/
