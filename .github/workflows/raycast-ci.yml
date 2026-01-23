@@ -48,12 +48,26 @@ jobs:
             exit 0
           fi
 
-          changed="$(git diff --name-only "origin/${GITHUB_BASE_REF}"...HEAD)"
-          if echo "$changed" | grep -E '^(package\.json|package-lock\.json)$' >/dev/null; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
+          # Don't rely on remote branches being present in the checkout.
+          # Use the PR base commit SHA, which GitHub always provides.
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          base_ref="${{ github.event.pull_request.base.ref }}"
+
+          if ! changed="$(git diff --name-only "${base_sha}"...HEAD)"; then
+            # Fallback: ensure base objects are available locally.
+            git fetch --no-tags --prune origin "refs/heads/${base_ref}:refs/remotes/origin/${base_ref}"
+            changed="$(git diff --name-only "${base_sha}"...HEAD)"
           fi
+
+          run=false
+          while IFS= read -r file; do
+            if [[ "${file}" == "package.json" || "${file}" == "package-lock.json" ]]; then
+              run=true
+              break
+            fi
+          done <<< "${changed}"
+
+          echo "run=${run}" >> "$GITHUB_OUTPUT"
 
       - name: Ensure Raycast migrations are applied
         if: steps.migrations.outputs.run == 'true'
