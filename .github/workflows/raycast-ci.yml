@@ -34,7 +34,43 @@ jobs:
 
       - name: Verify Raycast Store metadata basics
         run: |
-          node -e "const fs=require('fs'); const {execSync}=require('child_process'); const pkg=JSON.parse(fs.readFileSync('package.json','utf8')); if(pkg.license!=='MIT'){console.error('Expected package.json license to be MIT, got: '+pkg.license); process.exit(1);} if(!pkg.author||typeof pkg.author!=='string'||pkg.author.trim().length===0){console.error('Expected package.json author to be a non-empty string (your Raycast username).'); process.exit(1);} if(!fs.existsSync('package-lock.json')){console.error('Expected package-lock.json to exist (Raycast requires npm + lockfile).'); process.exit(1);} try{execSync('git ls-files --error-unmatch package-lock.json',{stdio:'ignore'});}catch{console.error('Expected package-lock.json to be committed (tracked by git).'); process.exit(1);} console.log('OK');"
+          node <<'NODE'
+          const fs = require("fs");
+          const { execSync } = require("child_process");
+
+          function fail(message) {
+            console.error(message);
+            process.exit(1);
+          }
+
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+          if (pkg.license !== "MIT") {
+            fail(`Expected package.json license to be MIT, got: ${pkg.license}`);
+          }
+
+          if (typeof pkg.author !== "string" || pkg.author.trim().length === 0) {
+            fail(
+              "Expected package.json author to be a non-empty string (your Raycast username).",
+            );
+          }
+
+          if (!fs.existsSync("package-lock.json")) {
+            fail(
+              "Expected package-lock.json to exist (Raycast requires npm + lockfile).",
+            );
+          }
+
+          try {
+            execSync("git ls-files --error-unmatch package-lock.json", {
+              stdio: "ignore",
+            });
+          } catch {
+            fail("Expected package-lock.json to be committed (tracked by git).");
+          }
+
+          console.log("OK");
+          NODE
 
       - name: Determine whether to run Raycast migrations
         id: migrations
