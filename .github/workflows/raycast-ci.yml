@@ -13,6 +13,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 15
     env:
+      NODE_VERSION: "22"
       # Keep npm cache inside the workspace (avoids permission issues).
       NPM_CONFIG_CACHE: .npm-cache
       # Pragmatic middle ground: pin migrations to avoid CI churn.
@@ -29,8 +30,15 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore npm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NPM_CONFIG_CACHE }}
+          key: ${{ runner.os }}-npm-cache-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-cache-node${{ env.NODE_VERSION }}-
 
       - name: Verify Raycast Store metadata basics
         run: |
