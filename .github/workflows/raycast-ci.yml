@@ -116,11 +116,13 @@ jobs:
       - name: Ensure Raycast migrations are applied
         if: steps.migrations.outputs.run == 'true'
         run: |
+          set -euo pipefail
           # @raycast/migration expects the extension path as its first argument.
           # Use an absolute path to avoid any arg-parsing edge cases in CI.
           npx -y "@raycast/migration@${RAYCAST_MIGRATION_VERSION}" "$GITHUB_WORKSPACE"
 
-          if [ -n "$(git status --porcelain)" ]; then
+          status_output=$(git status --porcelain)
+          if [ -n "$status_output" ]; then
             echo "Raycast migrations produced changes. Please run 'npx -y @raycast/migration@${RAYCAST_MIGRATION_VERSION} .' locally and commit the result."
             git status --porcelain
             git diff
