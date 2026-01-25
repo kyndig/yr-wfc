@@ -1,0 +1,139 @@
+name: Raycast CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions: read-all
+
+jobs:
+  verify:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    env:
+      NODE_VERSION: "22"
+      # Keep npm cache inside the workspace (avoids permission issues).
+      NPM_CONFIG_CACHE: .npm-cache
+      # Pragmatic middle ground: pin migrations to avoid CI churn.
+      # Bump intentionally when you bump @raycast/api.
+      # Align with this repo's @raycast/api minor (currently 1.102.x).
+      RAYCAST_MIGRATION_VERSION: "1.102.0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore npm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NPM_CONFIG_CACHE }}
+          key: ${{ runner.os }}-npm-cache-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-cache-node${{ env.NODE_VERSION }}-
+
+      - name: Verify Raycast Store metadata basics
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const { execSync } = require("child_process");
+
+          function fail(message) {
+            console.error(message);
+            process.exit(1);
+          }
+
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+          if (pkg.license !== "MIT") {
+            fail(`Expected package.json license to be MIT, got: ${pkg.license}`);
+          }
+
+          if (typeof pkg.author !== "string" || pkg.author.trim().length === 0) {
+            fail(
+              "Expected package.json author to be a non-empty string (your Raycast username).",
+            );
+          }
+
+          if (!fs.existsSync("package-lock.json")) {
+            fail(
+              "Expected package-lock.json to exist (Raycast requires npm + lockfile).",
+            );
+          }
+
+          try {
+            execSync("git ls-files --error-unmatch package-lock.json", {
+              stdio: "ignore",
+            });
+          } catch {
+            fail("Expected package-lock.json to be committed (tracked by git).");
+          }
+
+          console.log("OK");
+          NODE
+
+      - name: Determine whether to run Raycast migrations
+        id: migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Always run on pushes to main. For PRs, only run when dependency manifests changed.
+          if [ "${GITHUB_EVENT_NAME}" != "pull_request" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Don't rely on remote branches being present in the checkout.
+          # Use the PR base commit SHA, which GitHub always provides.
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          base_ref="${{ github.event.pull_request.base.ref }}"
+
+          if ! changed="$(git diff --name-only "${base_sha}"...HEAD)"; then
+            # Fallback: ensure base objects are available locally.
+            git fetch --no-tags --prune origin "refs/heads/${base_ref}:refs/remotes/origin/${base_ref}"
+            changed="$(git diff --name-only "${base_sha}"...HEAD)"
+          fi
+
+          run=false
+          while IFS= read -r file; do
+            if [[ "${file}" == "package.json" || "${file}" == "package-lock.json" ]]; then
+              run=true
+              break
+            fi
+          done <<< "${changed}"
+
+          echo "run=${run}" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure Raycast migrations are applied
+        if: steps.migrations.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          # @raycast/migration expects the extension path as its first argument.
+          # Use an absolute path to avoid any arg-parsing edge cases in CI.
+          npx -y "@raycast/migration@${RAYCAST_MIGRATION_VERSION}" "$GITHUB_WORKSPACE"
+
+          status_output=$(git status --porcelain)
+          if [ -n "$status_output" ]; then
+            echo "Raycast migrations produced changes. Please run 'npx -y @raycast/migration@${RAYCAST_MIGRATION_VERSION} .' locally and commit the result."
+            git status --porcelain
+            git diff
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Raycast lint (Store requirement)
+        run: npx ray lint
+
+      - name: Raycast build export (Store requirement)
+        run: npx ray build -e dist
