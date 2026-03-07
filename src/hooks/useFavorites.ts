@@ -120,7 +120,7 @@ export function useFavorites(): UseFavoritesReturn {
       key: LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon),
     }));
     const activeKeys = new Set(favoriteEntries.map((entry) => entry.key));
-    const pruneToActiveKeys = <T,>(record: Record<string, T>): Record<string, T> => {
+    const pruneToActiveKeys = <T>(record: Record<string, T>): Record<string, T> => {
       return Object.fromEntries(Object.entries(record).filter(([key]) => activeKeys.has(key))) as Record<string, T>;
     };
 
