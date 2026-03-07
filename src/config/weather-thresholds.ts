@@ -47,9 +47,9 @@ export const TEMPERATURE_THRESHOLDS = {
  * Based on Beaufort scale.
  */
 export const WIND_THRESHOLDS = {
-  LIGHT: 5,    // Beaufort 1–3
+  LIGHT: 5, // Beaufort 1–3
   MODERATE: 10, // Beaufort 4–5
-  STRONG: 17,   // Beaufort 6–7
+  STRONG: 17, // Beaufort 6–7
   VERY_STRONG: 18, // Beaufort 8+
 } as const;
 

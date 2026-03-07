@@ -238,9 +238,7 @@ function ForecastView(props: {
       const locationKey = LocationUtils.getLocationKey(location?.id, lat, lon);
 
       // Use displaySeries for graph generation to respect target date filtering
-      const dataForDetailedGraph = targetDate
-        ? displaySeries
-        : items.slice(0, UI_THRESHOLDS.DETAILED_FORECAST_HOURS);
+      const dataForDetailedGraph = targetDate ? displaySeries : items.slice(0, UI_THRESHOLDS.DETAILED_FORECAST_HOURS);
       const dataForSummaryGraph = targetDate ? displaySeries : reduced;
 
       // Generate graphs using persistent cache

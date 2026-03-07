@@ -11,11 +11,7 @@ export {
   CACHE_THRESHOLDS,
 } from "./weather-thresholds";
 
-import {
-  PRECIPITATION_THRESHOLDS,
-  PRECIPITATION_COVERAGE_THRESHOLDS,
-  UNIT_CONVERSION,
-} from "./weather-thresholds";
+import { PRECIPITATION_THRESHOLDS, PRECIPITATION_COVERAGE_THRESHOLDS, UNIT_CONVERSION } from "./weather-thresholds";
 
 export function getPrecipitationChanceLevel(
   maxIntensity: number,
