@@ -60,21 +60,11 @@ export function useFavorites(): UseFavoritesReturn {
   const [preWarmedGraphs, setPreWarmedGraphs] = useState<Record<string, string>>({});
   const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
   const favoriteWeatherRef = useRef(favoriteWeather);
-  const sunTimesRef = useRef(sunTimes);
-  const favoriteErrorsRef = useRef(favoriteErrors);
   const isInitialLoadRef = useRef(isInitialLoad);
 
   useEffect(() => {
     favoriteWeatherRef.current = favoriteWeather;
   }, [favoriteWeather]);
-
-  useEffect(() => {
-    sunTimesRef.current = sunTimes;
-  }, [sunTimes]);
-
-  useEffect(() => {
-    favoriteErrorsRef.current = favoriteErrors;
-  }, [favoriteErrors]);
 
   useEffect(() => {
     isInitialLoadRef.current = isInitialLoad;
