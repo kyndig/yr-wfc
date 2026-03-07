@@ -18,11 +18,7 @@ BUNDLE_OPTIMIZATION.md
 TESTING.md
 docs/
 
-# Test files and coverage (excluded from production builds)
-/tests/
+# Coverage output
 coverage/
-*.test.ts
-*.test.tsx
-*.spec.ts
-*.spec.tsx
-jest.config.js
+
+# Raycast builds only reads src/ so test files don't need to be excluded here
