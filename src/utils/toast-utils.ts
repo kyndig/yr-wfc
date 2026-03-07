@@ -58,17 +58,4 @@ export const ToastMessages = {
   /**
    * Show info toasts
    */
-  networkTestsRetry: () =>
-    showToast({
-      style: Toast.Style.Success,
-      title: "Network Tests",
-      message: "Tests will re-run when you restart the extension",
-    }),
-
-  networkTestErrors: (error: string) =>
-    showToast({
-      style: Toast.Style.Failure,
-      title: "Network Test Errors",
-      message: error || "Unknown network connectivity issues",
-    }),
 } as const;

@@ -10,7 +10,6 @@ import { isFirstTimeUser, markAsNotFirstTime } from "./storage";
 import { iconForSymbol } from "./weather-emoji";
 import { TemperatureFormatter } from "./utils/weather-formatters";
 
-import { useNetworkTest } from "./hooks/useNetworkTest";
 import { useSearch } from "./hooks/useSearch";
 import { useFavorites } from "./hooks/useFavorites";
 import { useGraphCache } from "./hooks/useGraphCache";
@@ -30,7 +29,6 @@ export default function Command() {
   // Custom hooks for different responsibilities
   const search = useSearch();
   const favorites = useFavorites();
-  const networkTest = useNetworkTest();
   const graphCache = useGraphCache();
 
   // Derive favorite membership from loaded favorites to avoid duplicate storage reads.
@@ -40,27 +38,6 @@ export default function Command() {
   );
   const isLocationFavorite = (loc: LocationResult): boolean =>
     favoriteKeySet.has(LocationUtils.getLocationKey(loc.id, loc.lat, loc.lon));
-
-  // Debug: Log network test results and show user-friendly notifications
-  useEffect(() => {
-    if (networkTest.error) {
-      DebugLogger.error("Network test results:", networkTest);
-
-      // Show user-friendly notifications for critical API failures
-      if (!networkTest.metApi) {
-        ToastMessages.weatherApiUnavailable();
-      }
-
-      if (!networkTest.nominatim) {
-        ToastMessages.locationApiUnavailable();
-      }
-
-      // Only show general connectivity warning if both critical services fail
-      if (!networkTest.metApi && !networkTest.nominatim) {
-        ToastMessages.networkConnectivityIssues();
-      }
-    }
-  }, [networkTest]);
 
   // Check if this is the first time opening the extension
   useEffect(() => {
@@ -215,32 +192,6 @@ export default function Command() {
                 actions={ActionPanelBuilders.createWelcomeActions(() => setShowWelcomeMessage(true))}
               />
             )}
-
-          {/* Network Status Section - Show when there are connectivity issues */}
-          {networkTest.error && (
-            <List.Section title="⚠️ Network Status">
-              <List.Item
-                title="Service Connectivity Issues Detected"
-                subtitle="Some features may not work properly"
-                icon="⚠️"
-                accessories={[
-                  {
-                    text: networkTest.metApi ? "✅" : "❌",
-                    tooltip: networkTest.metApi ? "Weather API: Connected" : "Weather API: Failed",
-                  },
-                  {
-                    text: networkTest.nominatim ? "✅" : "❌",
-                    tooltip: networkTest.nominatim ? "Location API: Connected" : "Location API: Failed",
-                  },
-                ]}
-                actions={ActionPanelBuilders.createNetworkRetryActions(() => {
-                  // Network tests will re-run when the component re-mounts
-                  // Show a toast message to indicate retry action
-                  ToastMessages.networkTestsRetry();
-                })}
-              />
-            </List.Section>
-          )}
 
           {/* Show special loading state for date queries */}
           {isDateQueryLoading && search.safeLocations.length === 0 && (

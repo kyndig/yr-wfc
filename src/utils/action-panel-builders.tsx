@@ -1,4 +1,4 @@
-import { Action, ActionPanel, Icon, showToast, Toast } from "@raycast/api";
+import { Action, ActionPanel, Icon } from "@raycast/api";
 
 /**
  * Reusable ActionPanel builders to eliminate duplication
@@ -31,29 +31,6 @@ export class ActionPanelBuilders {
     return (
       <ActionPanel>
         <Action title={title} icon={Icon.ArrowClockwise} onAction={onRefresh} />
-      </ActionPanel>
-    );
-  }
-
-  /**
-   * Create network retry actions
-   * Used for network-related error states
-   */
-  static createNetworkRetryActions(onRetry: () => void) {
-    return (
-      <ActionPanel>
-        <Action title="Retry Network Tests" icon={Icon.ArrowClockwise} onAction={onRetry} />
-        <Action
-          title="Show Error Details"
-          icon={Icon.Info}
-          onAction={async () => {
-            await showToast({
-              style: Toast.Style.Failure,
-              title: "Network Error Details",
-              message: "Check your internet connection and try again",
-            });
-          }}
-        />
       </ActionPanel>
     );
   }

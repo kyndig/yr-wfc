@@ -6,6 +6,7 @@ import { useDebouncedCallback } from "./useDebounce";
 import { UI_THRESHOLDS, TIMING_THRESHOLDS, GRAPH_THRESHOLDS } from "../config/weather-config";
 import { DebugLogger } from "../utils/debug-utils";
 import { LocationUtils } from "../utils/location-utils";
+import { ToastMessages } from "../utils/toast-utils";
 
 export interface UseSearchReturn {
   // Search state
@@ -100,6 +101,7 @@ export function useSearch(): UseSearchReturn {
         return;
       }
       DebugLogger.error("Search failed:", error);
+      void ToastMessages.locationApiUnavailable();
       setLocations([]);
       setSearchError(error instanceof Error ? error.message : "Search failed");
     } finally {

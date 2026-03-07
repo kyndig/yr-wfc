@@ -13,6 +13,7 @@ import { LocationUtils } from "../utils/location-utils";
 import { DebugLogger } from "../utils/debug-utils";
 import { UI_THRESHOLDS, TIMING_THRESHOLDS } from "../config/weather-config";
 import { generateAndCacheGraph } from "../graph-cache";
+import { ToastMessages } from "../utils/toast-utils";
 
 export interface UseFavoritesReturn {
   // Favorites state
@@ -90,6 +91,7 @@ export function useFavorites(): UseFavoritesReturn {
     async function fetchAll() {
       // Reset states
       setFavoriteErrors({});
+      let toastShown = false;
 
       // Mark all favorites as loading
       const loadingMap: Record<string, boolean> = {};
@@ -108,6 +110,10 @@ export function useFavorites(): UseFavoritesReturn {
               const sun = await getSunTimes(fav.lat, fav.lon).catch(() => ({}) as SunTimes);
               return [key, ts, sun] as const;
             } catch {
+              if (!toastShown) {
+                toastShown = true;
+                void ToastMessages.weatherApiUnavailable();
+              }
               // Immediately mark error so UI doesn't stay stuck in "Loading..."
               if (!cancelled) {
                 setFavoriteErrors((prev) => ({ ...prev, [key]: true }));
