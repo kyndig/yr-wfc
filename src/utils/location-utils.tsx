@@ -7,6 +7,7 @@ import { WeatherFormatters } from "./weather-formatters";
 import { FavoriteToggleAction } from "../components/FavoriteToggleAction";
 import { LocationResult } from "../location-search";
 import { locationKeyFromIdOrCoords } from "./location-key";
+import { toLocalDateString } from "./date-utils";
 
 /**
  * Location utility functions to eliminate duplication
@@ -36,7 +37,7 @@ export class LocationUtils {
               lon={lon}
               preCachedGraph={preCachedGraph}
               onShowWelcome={onShowWelcome}
-              targetDate={targetDate?.toISOString().split("T")[0]}
+              targetDate={targetDate ? toLocalDateString(targetDate) : undefined}
               onFavoriteChange={onFavoriteChange}
             />
           }
@@ -55,7 +56,7 @@ export class LocationUtils {
                   lon={lon}
                   preCachedGraph={preCachedGraph}
                   onShowWelcome={onShowWelcome}
-                  targetDate={targetDate.toISOString().split("T")[0]}
+                  targetDate={toLocalDateString(targetDate)}
                   onFavoriteChange={onFavoriteChange}
                 />
               }

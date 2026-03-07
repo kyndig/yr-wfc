@@ -73,6 +73,33 @@ export const TIME_FORMATS = {
 } as const;
 
 /**
+ * Format a Date object as a local YYYY-MM-DD string.
+ * Avoids UTC conversion artifacts from toISOString().
+ */
+export function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Parse a YYYY-MM-DD string as local midnight.
+ * Avoids Date constructor UTC parsing for date-only strings.
+ */
+export function parseLocalDateString(dateStr: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (!match) {
+    throw new Error(`Invalid local date string: ${dateStr}`);
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return new Date(year, month - 1, day);
+}
+
+/**
  * Format a date using predefined format options
  */
 export function formatDate(date: Date | string, format: keyof typeof DATE_FORMATS): string {
