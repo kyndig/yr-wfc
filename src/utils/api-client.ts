@@ -1,5 +1,5 @@
 import { getCached, setCached } from "../cache";
-import { API_CONFIG, buildApiHeaders, buildApiUrl } from "./api-config";
+import { buildApiHeaders, buildApiUrl } from "./api-config";
 import { DebugLogger } from "./debug-utils";
 import { CACHE_THRESHOLDS } from "../config/weather-config";
 
@@ -196,13 +196,13 @@ export class ApiClient {
 export const weatherApiClient = new ApiClient(
   "https://api.met.no/weatherapi/locationforecast/2.0/compact",
   "weather",
-  API_CONFIG.CACHE_TTL.WEATHER,
+  CACHE_THRESHOLDS.WEATHER,
 );
 
 export const sunriseApiClient = new ApiClient(
   "https://api.met.no/weatherapi/sunrise/3.0/sun",
   "sun",
-  API_CONFIG.CACHE_TTL.SUNRISE,
+  CACHE_THRESHOLDS.SUNRISE,
 );
 
 export const locationApiClient = new ApiClient(

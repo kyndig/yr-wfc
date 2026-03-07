@@ -30,14 +30,8 @@ export const API_ENDPOINTS = {
  * API request configuration constants
  */
 export const API_CONFIG = {
-  // Request limits and timeouts
   NOMINATIM: {
     ADDRESS_DETAILS: 1,
-  },
-  // Cache TTL values (in milliseconds)
-  CACHE_TTL: {
-    WEATHER: 30 * 60 * 1000, // 30 minutes
-    SUNRISE: 6 * 60 * 60 * 1000, // 6 hours
   },
 } as const;
 
