@@ -12,7 +12,7 @@ import {
   type FavoriteLocation,
 } from "./storage";
 import { FavoriteToggleAction } from "./components/FavoriteToggleAction";
-import { getUIThresholds } from "./config/weather-config";
+import { UI_THRESHOLDS } from "./config/weather-config";
 import { formatDate } from "./utils/date-utils";
 import { buildCompactWeatherSummary } from "./utils/weather-summary-builder";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
@@ -85,7 +85,7 @@ function ForecastView(props: {
         dates = [targetDate];
         DebugLogger.debug(`Fetching sunrise/sunset for target date:`, dates);
       } else {
-        const subset = items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS);
+        const subset = items.slice(0, UI_THRESHOLDS.DETAILED_FORECAST_HOURS);
         dates = Array.from(new Set(subset.map((s) => new Date(s.time)).map((d) => d.toISOString().slice(0, 10))));
         DebugLogger.debug(`Forecast dates for sunrise/sunset:`, dates);
       }
@@ -195,12 +195,12 @@ function ForecastView(props: {
     return items;
   }, [items, targetDate]);
 
-  const reduced = useMemo(() => reduceToDayPeriods(items, getUIThresholds().SUMMARY_FORECAST_DAYS), [items]);
+  const reduced = useMemo(() => reduceToDayPeriods(items, UI_THRESHOLDS.SUMMARY_FORECAST_DAYS), [items]);
   const displaySeries = useMemo(() => {
     if (targetDate) {
       return filteredItems; // Use filtered data for specific date
     }
-    return mode === "detailed" ? items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS) : reduced;
+    return mode === "detailed" ? items.slice(0, UI_THRESHOLDS.DETAILED_FORECAST_HOURS) : reduced;
   }, [targetDate, filteredItems, mode, items, reduced]);
 
   // Cache both graph types for instant switching
@@ -240,7 +240,7 @@ function ForecastView(props: {
       // Use displaySeries for graph generation to respect target date filtering
       const dataForDetailedGraph = targetDate
         ? displaySeries
-        : items.slice(0, getUIThresholds().DETAILED_FORECAST_HOURS);
+        : items.slice(0, UI_THRESHOLDS.DETAILED_FORECAST_HOURS);
       const dataForSummaryGraph = targetDate ? displaySeries : reduced;
 
       // Generate graphs using persistent cache
@@ -252,7 +252,7 @@ function ForecastView(props: {
               "detailed",
               dataForDetailedGraph,
               originalName,
-              targetDate ? displaySeries.length : getUIThresholds().DETAILED_FORECAST_HOURS,
+              targetDate ? displaySeries.length : UI_THRESHOLDS.DETAILED_FORECAST_HOURS,
               sunByDate,
               targetDate,
               shouldForceRegenerate,
@@ -280,7 +280,7 @@ function ForecastView(props: {
           const detailedGraph = buildGraphMarkdown(
             originalName,
             dataForDetailedGraph,
-            targetDate ? displaySeries.length : getUIThresholds().DETAILED_FORECAST_HOURS,
+            targetDate ? displaySeries.length : UI_THRESHOLDS.DETAILED_FORECAST_HOURS,
             {
               title: targetDate ? "1-day forecast" : "48h forecast",
               smooth: true,

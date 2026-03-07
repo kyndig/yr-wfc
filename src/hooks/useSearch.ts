@@ -3,7 +3,7 @@ import { showToast, Toast } from "@raycast/api";
 import { searchLocations, type LocationResult } from "../location-search";
 import { parseQueryIntent, type QueryIntent } from "../query-intent";
 import { useDebouncedCallback } from "./useDebounce";
-import { getUIThresholds, getTimingThresholds, getGraphThresholds } from "../config/weather-config";
+import { UI_THRESHOLDS, TIMING_THRESHOLDS, GRAPH_THRESHOLDS } from "../config/weather-config";
 import { DebugLogger } from "../utils/debug-utils";
 import { LocationUtils } from "../utils/location-utils";
 
@@ -60,7 +60,7 @@ export function useSearch(): UseSearchReturn {
       const isToday = intent.targetDate.toDateString() === new Date().toDateString();
       const isTomorrow =
         intent.targetDate.toDateString() ===
-        new Date(Date.now() + getGraphThresholds().STYLING.MILLISECONDS_PER_DAY).toDateString();
+        new Date(Date.now() + GRAPH_THRESHOLDS.STYLING.MILLISECONDS_PER_DAY).toDateString();
 
       let dateLabel = dateStr;
       if (isToday) dateLabel = "today";
@@ -77,7 +77,7 @@ export function useSearch(): UseSearchReturn {
     const locationQuery = intent.locationQuery || trimmed;
 
     // Require minimum characters before searching
-    const minChars = getUIThresholds().SEARCH_MIN_CHARS;
+    const minChars = UI_THRESHOLDS.SEARCH_MIN_CHARS;
     if (locationQuery.length < minChars) {
       setLocations([]);
       setSearchError(null);
@@ -108,7 +108,7 @@ export function useSearch(): UseSearchReturn {
   }, []);
 
   // Debounced search function
-  const debouncedSearch = useDebouncedCallback(performSearch, getTimingThresholds().SEARCH_DEBOUNCE);
+  const debouncedSearch = useDebouncedCallback(performSearch, TIMING_THRESHOLDS.SEARCH_DEBOUNCE);
 
   // Clear search function
   const clearSearch = useCallback(() => {
@@ -127,7 +127,7 @@ export function useSearch(): UseSearchReturn {
       const intent = parseQueryIntent(q);
       const locationQuery = intent.locationQuery || q;
 
-      const minChars = getUIThresholds().SEARCH_MIN_CHARS;
+      const minChars = UI_THRESHOLDS.SEARCH_MIN_CHARS;
       if (locationQuery.length >= minChars) {
         debouncedSearch(q);
       } else {

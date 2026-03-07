@@ -1,5 +1,5 @@
 import { clearCachedByPrefix, getCached, setCached } from "./cache";
-import { getCacheThresholds } from "./config/weather-config";
+import { CACHE_THRESHOLDS } from "./config/weather-config";
 import { TimeseriesEntry } from "./weather-client";
 import { SunTimes } from "./sunrise-client";
 import { buildGraphMarkdown } from "./graph-utils";
@@ -77,16 +77,15 @@ export async function getCachedGraph(
   targetDate?: string,
 ): Promise<string | undefined> {
   try {
-    const cacheThresholds = getCacheThresholds();
     const dataHash = generateDataHash(series, name, hours, sunByDate);
     const cacheKey = generateGraphCacheKey(locationKey, mode, targetDate, dataHash);
 
-    const cached = await getCached<GraphCacheEntry>(cacheKey, cacheThresholds.GRAPH);
+    const cached = await getCached<GraphCacheEntry>(cacheKey, CACHE_THRESHOLDS.GRAPH);
 
     if (!cached) return undefined;
 
     // Check version compatibility
-    if (cached.version !== cacheThresholds.GRAPH_VERSION) {
+    if (cached.version !== CACHE_THRESHOLDS.GRAPH_VERSION) {
       return undefined;
     }
 
@@ -116,13 +115,12 @@ export async function setCachedGraph(
   targetDate?: string,
 ): Promise<void> {
   try {
-    const cacheThresholds = getCacheThresholds();
     const dataHash = generateDataHash(series, name, hours, sunByDate);
     const cacheKey = generateGraphCacheKey(locationKey, mode, targetDate, dataHash);
 
     const cacheEntry: GraphCacheEntry = {
       markdown,
-      version: cacheThresholds.GRAPH_VERSION,
+      version: CACHE_THRESHOLDS.GRAPH_VERSION,
       dataHash,
       generatedAt: Date.now(),
     };

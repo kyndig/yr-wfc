@@ -1,6 +1,6 @@
 import { clearAllCached, clearCachedByPrefix, getCached, setCached } from "../cache";
 import { DebugLogger } from "./debug-utils";
-import { getCacheThresholds } from "../config/weather-config";
+import { CACHE_THRESHOLDS } from "../config/weather-config";
 
 /**
  * Unified cache key generator following consistent patterns
@@ -119,19 +119,17 @@ export class CacheManager {
    * Get default TTL based on cache key type
    */
   private getDefaultTtl(key: string): number {
-    const thresholds = getCacheThresholds();
-
     if (key.startsWith("graph:")) {
-      return thresholds.GRAPH;
+      return CACHE_THRESHOLDS.GRAPH;
     } else if (key.startsWith("weather:")) {
-      return thresholds.WEATHER;
+      return CACHE_THRESHOLDS.WEATHER;
     } else if (key.startsWith("sunrise:")) {
-      return thresholds.SUNRISE;
+      return CACHE_THRESHOLDS.SUNRISE;
     } else if (key.startsWith("location:")) {
-      return thresholds.LOCATION_SEARCH;
+      return CACHE_THRESHOLDS.LOCATION_SEARCH;
     }
 
-    return thresholds.WEATHER; // Default fallback
+    return CACHE_THRESHOLDS.WEATHER; // Default fallback
   }
 
   /**

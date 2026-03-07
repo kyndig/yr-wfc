@@ -11,7 +11,7 @@ import {
 } from "../storage";
 import { LocationUtils } from "../utils/location-utils";
 import { DebugLogger } from "../utils/debug-utils";
-import { getUIThresholds, getTimingThresholds } from "../config/weather-config";
+import { UI_THRESHOLDS, TIMING_THRESHOLDS } from "../config/weather-config";
 import { generateAndCacheGraph } from "../graph-cache";
 
 export interface UseFavoritesReturn {
@@ -133,7 +133,7 @@ export function useFavorites(): UseFavoritesReturn {
                   "detailed",
                   [ts], // Single entry for favorites
                   favoriteName,
-                  getUIThresholds().DEFAULT_FORECAST_HOURS,
+                  UI_THRESHOLDS.DEFAULT_FORECAST_HOURS,
                 );
 
                 setPreWarmedGraphs((prev) => ({ ...prev, [key]: graphMarkdown }));
@@ -151,7 +151,7 @@ export function useFavorites(): UseFavoritesReturn {
             setWeatherDataInitialized(true);
             setIsInitialLoad(false); // Mark initial load as complete
             setIsBackgroundLoading(false); // Background loading complete
-          }, getTimingThresholds().COMPONENT_INIT_DELAY);
+          }, TIMING_THRESHOLDS.COMPONENT_INIT_DELAY);
         }
       } catch (err) {
         DebugLogger.error("Error fetching favorites:", err);
@@ -163,7 +163,7 @@ export function useFavorites(): UseFavoritesReturn {
             setWeatherDataInitialized(true);
             setIsInitialLoad(false); // Mark initial load as complete
             setIsBackgroundLoading(false); // Background loading complete
-          }, getTimingThresholds().COMPONENT_INIT_DELAY);
+          }, TIMING_THRESHOLDS.COMPONENT_INIT_DELAY);
         }
       }
     }

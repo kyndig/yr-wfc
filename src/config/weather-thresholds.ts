@@ -521,12 +521,3 @@ export const CACHE_THRESHOLDS = {
    */
   GRAPH_VERSION: "1.2.0",
 } as const;
-
-/**
- * Legacy compatibility - maps old threshold names to new ones
- * @deprecated Use the specific threshold constants above
- */
-export const LEGACY_THRESHOLDS = {
-  HIGH_THRESHOLD: PRECIPITATION_THRESHOLDS.HEAVY,
-  MEDIUM_THRESHOLD: PRECIPITATION_THRESHOLDS.MODERATE,
-} as const;

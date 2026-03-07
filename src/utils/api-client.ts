@@ -1,7 +1,7 @@
 import { getCached, setCached } from "../cache";
 import { API_CONFIG, buildApiHeaders, buildApiUrl } from "./api-config";
 import { DebugLogger } from "./debug-utils";
-import { getCacheThresholds } from "../config/weather-config";
+import { CACHE_THRESHOLDS } from "../config/weather-config";
 
 /**
  * Generic API client for making cached HTTP requests
@@ -208,7 +208,7 @@ export const sunriseApiClient = new ApiClient(
 export const locationApiClient = new ApiClient(
   "https://nominatim.openstreetmap.org/search",
   "location",
-  getCacheThresholds().LOCATION_SEARCH,
+  CACHE_THRESHOLDS.LOCATION_SEARCH,
 );
 
 // Debug: Log API client initialization

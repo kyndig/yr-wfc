@@ -14,7 +14,7 @@ import { useSearch } from "./hooks/useSearch";
 import { useFavorites } from "./hooks/useFavorites";
 import { useFavoriteIds } from "./hooks/useFavoriteIds";
 import { useGraphCache } from "./hooks/useGraphCache";
-import { getUIThresholds } from "./config/weather-config";
+import { UI_THRESHOLDS } from "./config/weather-config";
 import { CacheClearingUtility } from "./utils/cache-manager";
 import { DebugLogger } from "./utils/debug-utils";
 
@@ -180,15 +180,15 @@ export default function Command() {
           {/* Regular empty state */}
           <List.EmptyView
             title={
-              search.searchText && search.searchText.trim().length >= getUIThresholds().SEARCH_MIN_CHARS
+              search.searchText && search.searchText.trim().length >= UI_THRESHOLDS.SEARCH_MIN_CHARS
                 ? `Searching for "${search.searchText}"`
                 : search.searchText
                   ? `"${search.searchText}"`
                   : "Search for a location"
             }
             description={
-              search.searchText && search.searchText.trim().length < getUIThresholds().SEARCH_MIN_CHARS
-                ? `Enter at least ${getUIThresholds().SEARCH_MIN_CHARS} characters to search`
+              search.searchText && search.searchText.trim().length < UI_THRESHOLDS.SEARCH_MIN_CHARS
+                ? `Enter at least ${UI_THRESHOLDS.SEARCH_MIN_CHARS} characters to search`
                 : "Enter a city name or coordinates to get weather information"
             }
           />
@@ -199,19 +199,19 @@ export default function Command() {
           {search.safeLocations.length === 0 &&
             search.searchText &&
             search.searchText.trim().length > 0 &&
-            search.searchText.trim().length < getUIThresholds().SEARCH_MIN_CHARS && (
+            search.searchText.trim().length < UI_THRESHOLDS.SEARCH_MIN_CHARS && (
               <List.Item
                 key="min-chars-feedback"
                 title={`"${search.searchText}" - More characters needed`}
-                subtitle={`Type ${getUIThresholds().SEARCH_MIN_CHARS - search.searchText.trim().length} more character${getUIThresholds().SEARCH_MIN_CHARS - search.searchText.trim().length === 1 ? "" : "s"} to search`}
+                subtitle={`Type ${UI_THRESHOLDS.SEARCH_MIN_CHARS - search.searchText.trim().length} more character${UI_THRESHOLDS.SEARCH_MIN_CHARS - search.searchText.trim().length === 1 ? "" : "s"} to search`}
                 icon="💡"
                 accessories={[
                   {
-                    text: `${search.searchText.trim().length}/${getUIThresholds().SEARCH_MIN_CHARS}`,
+                    text: `${search.searchText.trim().length}/${UI_THRESHOLDS.SEARCH_MIN_CHARS}`,
                     tooltip: "Characters entered",
                   },
                   {
-                    text: `${getUIThresholds().SEARCH_MIN_CHARS - search.searchText.trim().length} more`,
+                    text: `${UI_THRESHOLDS.SEARCH_MIN_CHARS - search.searchText.trim().length} more`,
                     tooltip: "Characters needed",
                   },
                 ]}
@@ -287,7 +287,7 @@ export default function Command() {
                     {
                       text: search.queryIntent.targetDate
                         ? search.queryIntent.targetDate.toLocaleDateString()
-                        : `${loc.lat.toFixed(getUIThresholds().COORDINATE_PRECISION)}, ${loc.lon.toFixed(getUIThresholds().COORDINATE_PRECISION)}`,
+                        : `${loc.lat.toFixed(UI_THRESHOLDS.COORDINATE_PRECISION)}, ${loc.lon.toFixed(UI_THRESHOLDS.COORDINATE_PRECISION)}`,
                       icon: search.queryIntent.targetDate ? Icon.Calendar : undefined,
                     },
                   ]}
@@ -336,7 +336,7 @@ export default function Command() {
 
           {/* Show "no results" message only when search has completed and returned no results */}
           {!search.isLoading &&
-            search.searchText.trim().length >= getUIThresholds().SEARCH_MIN_CHARS &&
+            search.searchText.trim().length >= UI_THRESHOLDS.SEARCH_MIN_CHARS &&
             search.safeLocations.length === 0 && (
               <List.EmptyView
                 title={`No results found for "${search.searchText}"`}
