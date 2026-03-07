@@ -24,6 +24,7 @@ import { LocationResult } from "./location-search";
 
 function ForecastView(props: {
   location?: LocationResult;
+  locationId?: string;
   name?: string; // For backward compatibility with favorites
   lat: number;
   lon: number;
@@ -33,11 +34,23 @@ function ForecastView(props: {
   onFavoriteChange?: () => void; // Callback when favorites are added/removed
   initialMode?: "detailed" | "summary"; // Initial mode to start in
 }) {
-  const { location, name, lat, lon, preCachedGraph, onShowWelcome, targetDate, onFavoriteChange, initialMode } = props;
+  const {
+    location,
+    locationId,
+    name,
+    lat,
+    lon,
+    preCachedGraph,
+    onShowWelcome,
+    targetDate,
+    onFavoriteChange,
+    initialMode,
+  } = props;
+  const canonicalKey = LocationUtils.getLocationKey(locationId ?? location?.id, lat, lon);
 
   // Create a mock LocationResult for favorites (backward compatibility)
   const locationData: LocationResult = location || {
-    id: `favorite-${lat}-${lon}`,
+    id: locationId ?? `favorite-${lat}-${lon}`,
     displayName: name || "Unknown Location",
     lat,
     lon,
@@ -61,16 +74,15 @@ function ForecastView(props: {
     refresh: refreshWeatherData,
   } = useWeatherData(lat, lon, true);
 
-  // Check if current location is in favorites (using coordinate + name matching)
+  // Check if current location is in favorites using canonical identity.
   useEffect(() => {
     const checkFavoriteStatus = async () => {
-      const canonicalId = LocationUtils.getLocationKey(location?.id, lat, lon);
-      const favLike: FavoriteLocation = { id: canonicalId, name: originalName, lat, lon };
+      const favLike: FavoriteLocation = { id: canonicalKey, name: originalName, lat, lon };
       const isFav = await isFavoriteLocation(favLike);
       setIsFavorite(isFav);
     };
     checkFavoriteStatus();
-  }, [lat, lon, originalName, location?.id]);
+  }, [canonicalKey, lat, lon, originalName]);
 
   // Fetch sunrise/sunset for visible dates once forecast is loaded
   useEffect(() => {
@@ -199,7 +211,7 @@ function ForecastView(props: {
     // We rely on graph input data (including sunByDate) as the cache discriminator
     // instead of imperative cache clearing effects.
     if (items.length > 0) {
-      const locationKey = LocationUtils.getLocationKey(location?.id, lat, lon);
+      const locationKey = canonicalKey;
 
       // Use displaySeries for graph generation to respect target date filtering
       const dataForDetailedGraph = targetDate ? displaySeries : items.slice(0, UI_THRESHOLDS.DETAILED_FORECAST_HOURS);
@@ -263,7 +275,19 @@ function ForecastView(props: {
 
       generateGraphs();
     }
-  }, [items, reduced, name, preCachedGraph, preRenderedGraph, sunByDate, displaySeries, targetDate, lat, lon]);
+  }, [
+    canonicalKey,
+    items,
+    reduced,
+    name,
+    preCachedGraph,
+    preRenderedGraph,
+    sunByDate,
+    displaySeries,
+    targetDate,
+    lat,
+    lon,
+  ]);
 
   // Get cached graph based on current mode, with preCachedGraph as fallback
   const graph = useMemo(() => {
@@ -348,7 +372,7 @@ function ForecastView(props: {
   };
 
   const handleFavoriteToggle = async () => {
-    const id = LocationUtils.getLocationKey(location?.id, lat, lon);
+    const id = canonicalKey;
     const favLocation: FavoriteLocation = { id, name: originalName, lat, lon };
 
     try {
@@ -435,6 +459,7 @@ function ForecastView(props: {
                 shortcut={{ modifiers: ["cmd"], key: "4" }}
                 target={
                   <ForecastView
+                    locationId={locationId ?? location?.id}
                     name={name}
                     lat={lat}
                     lon={lon}
@@ -450,6 +475,7 @@ function ForecastView(props: {
                 shortcut={{ modifiers: ["cmd"], key: "9" }}
                 target={
                   <ForecastView
+                    locationId={locationId ?? location?.id}
                     name={name}
                     lat={lat}
                     lon={lon}
