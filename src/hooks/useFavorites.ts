@@ -134,14 +134,11 @@ export function useFavorites(): UseFavoritesReturn {
     const latestFavoriteWeather = favoriteWeatherRef.current;
     const latestSunTimes = sunTimesRef.current;
     const latestFavoriteErrors = favoriteErrorsRef.current;
-    const latestFavoritesLoading = favoritesLoadingRef.current;
-
     const missingEntries = favoriteEntries.filter(({ key }) => {
       return (
         !hasOwn(latestFavoriteWeather as Record<string, unknown>, key) &&
         !hasOwn(latestSunTimes as Record<string, unknown>, key) &&
-        !hasOwn(latestFavoriteErrors as Record<string, unknown>, key) &&
-        !hasOwn(latestFavoritesLoading as Record<string, unknown>, key)
+        !hasOwn(latestFavoriteErrors as Record<string, unknown>, key)
       );
     });
 
