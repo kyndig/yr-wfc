@@ -38,13 +38,6 @@ export const ToastMessages = {
       message: "Unable to connect to location service. You may not be able to search for new locations.",
     }),
 
-  networkConnectivityIssues: () =>
-    showToast({
-      style: Toast.Style.Failure,
-      title: "Network Connectivity Issues",
-      message: "Multiple services are unavailable. Please check your internet connection.",
-    }),
-
   /**
    * Show general error toasts
    */
