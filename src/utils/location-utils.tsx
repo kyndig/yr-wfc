@@ -229,19 +229,13 @@ export class LocationUtils {
 
       case "neighbourhood":
       case "suburb":
+      case "town":
+      case "village":
+      case "hamlet":
         return "🏘️";
 
       case "city":
         return "🏙️";
-
-      case "town":
-        return "🏘️";
-
-      case "village":
-        return "🏘️";
-
-      case "hamlet":
-        return "🏘️";
 
       case "municipality":
         return "🏛️";
