@@ -31,6 +31,8 @@ English and Norwegian (Bokmål). Diacritics normalised ("søndag" = "sondag").
 | Remove favourite | `Cmd+Shift+F` |
 | Move favourite up / down | `Cmd+Shift+↑` / `↓` |
 | Refresh & clear cache | `Cmd+R` |
+| Show welcome message | `Cmd+Shift+W` |
+| Hide welcome message | `Cmd+Shift+Alt+W` |
 
 ## Preferences
 
