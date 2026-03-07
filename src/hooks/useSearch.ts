@@ -125,7 +125,12 @@ export function useSearch(): UseSearchReturn {
   useEffect(() => {
     const q = searchText.trim();
     if (q) {
-      if (q.length >= UI_THRESHOLDS.SEARCH_MIN_CHARS) {
+      // Gate on parsed location query length, not raw query length.
+      // This avoids firing date-intent toasts for inputs like "ab tomorrow".
+      const intent = parseQueryIntent(q);
+      const locationQuery = intent.locationQuery || q;
+
+      if (locationQuery.length >= UI_THRESHOLDS.SEARCH_MIN_CHARS) {
         debouncedSearch(q);
       } else {
         setLocations([]);
