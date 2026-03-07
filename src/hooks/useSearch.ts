@@ -126,11 +126,6 @@ export function useSearch(): UseSearchReturn {
     const q = searchText.trim();
     if (q.length >= UI_THRESHOLDS.SEARCH_MIN_CHARS) {
       debouncedSearch(q);
-    } else if (q.length > 0) {
-      setLocations([]);
-      setQueryIntent({});
-      setIsLoading(false);
-      setSearchError(null);
     } else {
       setLocations([]);
       setQueryIntent({});
