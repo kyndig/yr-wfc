@@ -1,3 +1,6 @@
+export function getPreferenceValues<T>() {
+  return {} as T;
+}
 export const Toast = {
   Style: {
     Success: "success",
