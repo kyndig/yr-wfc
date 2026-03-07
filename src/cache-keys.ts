@@ -14,12 +14,8 @@ export function apiCacheKey(prefix: string, suffix: string): string {
   return `${prefix}:${suffix}`;
 }
 
-export function weatherCacheKey(lat: number, lon: number): string {
-  return `weather:${lat.toFixed(COORD_PRECISION)},${lon.toFixed(COORD_PRECISION)}`;
-}
-
-export function sunriseCacheKey(lat: number, lon: number, date: string): string {
-  return `sunrise:${lat.toFixed(COORD_PRECISION)},${lon.toFixed(COORD_PRECISION)}:${date}`;
+export function coordSuffix(lat: number, lon: number): string {
+  return `${lat.toFixed(COORD_PRECISION)},${lon.toFixed(COORD_PRECISION)}`;
 }
 
 export function graphCachePrefix(locationKey: string): string {
