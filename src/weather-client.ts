@@ -1,4 +1,5 @@
 import { weatherApiClient } from "./utils/api-client";
+import { coordSuffix } from "./cache-keys";
 
 export type TimeseriesEntry = {
   time: string;
@@ -42,10 +43,6 @@ type LocationForecastResponse = {
     updated_at?: string;
   };
 };
-
-function coordSuffix(lat: number, lon: number): string {
-  return `${lat.toFixed(3)},${lon.toFixed(3)}`;
-}
 
 export async function getWeather(
   lat: number,

@@ -1,4 +1,5 @@
 import { sunriseApiClient } from "./utils/api-client";
+import { coordSuffix } from "./cache-keys";
 
 export type SunTimes = {
   sunrise?: string; // ISO time
@@ -15,7 +16,7 @@ type SunriseApiResponse = {
 export async function getSunTimes(lat: number, lon: number, dateISO?: string): Promise<SunTimes> {
   const dateRaw = dateISO ?? new Date().toISOString().slice(0, 10);
   const date = dateRaw.includes("T") ? dateRaw.split("T")[0] : dateRaw;
-  const cacheKeySuffix = `${lat.toFixed(3)},${lon.toFixed(3)}:${date}`;
+  const cacheKeySuffix = `${coordSuffix(lat, lon)}:${date}`;
 
   return sunriseApiClient.requestSafe(
     { lat, lon, date },
