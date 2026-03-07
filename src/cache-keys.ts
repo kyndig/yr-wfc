@@ -1,7 +1,7 @@
+import { COORD_PRECISION } from "./utils/location-key";
+
 export type GraphMode = "detailed" | "summary";
 export type GraphPaletteId = "light" | "dark";
-
-const COORD_PRECISION = 3;
 const GRAPH_ALL_DATES_TOKEN = "all";
 const GRAPH_NO_TIME_TOKEN = "none";
 const GRAPH_NO_SUN_DATES_TOKEN = "none";

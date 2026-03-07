@@ -8,7 +8,7 @@
  */
 export type LocationKey = string;
 
-const COORD_PRECISION = 3;
+export const COORD_PRECISION = 3;
 
 function coordPart(n: number): string {
   return n.toFixed(COORD_PRECISION);
