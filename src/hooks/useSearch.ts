@@ -125,15 +125,9 @@ export function useSearch(): UseSearchReturn {
   useEffect(() => {
     const q = searchText.trim();
     if (q) {
-      // Parse query intent to check if we have a valid location query
-      const intent = parseQueryIntent(q);
-      const locationQuery = intent.locationQuery || q;
-
-      const minChars = UI_THRESHOLDS.SEARCH_MIN_CHARS;
-      if (locationQuery.length >= minChars) {
+      if (q.length >= UI_THRESHOLDS.SEARCH_MIN_CHARS) {
         debouncedSearch(q);
       } else {
-        // Clear locations but keep query intent for display
         setLocations([]);
         setIsLoading(false);
         setSearchError(null);
