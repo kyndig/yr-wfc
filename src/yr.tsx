@@ -321,6 +321,7 @@ export default function Command() {
                           icon={Icon.Clock}
                           target={
                             <LazyForecastView
+                              locationId={fav.id}
                               name={fav.name}
                               lat={fav.lat}
                               lon={fav.lon}

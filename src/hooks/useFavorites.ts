@@ -36,7 +36,6 @@ export interface UseFavoritesReturn {
   refreshFavorites: () => Promise<void>;
 
   // Utility functions
-  isLocationFavorite: (locationId: string) => boolean;
   getFavoriteWeather: (locationId: string, lat: number, lon: number) => TimeseriesEntry | undefined;
   getFavoriteSunTimes: (locationId: string, lat: number, lon: number) => SunTimes | undefined;
   isFavoriteLoading: (locationId: string, lat: number, lon: number) => boolean;
@@ -283,14 +282,6 @@ export function useFavorites(): UseFavoritesReturn {
     [refreshFavorites],
   );
 
-  // Check if location is favorite
-  const isLocationFavorite = useCallback(
-    (locationId: string) => {
-      return favorites.some((fav) => fav.id === locationId);
-    },
-    [favorites],
-  );
-
   // Get weather data for a favorite location
   const getFavoriteWeather = useCallback(
     (locationId: string, lat: number, lon: number) => {
@@ -348,7 +339,6 @@ export function useFavorites(): UseFavoritesReturn {
     refreshFavorites,
 
     // Utility functions
-    isLocationFavorite,
     getFavoriteWeather,
     getFavoriteSunTimes,
     isFavoriteLoading,

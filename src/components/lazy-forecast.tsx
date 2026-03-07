@@ -8,6 +8,7 @@ const LazyForecastComponent = lazy(() => import("../forecast"));
 
 interface LazyForecastProps {
   location?: LocationResult;
+  locationId?: string;
   name?: string; // For backward compatibility with favorites
   lat: number;
   lon: number;
