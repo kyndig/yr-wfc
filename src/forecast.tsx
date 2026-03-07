@@ -218,23 +218,10 @@ function ForecastView(props: {
       Object.keys(sunByDate).length,
     );
 
-    // Generate graphs if we have weather data
-    // For detailed mode, prefer to wait for sunrise/sunset data if it's being fetched
+    // Generate graphs if we have weather data.
+    // We rely on graph input data (including sunByDate) as the cache discriminator
+    // instead of imperative cache clearing effects.
     if (items.length > 0) {
-      // Check if we're in detailed mode and sunrise/sunset data might still be loading
-      const isDetailedMode = !targetDate && mode === "detailed";
-      const hasSunData = Object.keys(sunByDate).length > 0;
-
-      if (isDetailedMode && !hasSunData) {
-        DebugLogger.debug("Detailed mode without sunrise/sunset data - waiting for data to load");
-        return; // Wait for sunrise/sunset data
-      }
-
-      // Force regeneration if we have sunrise/sunset data
-      const shouldForceRegenerate = hasSunData;
-      if (shouldForceRegenerate) {
-        DebugLogger.debug("Forcing graph regeneration with sunrise/sunset data");
-      }
       const locationKey = LocationUtils.getLocationKey(location?.id, lat, lon);
 
       // Use displaySeries for graph generation to respect target date filtering
@@ -253,7 +240,6 @@ function ForecastView(props: {
               targetDate ? displaySeries.length : UI_THRESHOLDS.DETAILED_FORECAST_HOURS,
               sunByDate,
               targetDate,
-              shouldForceRegenerate,
             ),
             generateAndCacheGraph(
               locationKey,
@@ -263,7 +249,6 @@ function ForecastView(props: {
               dataForSummaryGraph.length,
               targetDate ? sunByDate : undefined, // Show sunrise/sunset for 1-day, not for 9-day summary
               targetDate,
-              shouldForceRegenerate,
             ),
           ]);
 
@@ -302,20 +287,6 @@ function ForecastView(props: {
       generateGraphs();
     }
   }, [items, reduced, name, preCachedGraph, preRenderedGraph, sunByDate, displaySeries, targetDate, lat, lon]);
-
-  // Clear graph cache when component mounts to ensure fresh styling
-  useEffect(() => {
-    setGraphCache({ detailed: "", summary: "" });
-  }, []);
-
-  // Force cache invalidation when sunByDate changes to ensure fresh graphs
-  useEffect(() => {
-    if (Object.keys(sunByDate).length > 0) {
-      setGraphCache({ detailed: "", summary: "" });
-      // Also clear persistent cache when sunByDate changes
-      CacheClearingUtility.clearCachesForSunriseSunsetChange();
-    }
-  }, [sunByDate]);
 
   // Get cached graph based on current mode, with preCachedGraph as fallback
   const graph = useMemo(() => {
