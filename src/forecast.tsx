@@ -75,6 +75,23 @@ function ForecastView(props: {
   // Fetch sunrise/sunset for visible dates once forecast is loaded
   useEffect(() => {
     let cancelled = false;
+
+    const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      try {
+        return await Promise.race([
+          promise,
+          new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error(`Timeout: ${label}`)), timeoutMs);
+          }),
+        ]);
+      } finally {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      }
+    };
+
     async function fetchSun() {
       if (items.length === 0) return;
 
@@ -90,67 +107,34 @@ function ForecastView(props: {
         DebugLogger.debug(`Forecast dates for sunrise/sunset:`, dates);
       }
 
-      let successCount = 0;
-      let errorCount = 0;
-
       const entries = await Promise.allSettled(
         dates.map(async (date: string) => {
-          try {
-            DebugLogger.debug(`Fetching sunrise/sunset for ${date} at ${lat}, ${lon}`);
-
-            // Add timeout to prevent hanging on slow API responses
-            const timeoutPromise = new Promise<never>((_, reject) => {
-              setTimeout(() => reject(new Error(`Timeout fetching sunrise/sunset for ${date}`)), 10000);
-            });
-
-            // Try with retry logic for robustness
-            let v: SunTimes = {};
-            let lastError: Error | null = null;
-
-            for (let attempt = 1; attempt <= 2; attempt++) {
-              try {
-                v = await Promise.race([getSunTimes(lat, lon, date), timeoutPromise]);
-                DebugLogger.debug(`Got sunrise/sunset for ${date} (attempt ${attempt}):`, v);
-
-                // Validate the response
-                if (v && (v.sunrise || v.sunset)) {
-                  successCount++;
-                  return [date, v] as const;
-                } else if (attempt === 1) {
-                  // Only retry if first attempt returned empty data
-                  DebugLogger.warn(`Empty sunrise/sunset data for ${date}, retrying...`);
-                  await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s before retry
-                  continue;
-                }
-              } catch (error) {
-                lastError = error as Error;
-                if (attempt === 1) {
-                  DebugLogger.warn(`Attempt ${attempt} failed for ${date}, retrying...`, error);
-                  await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s before retry
-                }
-              }
-            }
-
-            // If we get here, both attempts failed or returned empty data
-            DebugLogger.warn(`Failed to get sunrise/sunset data for ${date} after 2 attempts:`, lastError);
-            errorCount++;
-            return [date, {} as SunTimes];
-          } catch (error) {
-            DebugLogger.warn(`Failed to fetch sunrise/sunset for ${date}:`, error);
-            errorCount++;
-            return [date, {} as SunTimes];
-          }
+          DebugLogger.debug(`Fetching sunrise/sunset for ${date} at ${lat}, ${lon}`);
+          const value = await withTimeout(getSunTimes(lat, lon, date), 5000, `sunrise/sunset for ${date}`);
+          return [date, value] as const;
         }),
       );
 
       if (!cancelled) {
         const map: Record<string, SunTimes> = {};
-        for (const entry of entries) {
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let index = 0; index < entries.length; index++) {
+          const entry = entries[index];
+          const date = dates[index];
+
           if (entry.status === "fulfilled") {
-            const [date, sunTimes] = entry.value as [string, SunTimes];
-            map[date] = sunTimes;
+            const [entryDate, sunTimes] = entry.value as [string, SunTimes];
+            map[entryDate] = sunTimes;
+            if (sunTimes && (sunTimes.sunrise || sunTimes.sunset)) {
+              successCount++;
+            } else {
+              errorCount++;
+            }
           } else {
-            DebugLogger.warn("Promise rejected for sunrise/sunset:", entry.reason);
+            DebugLogger.warn(`Failed to fetch sunrise/sunset for ${date}:`, entry.reason);
+            map[date] = {};
             errorCount++;
           }
         }
@@ -161,13 +145,6 @@ function ForecastView(props: {
         // Always set the data, even if some requests failed
         // This ensures graph generation proceeds with partial data
         setSunByDate(map);
-
-        // Clear graph cache when sunrise/sunset data changes to force regeneration
-        if (successCount > 0) {
-          DebugLogger.debug("Clearing graph cache due to sunrise/sunset data change");
-          setGraphCache({ detailed: "", summary: "" });
-          await CacheClearingUtility.clearCachesForSunriseSunsetChange();
-        }
 
         // Show user feedback if there were issues (but don't block the UI)
         if (errorCount > 0 && successCount === 0) {
@@ -218,23 +195,10 @@ function ForecastView(props: {
       Object.keys(sunByDate).length,
     );
 
-    // Generate graphs if we have weather data
-    // For detailed mode, prefer to wait for sunrise/sunset data if it's being fetched
+    // Generate graphs if we have weather data.
+    // We rely on graph input data (including sunByDate) as the cache discriminator
+    // instead of imperative cache clearing effects.
     if (items.length > 0) {
-      // Check if we're in detailed mode and sunrise/sunset data might still be loading
-      const isDetailedMode = !targetDate && mode === "detailed";
-      const hasSunData = Object.keys(sunByDate).length > 0;
-
-      if (isDetailedMode && !hasSunData) {
-        DebugLogger.debug("Detailed mode without sunrise/sunset data - waiting for data to load");
-        return; // Wait for sunrise/sunset data
-      }
-
-      // Force regeneration if we have sunrise/sunset data
-      const shouldForceRegenerate = hasSunData;
-      if (shouldForceRegenerate) {
-        DebugLogger.debug("Forcing graph regeneration with sunrise/sunset data");
-      }
       const locationKey = LocationUtils.getLocationKey(location?.id, lat, lon);
 
       // Use displaySeries for graph generation to respect target date filtering
@@ -253,7 +217,6 @@ function ForecastView(props: {
               targetDate ? displaySeries.length : UI_THRESHOLDS.DETAILED_FORECAST_HOURS,
               sunByDate,
               targetDate,
-              shouldForceRegenerate,
             ),
             generateAndCacheGraph(
               locationKey,
@@ -263,7 +226,6 @@ function ForecastView(props: {
               dataForSummaryGraph.length,
               targetDate ? sunByDate : undefined, // Show sunrise/sunset for 1-day, not for 9-day summary
               targetDate,
-              shouldForceRegenerate,
             ),
           ]);
 
@@ -302,20 +264,6 @@ function ForecastView(props: {
       generateGraphs();
     }
   }, [items, reduced, name, preCachedGraph, preRenderedGraph, sunByDate, displaySeries, targetDate, lat, lon]);
-
-  // Clear graph cache when component mounts to ensure fresh styling
-  useEffect(() => {
-    setGraphCache({ detailed: "", summary: "" });
-  }, []);
-
-  // Force cache invalidation when sunByDate changes to ensure fresh graphs
-  useEffect(() => {
-    if (Object.keys(sunByDate).length > 0) {
-      setGraphCache({ detailed: "", summary: "" });
-      // Also clear persistent cache when sunByDate changes
-      CacheClearingUtility.clearCachesForSunriseSunsetChange();
-    }
-  }, [sunByDate]);
 
   // Get cached graph based on current mode, with preCachedGraph as fallback
   const graph = useMemo(() => {

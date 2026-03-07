@@ -1,3 +1,12 @@
+export const Toast = {
+  Style: {
+    Success: "success",
+    Failure: "failure",
+  },
+} as const;
+
+export const showToast = jest.fn(async () => undefined);
+
 export const getPreferenceValues = jest.fn(() => ({
   units: "metric",
   clockFormat: "24h",
