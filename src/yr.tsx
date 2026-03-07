@@ -1,18 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Action, ActionPanel, List, Icon, showToast, Toast } from "@raycast/api";
 import { LazyForecastView } from "./components/lazy-forecast";
 import WelcomeMessage from "./components/welcome-message";
 
 import { getWeather, type TimeseriesEntry } from "./weather-client";
+import { type LocationResult } from "./location-search";
 import { isFirstTimeUser, markAsNotFirstTime } from "./storage";
 
 import { iconForSymbol } from "./weather-emoji";
 import { TemperatureFormatter } from "./utils/weather-formatters";
 
-import { useNetworkTest } from "./hooks/useNetworkTest";
 import { useSearch } from "./hooks/useSearch";
 import { useFavorites } from "./hooks/useFavorites";
-import { useFavoriteIds } from "./hooks/useFavoriteIds";
 import { useGraphCache } from "./hooks/useGraphCache";
 import { UI_THRESHOLDS } from "./config/weather-config";
 import { CacheClearingUtility } from "./utils/cache-manager";
@@ -30,40 +29,15 @@ export default function Command() {
   // Custom hooks for different responsibilities
   const search = useSearch();
   const favorites = useFavorites();
-  const favoriteIds = useFavoriteIds();
-  const networkTest = useNetworkTest();
   const graphCache = useGraphCache();
 
-  // Update favorite IDs when search results change
-  useEffect(() => {
-    favoriteIds.refreshFavoriteIds(search.safeLocations);
-  }, [search.safeLocations, favoriteIds.refreshFavoriteIds]);
-
-  // Update favorite IDs when favorites change
-  useEffect(() => {
-    favoriteIds.refreshFavoriteIds(search.safeLocations);
-  }, [favorites.favorites, favoriteIds.refreshFavoriteIds, search.safeLocations]);
-
-  // Debug: Log network test results and show user-friendly notifications
-  useEffect(() => {
-    if (networkTest.error) {
-      DebugLogger.error("Network test results:", networkTest);
-
-      // Show user-friendly notifications for critical API failures
-      if (!networkTest.metApi) {
-        ToastMessages.weatherApiUnavailable();
-      }
-
-      if (!networkTest.nominatim) {
-        ToastMessages.locationApiUnavailable();
-      }
-
-      // Only show general connectivity warning if both critical services fail
-      if (!networkTest.metApi && !networkTest.nominatim) {
-        ToastMessages.networkConnectivityIssues();
-      }
-    }
-  }, [networkTest]);
+  // Derive favorite membership from loaded favorites to avoid duplicate storage reads.
+  const favoriteKeySet = useMemo(
+    () => new Set(favorites.favorites.map((f) => LocationUtils.getLocationKey(f.id, f.lat, f.lon))),
+    [favorites.favorites],
+  );
+  const isLocationFavorite = (loc: LocationResult): boolean =>
+    favoriteKeySet.has(LocationUtils.getLocationKey(loc.id, loc.lat, loc.lon));
 
   // Check if this is the first time opening the extension
   useEffect(() => {
@@ -219,32 +193,6 @@ export default function Command() {
               />
             )}
 
-          {/* Network Status Section - Show when there are connectivity issues */}
-          {networkTest.error && (
-            <List.Section title="⚠️ Network Status">
-              <List.Item
-                title="Service Connectivity Issues Detected"
-                subtitle="Some features may not work properly"
-                icon="⚠️"
-                accessories={[
-                  {
-                    text: networkTest.metApi ? "✅" : "❌",
-                    tooltip: networkTest.metApi ? "Weather API: Connected" : "Weather API: Failed",
-                  },
-                  {
-                    text: networkTest.nominatim ? "✅" : "❌",
-                    tooltip: networkTest.nominatim ? "Location API: Connected" : "Location API: Failed",
-                  },
-                ]}
-                actions={ActionPanelBuilders.createNetworkRetryActions(() => {
-                  // Network tests will re-run when the component re-mounts
-                  // Show a toast message to indicate retry action
-                  ToastMessages.networkTestsRetry();
-                })}
-              />
-            </List.Section>
-          )}
-
           {/* Show special loading state for date queries */}
           {isDateQueryLoading && search.safeLocations.length === 0 && (
             <List.Section title="🔍 Processing Date Query">
@@ -293,10 +241,10 @@ export default function Command() {
                   ]}
                   actions={createLocationActions(
                     loc,
-                    favoriteIds.favoriteIds[loc.id],
+                    isLocationFavorite(loc),
                     async () => {
                       try {
-                        if (favoriteIds.favoriteIds[loc.id]) {
+                        if (isLocationFavorite(loc)) {
                           const fav = LocationUtils.createFavoriteFromSearchResult(
                             loc.id,
                             loc.displayName,
