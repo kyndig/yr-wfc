@@ -55,6 +55,17 @@ export function useSearch(): UseSearchReturn {
     const intent = parseQueryIntent(trimmed);
     setQueryIntent(intent);
 
+    // Use the parsed location query if available, otherwise use the full query
+    const locationQuery = intent.locationQuery || trimmed;
+
+    // Require minimum characters before searching
+    const minChars = UI_THRESHOLDS.SEARCH_MIN_CHARS;
+    if (locationQuery.length < minChars) {
+      setLocations([]);
+      setSearchError(null);
+      return;
+    }
+
     // Show toast notification if a date query was successfully parsed
     if (intent.targetDate) {
       const dateStr = intent.targetDate.toLocaleDateString();
@@ -72,17 +83,6 @@ export function useSearch(): UseSearchReturn {
         title: `📅 ${dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} weather query detected!`,
         message: `Search results will show weather for ${dateLabel} - tap any location to view detailed forecast`,
       });
-    }
-
-    // Use the parsed location query if available, otherwise use the full query
-    const locationQuery = intent.locationQuery || trimmed;
-
-    // Require minimum characters before searching
-    const minChars = UI_THRESHOLDS.SEARCH_MIN_CHARS;
-    if (locationQuery.length < minChars) {
-      setLocations([]);
-      setSearchError(null);
-      return;
     }
 
     setIsLoading(true);
@@ -124,19 +124,13 @@ export function useSearch(): UseSearchReturn {
   // Trigger search when search text changes with debouncing
   useEffect(() => {
     const q = searchText.trim();
-    if (q) {
-      // Gate on parsed location query length, not raw query length.
-      // This avoids firing date-intent toasts for inputs like "ab tomorrow".
-      const intent = parseQueryIntent(q);
-      const locationQuery = intent.locationQuery || q;
-
-      if (locationQuery.length >= UI_THRESHOLDS.SEARCH_MIN_CHARS) {
-        debouncedSearch(q);
-      } else {
-        setLocations([]);
-        setIsLoading(false);
-        setSearchError(null);
-      }
+    if (q.length >= UI_THRESHOLDS.SEARCH_MIN_CHARS) {
+      debouncedSearch(q);
+    } else if (q.length > 0) {
+      setLocations([]);
+      setQueryIntent({});
+      setIsLoading(false);
+      setSearchError(null);
     } else {
       setLocations([]);
       setQueryIntent({});
