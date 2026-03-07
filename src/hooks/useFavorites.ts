@@ -62,7 +62,6 @@ export function useFavorites(): UseFavoritesReturn {
   const favoriteWeatherRef = useRef(favoriteWeather);
   const sunTimesRef = useRef(sunTimes);
   const favoriteErrorsRef = useRef(favoriteErrors);
-  const favoritesLoadingRef = useRef(favoritesLoading);
   const isInitialLoadRef = useRef(isInitialLoad);
 
   useEffect(() => {
@@ -76,10 +75,6 @@ export function useFavorites(): UseFavoritesReturn {
   useEffect(() => {
     favoriteErrorsRef.current = favoriteErrors;
   }, [favoriteErrors]);
-
-  useEffect(() => {
-    favoritesLoadingRef.current = favoritesLoading;
-  }, [favoritesLoading]);
 
   useEffect(() => {
     isInitialLoadRef.current = isInitialLoad;
