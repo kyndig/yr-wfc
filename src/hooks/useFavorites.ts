@@ -127,14 +127,8 @@ export function useFavorites(): UseFavoritesReturn {
     setPreWarmedGraphs((prev) => pruneToActiveKeys(prev));
 
     const latestFavoriteWeather = favoriteWeatherRef.current;
-    const latestSunTimes = sunTimesRef.current;
-    const latestFavoriteErrors = favoriteErrorsRef.current;
     const missingEntries = favoriteEntries.filter(({ key }) => {
-      return (
-        !hasOwn(latestFavoriteWeather as Record<string, unknown>, key) &&
-        !hasOwn(latestSunTimes as Record<string, unknown>, key) &&
-        !hasOwn(latestFavoriteErrors as Record<string, unknown>, key)
-      );
+      return !hasOwn(latestFavoriteWeather as Record<string, unknown>, key);
     });
 
     if (missingEntries.length === 0) {
@@ -156,12 +150,19 @@ export function useFavorites(): UseFavoritesReturn {
       let toastShown = false;
       const favoriteNameByKey = new Map(missingEntries.map(({ key, fav }) => [key, fav.name]));
 
-      // Mark only missing favorites as loading.
+      // Mark only missing favorites as loading and clear stale errors from prior failures.
       setFavoritesLoading((prev) => {
         const next = pruneToActiveKeys(prev);
         missingEntries.forEach(({ key }) => {
           next[key] = true;
         });
+        return next;
+      });
+      setFavoriteErrors((prev) => {
+        const next = { ...prev };
+        for (const { key } of missingEntries) {
+          delete next[key];
+        }
         return next;
       });
 

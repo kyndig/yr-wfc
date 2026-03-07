@@ -28,6 +28,10 @@ jest.mock("../../src/graph-cache", () => ({
   generateAndCacheGraph: jest.fn(async () => "graph"),
 }));
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 describe("useFavorites missing entry detection", () => {
   it("refetches entries that were only marked loading after cancellation", async () => {
     const alpha: FavoriteLocation = { id: "alpha", name: "Alpha", lat: 59.9, lon: 10.7 };
@@ -76,6 +80,40 @@ describe("useFavorites missing entry detection", () => {
       expect(result.current.isFavoriteLoading(beta.id ?? "", beta.lat, beta.lon)).toBe(false);
       expect(result.current.getFavoriteWeather(alpha.id ?? "", alpha.lat, alpha.lon)).toBeDefined();
       expect(result.current.getFavoriteWeather(beta.id ?? "", beta.lat, beta.lon)).toBeDefined();
+    });
+  });
+
+  it("retries previously failed favorites on refreshFavorites()", async () => {
+    const oslo: FavoriteLocation = { id: "oslo", name: "Oslo", lat: 59.9, lon: 10.7 };
+
+    const mockedGetFavorites = getFavorites as jest.MockedFunction<typeof getFavorites>;
+    const mockedGetWeather = getWeather as jest.MockedFunction<typeof getWeather>;
+    const mockedGetSunTimes = getSunTimes as jest.MockedFunction<typeof getSunTimes>;
+
+    mockedGetFavorites.mockResolvedValueOnce([oslo]).mockResolvedValueOnce([oslo]);
+
+    const weatherEntry = {
+      time: "2026-03-07T00:00:00Z",
+      data: { instant: { details: { air_temperature: 12 } } },
+    } as never;
+
+    mockedGetWeather.mockRejectedValueOnce(new Error("Network error")).mockResolvedValueOnce(weatherEntry);
+    mockedGetSunTimes.mockResolvedValue({});
+
+    const { result } = renderHook(() => useFavorites());
+
+    await waitFor(() => {
+      expect(result.current.hasFavoriteError("oslo", 59.9, 10.7)).toBe(true);
+    });
+
+    await act(async () => {
+      await result.current.refreshFavorites();
+    });
+
+    await waitFor(() => {
+      expect(mockedGetWeather).toHaveBeenCalledTimes(2);
+      expect(result.current.hasFavoriteError("oslo", 59.9, 10.7)).toBe(false);
+      expect(result.current.getFavoriteWeather("oslo", 59.9, 10.7)).toBeDefined();
     });
   });
 });
