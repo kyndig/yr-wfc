@@ -1,7 +1,6 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import { Detail } from "@raycast/api";
 import { ActionPanelBuilders } from "../utils/action-panel-builders";
-import { useBundleAnalyzer } from "../utils/bundle-analyzer";
 import { LocationResult } from "../location-search";
 
 // Lazy load the ForecastView component to defer D3 loading
@@ -24,15 +23,6 @@ interface LazyForecastProps {
  * until the forecast view is actually opened
  */
 export function LazyForecastView(props: LazyForecastProps) {
-  const { startTiming, endTiming } = useBundleAnalyzer("LazyForecastView");
-
-  useEffect(() => {
-    startTiming();
-    return () => {
-      endTiming();
-    };
-  }, [startTiming, endTiming]);
-
   return (
     <Suspense
       fallback={
@@ -55,18 +45,4 @@ ${props.targetDate ? `**Date:** ${props.targetDate}` : ""}
       <LazyForecastComponent {...props} />
     </Suspense>
   );
-}
-
-/**
- * Hook to preload the forecast component
- * Call this when user hovers over forecast-related actions
- */
-export function useForecastPreloader() {
-  const preloadForecast = () => {
-    // Preload the forecast component and its dependencies
-    import("../forecast");
-    import("../graph-utils");
-  };
-
-  return { preloadForecast };
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Action, ActionPanel, List, Icon, showToast, Toast } from "@raycast/api";
-import { LazyForecastView, useForecastPreloader } from "./components/lazy-forecast";
+import { LazyForecastView } from "./components/lazy-forecast";
 import WelcomeMessage from "./components/welcome-message";
 
 import { getWeather, type TimeseriesEntry } from "./weather-client";
@@ -33,7 +33,6 @@ export default function Command() {
   const favoriteIds = useFavoriteIds();
   const networkTest = useNetworkTest();
   const graphCache = useGraphCache();
-  useForecastPreloader();
 
   // Update favorite IDs when search results change
   useEffect(() => {
