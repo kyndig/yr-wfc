@@ -3,7 +3,7 @@ import { CACHE_THRESHOLDS } from "./config/weather-config";
 import { TimeseriesEntry } from "./weather-client";
 import { SunTimes } from "./sunrise-client";
 import { buildGraphMarkdown } from "./graph-utils";
-import { CacheKeyGenerator } from "./utils/cache-manager";
+import { graphCacheKey, graphCachePrefix, graphModeToken, graphTargetDateToken } from "./cache-keys";
 import { DebugLogger } from "./utils/debug-utils";
 import { environment, LocalStorage } from "@raycast/api";
 
@@ -13,55 +13,30 @@ import { environment, LocalStorage } from "@raycast/api";
 type GraphCacheEntry = {
   markdown: string;
   version: string;
-  dataHash: string; // Hash of the input data to detect changes
   generatedAt: number;
 };
 
 /**
- * Graph cache key generator (now using unified CacheKeyGenerator)
+ * Build an explicit graph cache key from deterministic inputs.
  */
 function generateGraphCacheKey(
   locationKey: string,
   mode: "detailed" | "summary",
+  series: TimeseriesEntry[],
+  sunByDate?: Record<string, SunTimes>,
   targetDate?: string,
-  dataHash?: string,
 ): string {
   const paletteId = environment.appearance === "dark" ? "dark" : "light";
-  return CacheKeyGenerator.graph(locationKey, mode, targetDate, dataHash, paletteId);
-}
-
-/**
- * Generate a hash for the input data to detect changes
- */
-function generateDataHash(
-  series: TimeseriesEntry[],
-  name: string,
-  hours: number,
-  sunByDate?: Record<string, SunTimes>,
-): string {
-  // Create a simple hash based on key data points
-  const keyData = {
+  return graphCacheKey({
+    locationKey,
+    mode,
+    paletteId,
     seriesLength: series.length,
-    name,
-    hours,
     firstTime: series[0]?.time,
     lastTime: series[series.length - 1]?.time,
-    sunByDate: sunByDate ? JSON.stringify(sunByDate) : "empty",
-  };
-
-  // Create a more robust hash that includes sunrise/sunset data
-  const dataString = JSON.stringify(keyData);
-  const hash = btoa(dataString)
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .substring(0, 40); // Increased to 40 chars to ensure uniqueness
-
-  DebugLogger.debug(
-    "Generated cache hash:",
-    hash,
-    "for sunByDate:",
-    sunByDate ? Object.keys(sunByDate).length + " dates" : "empty",
-  );
-  return hash;
+    targetDate,
+    sunDates: sunByDate ? Object.keys(sunByDate) : [],
+  });
 }
 
 /**
@@ -71,14 +46,11 @@ export async function getCachedGraph(
   locationKey: string,
   mode: "detailed" | "summary",
   series: TimeseriesEntry[],
-  name: string,
-  hours: number,
   sunByDate?: Record<string, SunTimes>,
   targetDate?: string,
 ): Promise<string | undefined> {
   try {
-    const dataHash = generateDataHash(series, name, hours, sunByDate);
-    const cacheKey = generateGraphCacheKey(locationKey, mode, targetDate, dataHash);
+    const cacheKey = generateGraphCacheKey(locationKey, mode, series, sunByDate, targetDate);
 
     const cached = await getCached<GraphCacheEntry>(cacheKey, CACHE_THRESHOLDS.GRAPH);
 
@@ -86,11 +58,6 @@ export async function getCachedGraph(
 
     // Check version compatibility
     if (cached.version !== CACHE_THRESHOLDS.GRAPH_VERSION) {
-      return undefined;
-    }
-
-    // Check if data has changed
-    if (cached.dataHash !== dataHash) {
       return undefined;
     }
 
@@ -108,20 +75,16 @@ export async function setCachedGraph(
   locationKey: string,
   mode: "detailed" | "summary",
   series: TimeseriesEntry[],
-  name: string,
-  hours: number,
   markdown: string,
   sunByDate?: Record<string, SunTimes>,
   targetDate?: string,
 ): Promise<void> {
   try {
-    const dataHash = generateDataHash(series, name, hours, sunByDate);
-    const cacheKey = generateGraphCacheKey(locationKey, mode, targetDate, dataHash);
+    const cacheKey = generateGraphCacheKey(locationKey, mode, series, sunByDate, targetDate);
 
     const cacheEntry: GraphCacheEntry = {
       markdown,
       version: CACHE_THRESHOLDS.GRAPH_VERSION,
-      dataHash,
       generatedAt: Date.now(),
     };
 
@@ -146,7 +109,7 @@ export async function generateAndCacheGraph(
 ): Promise<string> {
   // Try to get from cache first (unless forcing regeneration)
   if (!forceRegenerate) {
-    const cached = await getCachedGraph(locationKey, mode, series, name, hours, sunByDate, targetDate);
+    const cached = await getCachedGraph(locationKey, mode, series, sunByDate, targetDate);
     if (cached) {
       DebugLogger.debug("Using cached graph for", mode, "with sunByDate:", sunByDate);
       return cached;
@@ -169,7 +132,7 @@ export async function generateAndCacheGraph(
   });
 
   // Cache the result
-  await setCachedGraph(locationKey, mode, series, name, hours, result.markdown, sunByDate, targetDate);
+  await setCachedGraph(locationKey, mode, series, result.markdown, sunByDate, targetDate);
 
   return result.markdown;
 }
@@ -179,7 +142,7 @@ export async function generateAndCacheGraph(
  */
 export async function clearLocationGraphCache(locationKey: string): Promise<void> {
   try {
-    const removed = await clearCachedByPrefix(`graph:${locationKey}:`);
+    const removed = await clearCachedByPrefix(graphCachePrefix(locationKey));
     DebugLogger.debug(`Cleared ${removed} graph cache entries for location ${locationKey}`);
   } catch (error) {
     DebugLogger.warn("Failed to clear location graph cache:", error);
@@ -205,11 +168,11 @@ export async function invalidateModeGraphCache(mode: "detailed" | "summary"): Pr
   try {
     const all = await LocalStorage.allItems();
     const removedKeys: string[] = [];
+    const modeToken = graphModeToken(mode);
     for (const storageKey of Object.keys(all)) {
       if (!storageKey.startsWith("cache:graph:")) continue;
       const internalKey = storageKey.slice("cache:".length);
-      // internalKey: graph:<locationKey>:<mode>[:...]
-      if (internalKey.includes(`:${mode}`)) {
+      if (internalKey.includes(modeToken)) {
         removedKeys.push(internalKey);
         await LocalStorage.removeItem(storageKey);
       }
@@ -227,10 +190,11 @@ export async function invalidateDateGraphCache(targetDate: string): Promise<void
   try {
     const all = await LocalStorage.allItems();
     let removedCount = 0;
+    const targetDateToken = graphTargetDateToken(targetDate);
     for (const storageKey of Object.keys(all)) {
       if (!storageKey.startsWith("cache:graph:")) continue;
       const internalKey = storageKey.slice("cache:".length);
-      if (internalKey.endsWith(`:${targetDate}`) || internalKey.includes(`:${targetDate}:`)) {
+      if (internalKey.includes(targetDateToken)) {
         await LocalStorage.removeItem(storageKey);
         removedCount++;
       }

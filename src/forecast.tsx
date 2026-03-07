@@ -18,7 +18,7 @@ import { buildCompactWeatherSummary } from "./utils/weather-summary-builder";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
 import { generateAndCacheGraph } from "./graph-cache";
 import { LocationUtils } from "./utils/location-utils";
-import { CacheClearingUtility } from "./utils/cache-manager";
+import { clearAllCached } from "./cache";
 import { DebugLogger } from "./utils/debug-utils";
 import { LocationResult } from "./location-search";
 
@@ -326,7 +326,7 @@ function ForecastView(props: {
       setGraphCache({ detailed: "", summary: "" });
 
       // Clear persistent cache
-      await CacheClearingUtility.clearAllCaches();
+      await clearAllCached();
 
       // Force reload weather data
       refreshWeatherData();

@@ -14,7 +14,7 @@ import { useSearch } from "./hooks/useSearch";
 import { useFavorites } from "./hooks/useFavorites";
 import { useGraphCache } from "./hooks/useGraphCache";
 import { UI_THRESHOLDS } from "./config/weather-config";
-import { CacheClearingUtility } from "./utils/cache-manager";
+import { clearAllCached } from "./cache";
 import { DebugLogger } from "./utils/debug-utils";
 
 import { ToastMessages } from "./utils/toast-utils";
@@ -68,8 +68,8 @@ export default function Command() {
   // Handle cache clearing on refresh
   const handleRefreshWithCacheClear = async () => {
     try {
-      // Clear all caches using unified utility
-      await CacheClearingUtility.clearAllCaches();
+      // Clear all persistent cache entries for this extension.
+      await clearAllCached();
 
       // Refresh favorites data
       await favorites.refreshFavorites();
