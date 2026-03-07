@@ -1,7 +1,7 @@
 import { getCached, setCached } from "../cache";
-import { API_CONFIG, buildApiHeaders, buildApiUrl } from "./api-config";
+import { buildApiHeaders, buildApiUrl } from "./api-config";
 import { DebugLogger } from "./debug-utils";
-import { getCacheThresholds } from "../config/weather-config";
+import { CACHE_THRESHOLDS } from "../config/weather-config";
 
 /**
  * Generic API client for making cached HTTP requests
@@ -196,19 +196,19 @@ export class ApiClient {
 export const weatherApiClient = new ApiClient(
   "https://api.met.no/weatherapi/locationforecast/2.0/compact",
   "weather",
-  API_CONFIG.CACHE_TTL.WEATHER,
+  CACHE_THRESHOLDS.WEATHER,
 );
 
 export const sunriseApiClient = new ApiClient(
   "https://api.met.no/weatherapi/sunrise/3.0/sun",
   "sun",
-  API_CONFIG.CACHE_TTL.SUNRISE,
+  CACHE_THRESHOLDS.SUNRISE,
 );
 
 export const locationApiClient = new ApiClient(
   "https://nominatim.openstreetmap.org/search",
   "location",
-  getCacheThresholds().LOCATION_SEARCH,
+  CACHE_THRESHOLDS.LOCATION_SEARCH,
 );
 
 // Debug: Log API client initialization

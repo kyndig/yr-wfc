@@ -2,7 +2,7 @@ import { scaleLinear } from "d3-scale";
 import { line, curveMonotoneX } from "d3-shape";
 import { TimeseriesEntry } from "./weather-client";
 import { SunTimes } from "./sunrise-client";
-import { getGraphThresholds, getWeatherConfig } from "./config/weather-config";
+import { GRAPH_THRESHOLDS, PRECIPITATION_THRESHOLDS } from "./config/weather-config";
 import { getUnits } from "./units";
 import { precipitationAmount, symbolCode } from "./utils-forecast";
 import { symbolToEmoji } from "./utils/weather-symbols";
@@ -33,8 +33,7 @@ export function buildGraphMarkdown(
   opts?: { sunByDate?: Record<string, SunTimes>; title?: string; smooth?: boolean },
 ): { markdown: string } {
   const subset = series.slice(0, hours);
-  const graphConfig = getGraphThresholds();
-  const weatherConfig = getWeatherConfig();
+  const graphConfig = GRAPH_THRESHOLDS;
   const isDark = environment.appearance === "dark";
   const colors = isDark
     ? {
@@ -78,11 +77,11 @@ export function buildGraphMarkdown(
   const ty = (v: number) => yT(v);
 
   const pMaxDisp = Math.max(
-    weatherConfig.precipitation.DISPLAY_MIN,
-    maxFinite(precsDisplay) ?? weatherConfig.precipitation.DISPLAY_MIN,
+    PRECIPITATION_THRESHOLDS.DISPLAY_MIN,
+    maxFinite(precsDisplay) ?? PRECIPITATION_THRESHOLDS.DISPLAY_MIN,
   );
   const yP = scaleLinear()
-    .domain([weatherConfig.precipitation.ZERO, pMaxDisp])
+    .domain([PRECIPITATION_THRESHOLDS.ZERO, pMaxDisp])
     .range([margin.TOP + innerHeight, margin.TOP]);
   const py = (v: number) => yP(v);
 
@@ -104,7 +103,7 @@ export function buildGraphMarkdown(
 
   // Build precipitation area fill for better visibility
   // Create area fill by closing the path to the zero line
-  const precipAreaFill = `<path d="${precPath} L ${xScale(times[times.length - 1])} ${py(weatherConfig.precipitation.ZERO)} L ${xScale(times[0])} ${py(weatherConfig.precipitation.ZERO)} Z" fill="${colors.PRECIPITATION_AREA}" opacity="${graphConfig.OPACITY.PRECIPITATION_AREA}" stroke-linejoin="round" />`;
+  const precipAreaFill = `<path d="${precPath} L ${xScale(times[times.length - 1])} ${py(PRECIPITATION_THRESHOLDS.ZERO)} L ${xScale(times[0])} ${py(PRECIPITATION_THRESHOLDS.ZERO)} Z" fill="${colors.PRECIPITATION_AREA}" opacity="${graphConfig.OPACITY.PRECIPITATION_AREA}" stroke-linejoin="round" />`;
 
   // Emoji labels for weather above temperature points
   const emojiLabels = times
@@ -220,7 +219,7 @@ export function buildGraphMarkdown(
 
   // Right-side precipitation labels (0, mid, max) in selected units
   const pLabel = (v: number) => (units === "imperial" ? `${Number(v.toFixed(2))} in` : `${v} mm`);
-  const pLabels = [weatherConfig.precipitation.ZERO, pMaxDisp / 2, pMaxDisp].map((v) => {
+  const pLabels = [PRECIPITATION_THRESHOLDS.ZERO, pMaxDisp / 2, pMaxDisp].map((v) => {
     const y = py(v);
     return `<text x="${width - margin.RIGHT + graphConfig.POSITIONING.RIGHT_LABEL_OFFSET}" y="${y.toFixed(1)}" font-size="${graphConfig.FONT_SIZES.AXIS}" text-anchor="start" alignment-baseline="middle" fill="${colors.AXIS}" font-weight="500">${pLabel(
       v,
@@ -234,7 +233,7 @@ export function buildGraphMarkdown(
   const tempTitle = `<text x="${margin.LEFT + graphConfig.POSITIONING.Y_AXIS_LABEL_OFFSET}" y="${margin.TOP + graphConfig.POSITIONING.DAY_LABEL_OFFSET}" font-size="${graphConfig.FONT_SIZES.TITLE}" text-anchor="end" fill="${colors.TEMPERATURE}" font-weight="600">T (${units === "imperial" ? "°F" : "°C"})</text>`;
 
   // Add precipitation grid lines for better readability
-  const precipGridLines = [weatherConfig.precipitation.ZERO, pMaxDisp / 2, pMaxDisp].map((v) => {
+  const precipGridLines = [PRECIPITATION_THRESHOLDS.ZERO, pMaxDisp / 2, pMaxDisp].map((v) => {
     const y = py(v);
     return `<line x1="${margin.LEFT}" x2="${width - margin.RIGHT}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${colors.PRECIPITATION_GRID}" stroke-width="${graphConfig.LINE_STYLES.GRID_WIDTH}" opacity="${graphConfig.OPACITY.GRID_LINES}" />`;
   });
@@ -242,7 +241,7 @@ export function buildGraphMarkdown(
   // Add precipitation data points for better visibility
   const precipPoints = precsDisplay
     .map((p, i) => {
-      if (p > weatherConfig.precipitation.ZERO) {
+      if (p > PRECIPITATION_THRESHOLDS.ZERO) {
         const x = xScale(times[i]);
         const y = py(p);
         return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${graphConfig.PRECIPITATION_POINT_RADIUS}" fill="${colors.PRECIPITATION}" opacity="${graphConfig.OPACITY.PRECIPITATION_POINTS}" />`;
