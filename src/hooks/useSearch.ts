@@ -45,9 +45,11 @@ export function useSearch(): UseSearchReturn {
     const query = args[0] as string;
     const trimmed = query.trim();
     if (!trimmed) {
+      activeSearchControllerRef.current?.abort();
       setLocations([]);
       setQueryIntent({});
       setSearchError(null);
+      setIsLoading(false);
       return;
     }
 
@@ -60,9 +62,11 @@ export function useSearch(): UseSearchReturn {
     // Require minimum characters before searching
     const minChars = UI_THRESHOLDS.SEARCH_MIN_CHARS;
     if (locationQuery.length < minChars) {
+      activeSearchControllerRef.current?.abort();
       setLocations([]);
       setQueryIntent({});
       setSearchError(null);
+      setIsLoading(false);
       return;
     }
 
