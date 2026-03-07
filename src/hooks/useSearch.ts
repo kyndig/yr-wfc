@@ -53,7 +53,6 @@ export function useSearch(): UseSearchReturn {
 
     // Parse query intent to extract location and date information
     const intent = parseQueryIntent(trimmed);
-    setQueryIntent(intent);
 
     // Use the parsed location query if available, otherwise use the full query
     const locationQuery = intent.locationQuery || trimmed;
@@ -62,9 +61,12 @@ export function useSearch(): UseSearchReturn {
     const minChars = UI_THRESHOLDS.SEARCH_MIN_CHARS;
     if (locationQuery.length < minChars) {
       setLocations([]);
+      setQueryIntent({});
       setSearchError(null);
       return;
     }
+
+    setQueryIntent(intent);
 
     // Show toast notification if a date query was successfully parsed
     if (intent.targetDate) {
