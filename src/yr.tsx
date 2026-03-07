@@ -4,8 +4,9 @@ import { LazyForecastView } from "./components/lazy-forecast";
 import WelcomeMessage from "./components/welcome-message";
 
 import { getWeather, type TimeseriesEntry } from "./weather-client";
+import { type SunTimes } from "./sunrise-client";
 import { type LocationResult } from "./location-search";
-import { isFirstTimeUser, markAsNotFirstTime } from "./storage";
+import { type FavoriteLocation, isFirstTimeUser, markAsNotFirstTime } from "./storage";
 
 import { iconForSymbol } from "./weather-emoji";
 import { TemperatureFormatter } from "./utils/weather-formatters";
@@ -297,68 +298,22 @@ export default function Command() {
             <List.Section title={showBackgroundLoading ? "Favorites (Loading weather data...)" : "Favorites"}>
               {favorites.favorites.map((fav) => {
                 const key = LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon);
+                const favoriteId = fav.id;
+                const state: FavoriteRenderState = {
+                  favorite: fav,
+                  weather: favoriteId ? favorites.getFavoriteWeather(favoriteId, fav.lat, fav.lon) : undefined,
+                  error: favoriteId ? favorites.hasFavoriteError(favoriteId, fav.lat, fav.lon) : false,
+                  loading: favoriteId ? favorites.isFavoriteLoading(favoriteId, fav.lat, fav.lon) : false,
+                  sunTimes: favoriteId ? favorites.getFavoriteSunTimes(favoriteId, fav.lat, fav.lon) : undefined,
+                };
 
                 return (
                   <List.Item
                     key={key}
                     title={fav.name}
-                    subtitle={(() => {
-                      if (!fav.id) return "Invalid favorite";
-                      const weather = favorites.getFavoriteWeather(fav.id, fav.lat, fav.lon);
-                      const error = favorites.hasFavoriteError(fav.id, fav.lat, fav.lon);
-                      const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
-
-                      if (weather) {
-                        const temp = TemperatureFormatter.format(weather);
-                        return temp || "⚠️ Temperature unavailable";
-                      }
-
-                      if (error) {
-                        return "⚠️ Data fetch failed";
-                      }
-
-                      if (loading) {
-                        return "Loading weather...";
-                      }
-
-                      // Show coordinates when no weather data yet (lazy loading)
-                      return `${fav.lat.toFixed(2)}, ${fav.lon.toFixed(2)}`;
-                    })()}
-                    icon={(() => {
-                      if (!fav.id) return "❌";
-                      const weather = favorites.getFavoriteWeather(fav.id, fav.lat, fav.lon);
-                      const error = favorites.hasFavoriteError(fav.id, fav.lat, fav.lon);
-                      const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
-
-                      if (weather) {
-                        return iconForSymbol(weather);
-                      }
-                      if (error) {
-                        return "⚠️";
-                      }
-                      if (loading) {
-                        return "⏳";
-                      }
-                      // Show neutral location icon when no weather data yet (lazy loading)
-                      return "📍";
-                    })()}
-                    accessories={(() => {
-                      if (!fav.id) return undefined;
-                      const weather = favorites.getFavoriteWeather(fav.id, fav.lat, fav.lon);
-                      const sunTimes = favorites.getFavoriteSunTimes(fav.id, fav.lat, fav.lon);
-                      const loading = favorites.isFavoriteLoading(fav.id, fav.lat, fav.lon);
-
-                      if (weather) {
-                        return formatAccessories(weather, sunTimes);
-                      }
-
-                      if (loading) {
-                        return [{ text: "Loading...", icon: Icon.ArrowClockwise }];
-                      }
-
-                      // No accessories when no weather data yet (lazy loading)
-                      return undefined;
-                    })()}
+                    subtitle={favoriteSubtitle(state)}
+                    icon={favoriteIcon(state)}
+                    accessories={favoriteAccessories(state)}
                     actions={
                       <ActionPanel>
                         <Action.Push
@@ -443,6 +398,56 @@ export default function Command() {
       )}
     </List>
   );
+}
+
+interface FavoriteRenderState {
+  favorite: FavoriteLocation;
+  weather: TimeseriesEntry | undefined;
+  error: boolean;
+  loading: boolean;
+  sunTimes: SunTimes | undefined;
+}
+
+function favoriteSubtitle({ favorite, weather, error, loading }: FavoriteRenderState): string {
+  if (!favorite.id) return "Invalid favorite";
+  if (weather) {
+    return TemperatureFormatter.format(weather) || "⚠️ Temperature unavailable";
+  }
+  if (error) {
+    return "⚠️ Data fetch failed";
+  }
+  if (loading) {
+    return "Loading weather...";
+  }
+  // Show coordinates when no weather data yet (lazy loading)
+  return `${favorite.lat.toFixed(2)}, ${favorite.lon.toFixed(2)}`;
+}
+
+function favoriteIcon({ favorite, weather, error, loading }: FavoriteRenderState): string {
+  if (!favorite.id) return "❌";
+  if (weather) {
+    return iconForSymbol(weather) ?? "📍";
+  }
+  if (error) {
+    return "⚠️";
+  }
+  if (loading) {
+    return "⏳";
+  }
+  // Show neutral location icon when no weather data yet (lazy loading)
+  return "📍";
+}
+
+function favoriteAccessories({ favorite, weather, loading, sunTimes }: FavoriteRenderState) {
+  if (!favorite.id) return undefined;
+  if (weather) {
+    return formatAccessories(weather, sunTimes);
+  }
+  if (loading) {
+    return [{ text: "Loading...", icon: Icon.ArrowClockwise }];
+  }
+  // No accessories when no weather data yet (lazy loading)
+  return undefined;
 }
 
 // Use the utility function instead of local implementation
