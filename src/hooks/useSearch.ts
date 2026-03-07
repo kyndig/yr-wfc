@@ -45,14 +45,31 @@ export function useSearch(): UseSearchReturn {
     const query = args[0] as string;
     const trimmed = query.trim();
     if (!trimmed) {
+      activeSearchControllerRef.current?.abort();
       setLocations([]);
       setQueryIntent({});
       setSearchError(null);
+      setIsLoading(false);
       return;
     }
 
     // Parse query intent to extract location and date information
     const intent = parseQueryIntent(trimmed);
+
+    // Use the parsed location query if available, otherwise use the full query
+    const locationQuery = intent.locationQuery || trimmed;
+
+    // Require minimum characters before searching
+    const minChars = UI_THRESHOLDS.SEARCH_MIN_CHARS;
+    if (locationQuery.length < minChars) {
+      activeSearchControllerRef.current?.abort();
+      setLocations([]);
+      setQueryIntent({});
+      setSearchError(null);
+      setIsLoading(false);
+      return;
+    }
+
     setQueryIntent(intent);
 
     // Show toast notification if a date query was successfully parsed
@@ -72,17 +89,6 @@ export function useSearch(): UseSearchReturn {
         title: `📅 ${dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} weather query detected!`,
         message: `Search results will show weather for ${dateLabel} - tap any location to view detailed forecast`,
       });
-    }
-
-    // Use the parsed location query if available, otherwise use the full query
-    const locationQuery = intent.locationQuery || trimmed;
-
-    // Require minimum characters before searching
-    const minChars = UI_THRESHOLDS.SEARCH_MIN_CHARS;
-    if (locationQuery.length < minChars) {
-      setLocations([]);
-      setSearchError(null);
-      return;
     }
 
     setIsLoading(true);
@@ -124,20 +130,13 @@ export function useSearch(): UseSearchReturn {
   // Trigger search when search text changes with debouncing
   useEffect(() => {
     const q = searchText.trim();
-    if (q) {
-      // Gate on parsed location query length, not raw query length.
-      // This avoids firing date-intent toasts for inputs like "ab tomorrow".
-      const intent = parseQueryIntent(q);
-      const locationQuery = intent.locationQuery || q;
+    const intent = parseQueryIntent(q);
+    const locationQuery = intent.locationQuery || q;
 
-      if (locationQuery.length >= UI_THRESHOLDS.SEARCH_MIN_CHARS) {
-        debouncedSearch(q);
-      } else {
-        setLocations([]);
-        setIsLoading(false);
-        setSearchError(null);
-      }
+    if (locationQuery.length >= UI_THRESHOLDS.SEARCH_MIN_CHARS) {
+      debouncedSearch(q);
     } else {
+      activeSearchControllerRef.current?.abort();
       setLocations([]);
       setQueryIntent({});
       setIsLoading(false);

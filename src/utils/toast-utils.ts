@@ -47,8 +47,4 @@ export const ToastMessages = {
       title: "Failed to load weather",
       message: String((error as Error)?.message ?? error),
     }),
-
-  /**
-   * Show info toasts
-   */
 } as const;
