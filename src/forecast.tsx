@@ -13,7 +13,7 @@ import {
 } from "./storage";
 import { FavoriteToggleAction } from "./components/FavoriteToggleAction";
 import { UI_THRESHOLDS } from "./config/weather-config";
-import { formatDate } from "./utils/date-utils";
+import { formatDate, parseLocalDateString, toLocalDateString } from "./utils/date-utils";
 import { buildCompactWeatherSummary } from "./utils/weather-summary-builder";
 import { getSunTimes, type SunTimes } from "./sunrise-client";
 import { generateAndCacheGraph } from "./graph-cache";
@@ -103,7 +103,7 @@ function ForecastView(props: {
         DebugLogger.debug(`Fetching sunrise/sunset for target date:`, dates);
       } else {
         const subset = items.slice(0, UI_THRESHOLDS.DETAILED_FORECAST_HOURS);
-        dates = Array.from(new Set(subset.map((s) => new Date(s.time)).map((d) => d.toISOString().slice(0, 10))));
+        dates = Array.from(new Set(subset.map((s) => new Date(s.time)).map((d) => toLocalDateString(d))));
         DebugLogger.debug(`Forecast dates for sunrise/sunset:`, dates);
       }
 
@@ -167,7 +167,7 @@ function ForecastView(props: {
   // Filter data based on targetDate if provided, otherwise use mode-based filtering
   const filteredItems = useMemo(() => {
     if (targetDate) {
-      return filterToDate(items, new Date(targetDate));
+      return filterToDate(items, parseLocalDateString(targetDate));
     }
     return items;
   }, [items, targetDate]);
@@ -297,7 +297,7 @@ function ForecastView(props: {
         const locationEmoji = LocationUtils.getLocationEmoji(locationData);
 
         if (targetDate) {
-          const dateLabel = formatDate(targetDate, "LONG_DAY");
+          const dateLabel = formatDate(parseLocalDateString(targetDate), "LONG_DAY");
           DebugLogger.debug(`Date display: targetDate="${targetDate}", dateLabel="${dateLabel}"`);
           titleText = `# ${locationEmoji} ${simplifiedName} – ${dateLabel} (1-day)${view === "data" ? " (Data)" : ""}`;
         } else {
