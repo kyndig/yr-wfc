@@ -1,4 +1,5 @@
 import { getCached, setCached } from "../cache";
+import { apiCacheKey } from "../cache-keys";
 import { buildApiHeaders, buildApiUrl } from "./api-config";
 import { DebugLogger } from "./debug-utils";
 import { CACHE_THRESHOLDS } from "../config/weather-config";
@@ -138,7 +139,7 @@ export class ApiClient {
       headers?: Record<string, string>;
     },
   ): Promise<T> {
-    const cacheKey = `${this.cacheKeyPrefix}:${cacheKeySuffix}`;
+    const cacheKey = apiCacheKey(this.cacheKeyPrefix, cacheKeySuffix);
 
     // Check cache first
     const cached = await getCached<T>(cacheKey, this.cacheTtl);
