@@ -1,6 +1,6 @@
 # Yr Weather Forecast
 
-Norwegian weather data from MET, wrapped in a Raycast extension. Search locations, save favourites, get 9-day forecasts with graphs. No API keys, no faff.
+Norwegian weather data from MET, wrapped in a Raycast extension. Search locations, save favorites, get 9-day forecasts with graphs. No API keys, no fuss.
 
 **Maintainer:** [Kynd](https://www.kynd.no) · weather@kynd.no · [Issues](https://github.com/kyndig/yr-wfc/issues)
 
@@ -17,7 +17,7 @@ Uses OpenStreetMap Nominatim. Understands date tokens mixed with location names:
 - **Day of month** — "Bergen 25" (within 9-day window)
 - **Relative** — "Paris tomorrow", "Paris i morgen"
 
-English and Norwegian (Bokmål). Diacritics normalised ("søndag" = "sondag").
+English and Norwegian (Bokmål). Diacritics normalized ("søndag" = "sondag").
 
 ## Keyboard Shortcuts
 
@@ -27,9 +27,9 @@ English and Norwegian (Bokmål). Diacritics normalised ("søndag" = "sondag").
 | Graph ↔ Data table | `D` / `G` |
 | 48-hour detailed forecast | `Cmd+4` |
 | 9-day summary forecast | `Cmd+9` |
-| Add favourite | `Cmd+F` |
-| Remove favourite | `Cmd+Shift+F` |
-| Move favourite up / down | `Cmd+Shift+↑` / `↓` |
+| Add favorite | `Cmd+F` |
+| Remove favorite | `Cmd+Shift+F` |
+| Move favorite up / down | `Cmd+Shift+↑` / `↓` |
 | Refresh & clear cache | `Cmd+R` |
 | Show welcome message | `Cmd+Shift+W` |
 | Hide welcome message | `Cmd+Shift+Alt+W` |
