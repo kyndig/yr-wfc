@@ -64,6 +64,36 @@ export const UI_THRESHOLDS = {
   REPRESENTATIVE_HOURS: [3, 9, 15, 21],
 } as const;
 
+export const GRAPH_COLORS_LIGHT = {
+  TEMPERATURE: "#ff6b6b",
+  PRECIPITATION: "#1e90ff",
+  PRECIPITATION_AREA: "#1e90ff",
+  DAY_BOUNDARY: "#ddd",
+  SUNRISE: "#ff4500",
+  SUNSET: "#8b008b",
+  GRID: "#eee",
+  PRECIPITATION_GRID: "#e6f3ff",
+  LABEL: "#666",
+  AXIS: "#888",
+  BACKGROUND: "white",
+} as const;
+
+export type GraphColorPalette = Record<keyof typeof GRAPH_COLORS_LIGHT, string>;
+
+export const GRAPH_COLORS_DARK: GraphColorPalette = {
+  TEMPERATURE: "#ff6b6b",
+  PRECIPITATION: "#1e90ff",
+  PRECIPITATION_AREA: "#1e90ff",
+  DAY_BOUNDARY: "#2a3a45",
+  SUNRISE: "#ff4500",
+  SUNSET: "#da70d6",
+  GRID: "#1f2a33",
+  PRECIPITATION_GRID: "#102533",
+  LABEL: "#c7d1db",
+  AXIS: "#aab8c2",
+  BACKGROUND: "#0b0f14",
+};
+
 /** Graph and Visualization Thresholds */
 export const GRAPH_THRESHOLDS = {
   WIDTH: 800,
@@ -113,20 +143,7 @@ export const GRAPH_THRESHOLDS = {
     MIDNIGHT_HOUR: 24,
     MILLISECONDS_PER_DAY: 24 * 60 * 60 * 1000,
   },
-  // Note: hardcoded white background — dark mode override applied in graph-utils.ts
-  COLORS: {
-    TEMPERATURE: "#ff6b6b",
-    PRECIPITATION: "#1e90ff",
-    PRECIPITATION_AREA: "#1e90ff",
-    DAY_BOUNDARY: "#ddd",
-    SUNRISE: "#ff4500",
-    SUNSET: "#8b008b",
-    GRID: "#eee",
-    PRECIPITATION_GRID: "#e6f3ff",
-    LABEL: "#666",
-    AXIS: "#888",
-    BACKGROUND: "white",
-  },
+  COLORS: GRAPH_COLORS_LIGHT,
 } as const;
 
 /**
@@ -174,5 +191,5 @@ export const CACHE_THRESHOLDS = {
   LOCATION_SEARCH: 60 * 60 * 1000,
   // 2 hours — graphs are expensive to generate
   GRAPH: 2 * 60 * 60 * 1000,
-  GRAPH_VERSION: "1.2.0",
+  GRAPH_VERSION: "1.2.1",
 } as const;

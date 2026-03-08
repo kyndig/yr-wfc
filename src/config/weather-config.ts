@@ -5,13 +5,24 @@ export {
   WIND_THRESHOLDS,
   UI_THRESHOLDS,
   GRAPH_THRESHOLDS,
+  GRAPH_COLORS_LIGHT,
+  GRAPH_COLORS_DARK,
   TIMING_THRESHOLDS,
   UNIT_CONVERSION,
   ERROR_THRESHOLDS,
   CACHE_THRESHOLDS,
 } from "./weather-thresholds";
 
-import { PRECIPITATION_THRESHOLDS, PRECIPITATION_COVERAGE_THRESHOLDS, UNIT_CONVERSION } from "./weather-thresholds";
+import {
+  PRECIPITATION_THRESHOLDS,
+  PRECIPITATION_COVERAGE_THRESHOLDS,
+  UNIT_CONVERSION,
+  GRAPH_COLORS_LIGHT,
+  GRAPH_COLORS_DARK,
+  type GraphColorPalette,
+} from "./weather-thresholds";
+
+export type { GraphColorPalette } from "./weather-thresholds";
 
 export function getPrecipitationChanceLevel(
   maxIntensity: number,
@@ -41,4 +52,8 @@ export function convertSpeed(ms: number, toImperial: boolean): number {
 export function convertPrecipitation(mm: number, toImperial: boolean): number {
   if (!toImperial) return mm;
   return mm * UNIT_CONVERSION.MM_TO_INCHES;
+}
+
+export function getGraphColors(appearance: string): GraphColorPalette {
+  return appearance === "dark" ? GRAPH_COLORS_DARK : GRAPH_COLORS_LIGHT;
 }
