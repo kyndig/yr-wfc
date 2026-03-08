@@ -1,40 +1,33 @@
 import { lazy, Suspense } from "react";
 import { Detail } from "@raycast/api";
 import { ActionPanelBuilders } from "../utils/action-panel-builders";
-import { LocationResult } from "../location-search";
+import type { ForecastViewProps } from "../forecast";
 
 // Lazy load the ForecastView component to defer D3 loading
 const LazyForecastComponent = lazy(() => import("../forecast"));
 
-interface LazyForecastProps {
-  location?: LocationResult;
-  locationId?: string;
-  name?: string; // For backward compatibility with favorites
-  lat: number;
-  lon: number;
-  preCachedGraph?: string;
-  onShowWelcome?: () => void;
-  targetDate?: string;
-  onFavoriteChange?: () => void;
-  initialMode?: "detailed" | "summary";
-}
+type LazyForecastProps = ForecastViewProps;
 
 /**
  * Lazy-loaded ForecastView that defers D3 library loading
  * until the forecast view is actually opened
  */
 export function LazyForecastView(props: LazyForecastProps) {
+  const displayName = props.location ? props.location.displayName : props.name;
+  const lat = props.location ? props.location.lat : props.lat;
+  const lon = props.location ? props.location.lon : props.lon;
+
   return (
     <Suspense
       fallback={
         <Detail
           markdown={`
-# ${props.location?.displayName || props.name || "Unknown Location"}
+# ${displayName || "Unknown Location"}
 ## Loading forecast...
 
 Please wait while we load the weather forecast and generate the interactive graph...
 
-**Location:** ${props.lat.toFixed(3)}, ${props.lon.toFixed(3)}
+**Location:** ${lat.toFixed(3)}, ${lon.toFixed(3)}
 ${props.targetDate ? `**Date:** ${props.targetDate}` : ""}
 
 *This may take a moment as we load the graph generation libraries...*

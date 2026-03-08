@@ -224,7 +224,7 @@ export default function Command() {
             >
               {search.safeLocations.map((loc) => (
                 <List.Item
-                  key={loc.id}
+                  key={LocationUtils.getLocationKey(loc.id, loc.lat, loc.lon)}
                   title={LocationUtils.formatLocationName(loc)}
                   subtitle={
                     search.queryIntent.targetDate

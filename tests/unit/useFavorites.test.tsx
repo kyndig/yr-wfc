@@ -7,6 +7,7 @@ import { getFavorites } from "../../src/storage";
 import { getWeather } from "../../src/weather-client";
 import { getSunTimes } from "../../src/sunrise-client";
 import { generateAndCacheGraph } from "../../src/graph-cache";
+import { LocationUtils } from "../../src/utils/location-utils";
 
 jest.mock("../../src/storage", () => ({
   addFavorite: jest.fn(async () => true),
@@ -114,6 +115,102 @@ describe("useFavorites missing entry detection", () => {
       expect(mockedGetWeather).toHaveBeenCalledTimes(2);
       expect(result.current.hasFavoriteError("oslo", 59.9, 10.7)).toBe(false);
       expect(result.current.getFavoriteWeather("oslo", 59.9, 10.7)).toBeDefined();
+    });
+  });
+
+  it("does not refetch weather when favorites are only reordered", async () => {
+    const alpha: FavoriteLocation = { id: "osm:100", name: "Alpha", lat: 59.9, lon: 10.7 };
+    const beta: FavoriteLocation = { id: "osm:200", name: "Beta", lat: 60.4, lon: 5.3 };
+
+    const mockedGetFavorites = getFavorites as jest.MockedFunction<typeof getFavorites>;
+    const mockedGetWeather = getWeather as jest.MockedFunction<typeof getWeather>;
+    const mockedGetSunTimes = getSunTimes as jest.MockedFunction<typeof getSunTimes>;
+
+    mockedGetFavorites.mockResolvedValueOnce([alpha, beta]).mockResolvedValueOnce([beta, alpha]);
+    mockedGetWeather.mockResolvedValue({
+      time: "2026-03-07T00:00:00Z",
+      data: { instant: { details: { air_temperature: 12 } } },
+    } as never);
+    mockedGetSunTimes.mockResolvedValue({});
+
+    const { result } = renderHook(() => useFavorites());
+
+    await waitFor(() => {
+      expect(mockedGetWeather).toHaveBeenCalledTimes(2);
+    });
+
+    await act(async () => {
+      await result.current.refreshFavorites();
+    });
+
+    await waitFor(() => {
+      expect(mockedGetWeather).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("does not refetch weather when only favorite name changes", async () => {
+    const oslo: FavoriteLocation = { id: "osm:100", name: "Oslo", lat: 59.9, lon: 10.7 };
+    const renamed: FavoriteLocation = { ...oslo, name: "Oslo Renamed" };
+
+    const mockedGetFavorites = getFavorites as jest.MockedFunction<typeof getFavorites>;
+    const mockedGetWeather = getWeather as jest.MockedFunction<typeof getWeather>;
+    const mockedGetSunTimes = getSunTimes as jest.MockedFunction<typeof getSunTimes>;
+
+    mockedGetFavorites.mockResolvedValueOnce([oslo]).mockResolvedValueOnce([renamed]);
+    mockedGetWeather.mockResolvedValue({
+      time: "2026-03-07T00:00:00Z",
+      data: { instant: { details: { air_temperature: 12 } } },
+    } as never);
+    mockedGetSunTimes.mockResolvedValue({});
+
+    const { result } = renderHook(() => useFavorites());
+
+    await waitFor(() => {
+      expect(mockedGetWeather).toHaveBeenCalledTimes(1);
+    });
+
+    await act(async () => {
+      await result.current.refreshFavorites();
+    });
+
+    await waitFor(() => {
+      expect(mockedGetWeather).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("prunes keyed state records when a favorite is removed", async () => {
+    const alpha: FavoriteLocation = { id: "osm:100", name: "Alpha", lat: 59.9, lon: 10.7 };
+    const beta: FavoriteLocation = { id: "osm:200", name: "Beta", lat: 60.4, lon: 5.3 };
+
+    const mockedGetFavorites = getFavorites as jest.MockedFunction<typeof getFavorites>;
+    const mockedGetWeather = getWeather as jest.MockedFunction<typeof getWeather>;
+    const mockedGetSunTimes = getSunTimes as jest.MockedFunction<typeof getSunTimes>;
+
+    mockedGetFavorites.mockResolvedValueOnce([alpha, beta]).mockResolvedValueOnce([alpha]);
+    mockedGetWeather.mockResolvedValue({
+      time: "2026-03-07T00:00:00Z",
+      data: { instant: { details: { air_temperature: 12 } } },
+    } as never);
+    mockedGetSunTimes.mockResolvedValue({});
+
+    const { result } = renderHook(() => useFavorites());
+
+    await waitFor(() => {
+      expect(mockedGetWeather).toHaveBeenCalledTimes(2);
+      expect(result.current.getFavoriteWeather(beta.id ?? "", beta.lat, beta.lon)).toBeDefined();
+    });
+
+    await act(async () => {
+      await result.current.refreshFavorites();
+    });
+
+    const betaKey = LocationUtils.getLocationKey(beta.id, beta.lat, beta.lon);
+    await waitFor(() => {
+      expect(result.current.getFavoriteWeather(beta.id ?? "", beta.lat, beta.lon)).toBeUndefined();
+      expect(result.current.getFavoriteSunTimes(beta.id ?? "", beta.lat, beta.lon)).toBeUndefined();
+      expect(result.current.preWarmedGraphs[betaKey]).toBeUndefined();
+      expect(result.current.isFavoriteLoading(beta.id ?? "", beta.lat, beta.lon)).toBe(false);
+      expect(result.current.hasFavoriteError(beta.id ?? "", beta.lat, beta.lon)).toBe(false);
     });
   });
 });

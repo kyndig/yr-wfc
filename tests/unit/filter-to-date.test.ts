@@ -40,12 +40,19 @@ afterAll(() => {
 describe("filterToDate", () => {
   test("uses local-day boundaries for UTC+ dates", () => {
     withTimezone("Europe/Oslo", () => {
+      // On Linux CI, runtime TZ changes may not take effect; verify CET is active.
+      const probe = new Date(2026, 2, 8, 0, 0, 0, 0);
+      if (probe.getTimezoneOffset() >= 0) {
+        // Not running in UTC+; CET-specific boundary expectations would be wrong.
+        return;
+      }
+
       const series: TimeseriesEntry[] = [
-        entry("2026-03-07T22:00:00Z"), // 23:00 local previous day
-        entry("2026-03-07T23:00:00Z"), // 00:00 local target day
-        entry("2026-03-08T12:00:00Z"), // 13:00 local target day
-        entry("2026-03-08T22:00:00Z"), // 23:00 local target day
-        entry("2026-03-08T23:00:00Z"), // 00:00 local next day
+        entry("2026-03-07T22:00:00Z"), // 23:00 CET — previous day
+        entry("2026-03-07T23:00:00Z"), // 00:00 CET — target day start
+        entry("2026-03-08T12:00:00Z"), // 13:00 CET — target day
+        entry("2026-03-08T22:00:00Z"), // 23:00 CET — target day end
+        entry("2026-03-08T23:00:00Z"), // 00:00 CET — next day
       ];
 
       const result = filterToDate(series, parseLocalDateString("2026-03-08"));

@@ -137,3 +137,8 @@ jobs:
 
       - name: Raycast build export (Store requirement)
         run: npx ray build -e dist
+
+      - name: Unit tests
+        run: npm run test:unit
+        env:
+          TZ: Europe/Oslo

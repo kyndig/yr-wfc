@@ -56,3 +56,22 @@ describe("LocationUtils.getLocationEmoji", () => {
     );
   });
 });
+
+describe("LocationUtils canonical identity helpers", () => {
+  it("createFavoriteFromSearchResult canonicalizes numeric IDs to osm:", () => {
+    expect(LocationUtils.createFavoriteFromSearchResult("123", "Oslo", 59.9, 10.7)).toMatchObject({
+      id: "osm:123",
+      name: "Oslo",
+      lat: 59.9,
+      lon: 10.7,
+    });
+  });
+
+  it("createFavoriteFromSearchResult canonicalizes coord strings", () => {
+    expect(LocationUtils.createFavoriteFromSearchResult("59.9,10.7", "Coords", 0, 0).id).toBe("coord:59.900,10.700");
+  });
+
+  it("getLocationKey falls back to coordinate key when id is undefined", () => {
+    expect(LocationUtils.getLocationKey(undefined, 59.9139, 10.7522)).toBe("coord:59.914,10.752");
+  });
+});

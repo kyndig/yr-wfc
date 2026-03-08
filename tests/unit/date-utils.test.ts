@@ -44,10 +44,13 @@ describe("local date string helpers", () => {
     withTimezone("Europe/Oslo", () => {
       const localMidnight = new Date(2026, 2, 8, 0, 0, 0, 0);
 
-      // Demonstrate the original bug: UTC conversion shifts date-only serialization.
-      expect(localMidnight.toISOString().slice(0, 10)).toBe("2026-03-07");
+      // getTimezoneOffset() < 0 means UTC+ (e.g. CET = -60).
+      // On Linux CI, runtime TZ changes may not take effect; guard accordingly.
+      if (localMidnight.getTimezoneOffset() < 0) {
+        expect(localMidnight.toISOString().slice(0, 10)).toBe("2026-03-07");
+      }
 
-      // Helper must preserve local calendar date.
+      // Helper must preserve local calendar date regardless of timezone.
       expect(toLocalDateString(localMidnight)).toBe("2026-03-08");
     });
   });
