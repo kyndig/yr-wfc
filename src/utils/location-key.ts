@@ -27,37 +27,65 @@ function looksLikeLatLonPair(id: string): { lat: number; lon: number } | null {
   return { lat, lon };
 }
 
+function normalizePrefixedId(id: string, lat: number, lon: number): LocationKey | null {
+  const match = id.match(/^([a-zA-Z]+):(.*)$/);
+  if (!match) return null;
+
+  const prefix = match[1].toLowerCase();
+  const payload = match[2].trim();
+  if (!payload) return locationKeyFromCoords(lat, lon);
+
+  if (prefix === "osm") {
+    return /^\d+$/.test(payload) ? `osm:${payload}` : locationKeyFromCoords(lat, lon);
+  }
+
+  if (prefix === "coord") {
+    const pair = looksLikeLatLonPair(payload);
+    return pair ? locationKeyFromCoords(pair.lat, pair.lon) : locationKeyFromCoords(lat, lon);
+  }
+
+  if (prefix === "id") {
+    return `id:${payload}`;
+  }
+
+  return null;
+}
+
 /**
  * Convert any legacy/loose ID + coordinates into a canonical key.
  *
  * Important: we do NOT require callers to pre-prefix IDs. This function
  * canonicalizes common legacy formats used in this repo:
  * - Raw Nominatim place_id string/number -> `osm:${id}`
+ * - Prefixed IDs (`OSM:`, `coord:`, `id:`) -> normalized lowercase canonical keys
  * - Raw `"lat,lon"` strings -> `coord:...` (rounded)
  * - `favorite-<lat>-<lon>` -> treated as coord fallback
+ * - Malformed prefixed IDs -> deterministic coordinate fallback
  */
 export function locationKeyFromIdOrCoords(id: string | undefined, lat: number, lon: number): LocationKey {
-  if (id) {
-    if (id.startsWith("osm:") || id.startsWith("coord:") || id.startsWith("id:")) return id;
+  const normalizedInput = id?.trim();
+  if (normalizedInput) {
+    const prefixed = normalizePrefixedId(normalizedInput, lat, lon);
+    if (prefixed) return prefixed;
 
     // Internal/legacy placeholder used in forecast view
-    if (id.startsWith("favorite-")) {
+    if (normalizedInput.startsWith("favorite-")) {
       return locationKeyFromCoords(lat, lon);
     }
 
     // Legacy coordinate string IDs
-    const pair = looksLikeLatLonPair(id);
+    const pair = looksLikeLatLonPair(normalizedInput);
     if (pair) {
       return locationKeyFromCoords(pair.lat, pair.lon);
     }
 
     // Nominatim place_id is numeric (stringified); treat as stable OSM/Nominatim ID.
-    if (/^\d+$/.test(id)) {
-      return `osm:${id}`;
+    if (/^\d+$/.test(normalizedInput)) {
+      return `osm:${normalizedInput}`;
     }
 
     // Fallback for any other external id
-    return `id:${id}`;
+    return `id:${normalizedInput}`;
   }
 
   return locationKeyFromCoords(lat, lon);

@@ -15,16 +15,44 @@ describe("locationKeyFromCoords", () => {
 });
 
 describe("locationKeyFromIdOrCoords", () => {
-  describe("prefixed IDs are returned as-is", () => {
-    it("preserves osm: prefix", () => {
+  describe("prefixed IDs are normalized", () => {
+    it("normalizes osm: prefix and trims payload", () => {
+      expect(locationKeyFromIdOrCoords(" OSM:12345 ", 0, 0)).toBe("osm:12345");
+    });
+
+    it("normalizes coord: prefix precision", () => {
+      expect(locationKeyFromIdOrCoords("coord:59.9,10.7", 0, 0)).toBe("coord:59.900,10.700");
+    });
+
+    it("normalizes id: prefix and trims payload", () => {
+      expect(locationKeyFromIdOrCoords(" ID:custom-abc ", 0, 0)).toBe("id:custom-abc");
+    });
+  });
+
+  describe("malformed prefixed IDs fall back to coordinates", () => {
+    it("falls back for invalid osm payload", () => {
+      expect(locationKeyFromIdOrCoords("osm:not-a-number", 59.91, 10.75)).toBe("coord:59.910,10.750");
+    });
+
+    it("falls back for invalid coord payload", () => {
+      expect(locationKeyFromIdOrCoords("coord:not,coords", 59.91, 10.75)).toBe("coord:59.910,10.750");
+    });
+
+    it("falls back for empty prefixed payload", () => {
+      expect(locationKeyFromIdOrCoords("id:   ", 59.91, 10.75)).toBe("coord:59.910,10.750");
+    });
+  });
+
+  describe("already canonical forms remain canonical", () => {
+    it("keeps canonical osm id", () => {
       expect(locationKeyFromIdOrCoords("osm:12345", 0, 0)).toBe("osm:12345");
     });
 
-    it("preserves coord: prefix", () => {
+    it("keeps canonical coord key", () => {
       expect(locationKeyFromIdOrCoords("coord:59.914,10.752", 0, 0)).toBe("coord:59.914,10.752");
     });
 
-    it("preserves id: prefix", () => {
+    it("keeps canonical id key", () => {
       expect(locationKeyFromIdOrCoords("id:custom-abc", 0, 0)).toBe("id:custom-abc");
     });
   });
