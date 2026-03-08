@@ -307,7 +307,19 @@ function ForecastView(props: ForecastViewProps) {
 
       generateGraphs();
     }
-  }, [canonicalKey, items, reduced, originalName, preCachedGraph, preRenderedGraph, sunByDate, displaySeries, targetDate, lat, lon]);
+  }, [
+    canonicalKey,
+    items,
+    reduced,
+    originalName,
+    preCachedGraph,
+    preRenderedGraph,
+    sunByDate,
+    displaySeries,
+    targetDate,
+    lat,
+    lon,
+  ]);
 
   // Get cached graph based on current mode, with preCachedGraph as fallback
   const graph = useMemo(() => {
