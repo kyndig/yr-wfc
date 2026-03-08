@@ -35,6 +35,26 @@ describe("getFavorites", () => {
     store["favorite-locations"] = JSON.stringify({ not: "an array" });
     expect(await getFavorites()).toEqual([]);
   });
+
+  it("migrates and deduplicates mixed legacy IDs to one canonical favorite", async () => {
+    store["favorite-locations"] = JSON.stringify([
+      { id: "100", name: "Oslo numeric", lat: 59.9139, lon: 10.7522 },
+      { id: "osm:100", name: "Oslo canonical", lat: 59.9139, lon: 10.7522 },
+      { id: "OSM:100", name: "Oslo uppercase", lat: 59.9139, lon: 10.7522 },
+    ]);
+
+    const favorites = await getFavorites();
+    expect(favorites).toHaveLength(1);
+    expect(favorites[0]).toMatchObject({ id: "osm:100", name: "Oslo numeric" });
+  });
+
+  it("normalizes malformed prefixed IDs to coordinate key during migration", async () => {
+    store["favorite-locations"] = JSON.stringify([{ id: "osm:not-number", name: "Legacy", lat: 59.9139, lon: 10.7522 }]);
+
+    const favorites = await getFavorites();
+    expect(favorites).toHaveLength(1);
+    expect(favorites[0].id).toBe("coord:59.914,10.752");
+  });
 });
 
 describe("addFavorite / getFavorites round-trip", () => {
@@ -87,6 +107,11 @@ describe("isFavorite", () => {
 
   it("returns false when not stored", async () => {
     expect(await isFavorite(OSLO)).toBe(false);
+  });
+
+  it("matches canonical favorite when queried by numeric provider ID", async () => {
+    await addFavorite(OSLO);
+    expect(await isFavorite({ ...OSLO, id: "100" })).toBe(true);
   });
 });
 
