@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Action, ActionPanel, List, Icon, showToast, Toast } from "@raycast/api";
+import { ErrorBoundary } from "react-error-boundary";
 import { LazyForecastView } from "./components/lazy-forecast";
+import { ListErrorFallback } from "./components/ErrorBoundaryFallback";
 import WelcomeMessage from "./components/welcome-message";
 
 import { getWeather, type TimeseriesEntry } from "./weather-client";
@@ -115,38 +117,39 @@ export default function Command() {
   const createLocationActions = LocationUtils.createLocationActions;
 
   return (
-    <List
-      isLoading={shouldShowLoading}
-      onSearchTextChange={search.setSearchText}
-      searchBarPlaceholder={
-        search.queryIntent.targetDate
-          ? `Searching for weather on ${search.queryIntent.targetDate.toLocaleDateString()}...`
-          : "Search for a location or try 'Oslo fredag', 'London tomorrow'..."
-      }
-      throttle
-      actions={
-        <ActionPanel>
-          <Action
-            title="Refresh & Clear Cache"
-            icon={Icon.ArrowClockwise}
-            shortcut={{ modifiers: ["cmd"], key: "r" }}
-            onAction={handleRefreshWithCacheClear}
-          />
-          <Action
-            title="Show Welcome Message"
-            icon={Icon.Info}
-            shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
-            onAction={() => setShowWelcomeMessage(true)}
-          />
-          <Action
-            title="Hide Welcome Message"
-            icon={Icon.Info}
-            shortcut={{ modifiers: ["cmd", "shift", "alt"], key: "w" }}
-            onAction={() => setShowWelcomeMessage(false)}
-          />
-        </ActionPanel>
-      }
-    >
+    <ErrorBoundary FallbackComponent={ListErrorFallback}>
+      <List
+        isLoading={shouldShowLoading}
+        onSearchTextChange={search.setSearchText}
+        searchBarPlaceholder={
+          search.queryIntent.targetDate
+            ? `Searching for weather on ${search.queryIntent.targetDate.toLocaleDateString()}...`
+            : "Search for a location or try 'Oslo fredag', 'London tomorrow'..."
+        }
+        throttle
+        actions={
+          <ActionPanel>
+            <Action
+              title="Refresh & Clear Cache"
+              icon={Icon.ArrowClockwise}
+              shortcut={{ modifiers: ["cmd"], key: "r" }}
+              onAction={handleRefreshWithCacheClear}
+            />
+            <Action
+              title="Show Welcome Message"
+              icon={Icon.Info}
+              shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+              onAction={() => setShowWelcomeMessage(true)}
+            />
+            <Action
+              title="Hide Welcome Message"
+              icon={Icon.Info}
+              shortcut={{ modifiers: ["cmd", "shift", "alt"], key: "w" }}
+              onAction={() => setShowWelcomeMessage(false)}
+            />
+          </ActionPanel>
+        }
+      >
       {/* Welcome message - shown when manually triggered, regardless of favorites/search state */}
       {showWelcomeMessage && !search.searchText.trim() && <WelcomeMessage showActions={false} />}
 
@@ -397,7 +400,8 @@ export default function Command() {
           )}
         </>
       )}
-    </List>
+      </List>
+    </ErrorBoundary>
   );
 }
 
