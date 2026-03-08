@@ -1,6 +1,8 @@
 import { lazy, Suspense } from "react";
 import { Detail } from "@raycast/api";
+import { ErrorBoundary } from "react-error-boundary";
 import { ActionPanelBuilders } from "../utils/action-panel-builders";
+import { DetailErrorFallback } from "./ErrorBoundaryFallback";
 import type { ForecastViewProps } from "../forecast";
 
 // Lazy load the ForecastView component to defer D3 loading
@@ -36,7 +38,9 @@ ${props.targetDate ? `**Date:** ${props.targetDate}` : ""}
         />
       }
     >
-      <LazyForecastComponent {...props} />
+      <ErrorBoundary FallbackComponent={DetailErrorFallback}>
+        <LazyForecastComponent {...props} />
+      </ErrorBoundary>
     </Suspense>
   );
 }

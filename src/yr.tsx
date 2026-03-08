@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Action, ActionPanel, List, Icon, showToast, Toast } from "@raycast/api";
+import { ErrorBoundary } from "react-error-boundary";
 import { LazyForecastView } from "./components/lazy-forecast";
+import { ListErrorFallback } from "./components/ErrorBoundaryFallback";
 import WelcomeMessage from "./components/welcome-message";
 
 import { getWeather, type TimeseriesEntry } from "./weather-client";
@@ -24,6 +26,14 @@ import { WeatherFormatters } from "./utils/weather-formatters";
 import { ActionPanelBuilders } from "./utils/action-panel-builders";
 
 export default function Command() {
+  return (
+    <ErrorBoundary FallbackComponent={ListErrorFallback}>
+      <CommandContent />
+    </ErrorBoundary>
+  );
+}
+
+function CommandContent() {
   // UI state
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
 
