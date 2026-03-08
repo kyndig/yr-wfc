@@ -97,6 +97,7 @@ function ForecastView(props: ForecastViewProps) {
   const [view, setView] = useState<"graph" | "data">("graph");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [sunByDate, setSunByDate] = useState<Record<string, SunTimes>>({});
+  const [sunDataReady, setSunDataReady] = useState<boolean>(false);
   const {
     series: items,
     loading,
@@ -118,6 +119,7 @@ function ForecastView(props: ForecastViewProps) {
 
   // Fetch sunrise/sunset for visible dates once forecast is loaded
   useEffect(() => {
+    setSunDataReady(false);
     let cancelled = false;
 
     const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
@@ -137,7 +139,10 @@ function ForecastView(props: ForecastViewProps) {
     };
 
     async function fetchSun() {
-      if (items.length === 0) return;
+      if (items.length === 0) {
+        setSunDataReady(true);
+        return;
+      }
 
       // For target date (1-day view), fetch sunrise/sunset for that specific date
       // For detailed mode (48h), fetch for the first 48 hours
@@ -189,6 +194,7 @@ function ForecastView(props: ForecastViewProps) {
         // Always set the data, even if some requests failed
         // This ensures graph generation proceeds with partial data
         setSunByDate(map);
+        setSunDataReady(true);
 
         // Show user feedback if there were issues (but don't block the UI)
         if (errorCount > 0 && successCount === 0) {
@@ -242,7 +248,7 @@ function ForecastView(props: ForecastViewProps) {
     // Generate graphs if we have weather data.
     // We rely on graph input data (including sunByDate) as the cache discriminator
     // instead of imperative cache clearing effects.
-    if (items.length > 0) {
+    if (items.length > 0 && sunDataReady) {
       const locationKey = canonicalKey;
 
       // Use displaySeries for graph generation to respect target date filtering
@@ -315,6 +321,7 @@ function ForecastView(props: ForecastViewProps) {
     preCachedGraph,
     preRenderedGraph,
     sunByDate,
+    sunDataReady,
     displaySeries,
     targetDate,
     lat,
@@ -387,6 +394,7 @@ function ForecastView(props: ForecastViewProps) {
       // Force reload weather data
       refreshWeatherData();
       setSunByDate({});
+      setSunDataReady(false);
 
       // Show success toast
       await showToast({
