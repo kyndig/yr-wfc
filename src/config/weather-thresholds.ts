@@ -191,5 +191,5 @@ export const CACHE_THRESHOLDS = {
   LOCATION_SEARCH: 60 * 60 * 1000,
   // 2 hours — graphs are expensive to generate
   GRAPH: 2 * 60 * 60 * 1000,
-  GRAPH_VERSION: "1.2.0",
+  GRAPH_VERSION: "1.2.1",
 } as const;
