@@ -111,7 +111,5 @@ export const LocationResultSchema = z.looseObject({
 });
 
 export type TimeseriesEntry = z.infer<typeof TimeseriesEntrySchema>;
-export type SunriseApiResponse = z.infer<typeof SunriseApiResponseSchema>;
 export type SunTimes = z.infer<typeof SunTimesSchema>;
-export type NominatimRawResult = z.infer<typeof NominatimRawResultSchema>;
 export type LocationResult = z.infer<typeof LocationResultSchema>;
