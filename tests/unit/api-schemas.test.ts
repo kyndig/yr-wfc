@@ -137,6 +137,17 @@ describe("Nominatim and location schemas", () => {
     ).toThrow();
   });
 
+  it("rejects NaN coordinates in location result", () => {
+    expect(() =>
+      LocationResultSchema.parse({
+        id: "456",
+        displayName: "Bad Place",
+        lat: NaN,
+        lon: 10.0,
+      }),
+    ).toThrow();
+  });
+
   it("accepts derived location result shape", () => {
     const parsed = LocationResultSchema.parse({
       id: "123",
