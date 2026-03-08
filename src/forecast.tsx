@@ -22,45 +22,77 @@ import { clearAllCached } from "./cache";
 import { DebugLogger } from "./utils/debug-utils";
 import { LocationResult } from "./location-search";
 
-function ForecastView(props: {
-  location?: LocationResult;
-  locationId?: string;
-  name?: string; // For backward compatibility with favorites
-  lat: number;
-  lon: number;
+type ForecastLocationInput =
+  | {
+      location: LocationResult;
+      locationId?: string;
+      name?: never;
+      lat?: never;
+      lon?: never;
+    }
+  | {
+      location?: undefined;
+      locationId?: string;
+      name: string;
+      lat: number;
+      lon: number;
+    };
+
+export type ForecastViewProps = ForecastLocationInput & {
   preCachedGraph?: string;
   onShowWelcome?: () => void;
   targetDate?: string; // ISO date string for specific day view
   onFavoriteChange?: () => void; // Callback when favorites are added/removed
   initialMode?: "detailed" | "summary"; // Initial mode to start in
-}) {
-  const {
-    location,
-    locationId,
-    name,
-    lat,
-    lon,
-    preCachedGraph,
-    onShowWelcome,
-    targetDate,
-    onFavoriteChange,
-    initialMode,
-  } = props;
-  const canonicalKey = LocationUtils.getLocationKey(locationId ?? location?.id, lat, lon);
+};
 
-  // Create a mock LocationResult for favorites (backward compatibility)
-  const locationData: LocationResult = location || {
-    id: locationId ?? `favorite-${lat}-${lon}`,
-    displayName: name || "Unknown Location",
-    lat,
-    lon,
-    address: undefined,
-    addresstype: undefined,
-    type: undefined,
-    class: undefined,
+type ResolvedForecastLocation = {
+  key: string;
+  displayName: string;
+  lat: number;
+  lon: number;
+  locationData: LocationResult;
+};
+
+function resolveForecastLocation(input: ForecastLocationInput): ResolvedForecastLocation {
+  if (input.location) {
+    const source = input.location;
+    const key = LocationUtils.getLocationKey(input.locationId ?? source.id, source.lat, source.lon);
+    return {
+      key,
+      displayName: source.displayName,
+      lat: source.lat,
+      lon: source.lon,
+      locationData: { ...source, id: key },
+    };
+  }
+
+  const key = LocationUtils.getLocationKey(input.locationId, input.lat, input.lon);
+  return {
+    key,
+    displayName: input.name,
+    lat: input.lat,
+    lon: input.lon,
+    locationData: {
+      id: key,
+      displayName: input.name,
+      lat: input.lat,
+      lon: input.lon,
+      address: undefined,
+      addresstype: undefined,
+      type: undefined,
+      class: undefined,
+    },
   };
+}
 
-  const originalName = locationData.displayName; // Keep the original name for backward compatibility
+function ForecastView(props: ForecastViewProps) {
+  const { preCachedGraph, onShowWelcome, targetDate, onFavoriteChange, initialMode } = props;
+  const resolvedLocation = resolveForecastLocation(props);
+  const canonicalKey = resolvedLocation.key;
+  const originalName = resolvedLocation.displayName;
+  const { lat, lon, locationData } = resolvedLocation;
+
   const [mode, setMode] = useState<"detailed" | "summary">(initialMode || "detailed");
   const [view, setView] = useState<"graph" | "data">("graph");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
@@ -161,11 +193,11 @@ function ForecastView(props: {
         // Show user feedback if there were issues (but don't block the UI)
         if (errorCount > 0 && successCount === 0) {
           DebugLogger.warn(
-            `⚠️ All sunrise/sunset requests failed for ${name}. Graph will render without sunrise/sunset indicators.`,
+            `⚠️ All sunrise/sunset requests failed for ${originalName}. Graph will render without sunrise/sunset indicators.`,
           );
         } else if (errorCount > 0) {
           DebugLogger.warn(
-            `⚠️ Partial sunrise/sunset data for ${name}: ${successCount}/${dates.length} successful. Some indicators may be missing.`,
+            `⚠️ Partial sunrise/sunset data for ${originalName}: ${successCount}/${dates.length} successful. Some indicators may be missing.`,
           );
         }
       }
@@ -275,19 +307,7 @@ function ForecastView(props: {
 
       generateGraphs();
     }
-  }, [
-    canonicalKey,
-    items,
-    reduced,
-    name,
-    preCachedGraph,
-    preRenderedGraph,
-    sunByDate,
-    displaySeries,
-    targetDate,
-    lat,
-    lon,
-  ]);
+  }, [canonicalKey, items, reduced, preCachedGraph, preRenderedGraph, sunByDate, displaySeries, targetDate, lat, lon]);
 
   // Get cached graph based on current mode, with preCachedGraph as fallback
   const graph = useMemo(() => {
@@ -383,7 +403,7 @@ function ForecastView(props: {
         await showToast({
           style: Toast.Style.Success,
           title: "Removed from Favorites",
-          message: `${name} has been removed from your favorites`,
+          message: `${originalName} has been removed from your favorites`,
         });
       } else {
         // Check if there's already a favorite with the same location
@@ -403,13 +423,13 @@ function ForecastView(props: {
             await showToast({
               style: Toast.Style.Success,
               title: "Updated Favorite",
-              message: `Updated existing favorite to "${name}"`,
+              message: `Updated existing favorite to "${originalName}"`,
             });
           } else {
             await showToast({
               style: Toast.Style.Animated,
               title: "⭐ Already a Favorite Location!",
-              message: `${name} is already in your favorites`,
+              message: `${originalName} is already in your favorites`,
             });
             return; // Don't update isFavorite state or call onFavoriteChange
           }
@@ -420,13 +440,13 @@ function ForecastView(props: {
             await showToast({
               style: Toast.Style.Success,
               title: "Added to Favorites",
-              message: `${name} has been added to your favorites`,
+              message: `${originalName} has been added to your favorites`,
             });
           } else {
             await showToast({
               style: Toast.Style.Animated,
               title: "⭐ Already a Favorite Location!",
-              message: `${name} is already in your favorites`,
+              message: `${originalName} is already in your favorites`,
             });
             return; // Don't update isFavorite state or call onFavoriteChange
           }
@@ -459,10 +479,7 @@ function ForecastView(props: {
                 shortcut={{ modifiers: ["cmd"], key: "4" }}
                 target={
                   <ForecastView
-                    locationId={locationId ?? location?.id}
-                    name={name}
-                    lat={lat}
-                    lon={lon}
+                    location={locationData}
                     onShowWelcome={onShowWelcome}
                     onFavoriteChange={onFavoriteChange}
                     initialMode="detailed"
@@ -475,10 +492,7 @@ function ForecastView(props: {
                 shortcut={{ modifiers: ["cmd"], key: "9" }}
                 target={
                   <ForecastView
-                    locationId={locationId ?? location?.id}
-                    name={name}
-                    lat={lat}
-                    lon={lon}
+                    location={locationData}
                     onShowWelcome={onShowWelcome}
                     onFavoriteChange={onFavoriteChange}
                     initialMode="summary"

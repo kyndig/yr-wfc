@@ -33,8 +33,6 @@ export class LocationUtils {
           target={
             <LazyForecastView
               location={location}
-              lat={lat}
-              lon={lon}
               preCachedGraph={preCachedGraph}
               onShowWelcome={onShowWelcome}
               targetDate={targetDate ? toLocalDateString(targetDate) : undefined}
@@ -52,8 +50,6 @@ export class LocationUtils {
               target={
                 <LazyForecastView
                   location={location}
-                  lat={lat}
-                  lon={lon}
                   preCachedGraph={preCachedGraph}
                   onShowWelcome={onShowWelcome}
                   targetDate={toLocalDateString(targetDate)}
@@ -67,8 +63,6 @@ export class LocationUtils {
               target={
                 <LazyForecastView
                   location={location}
-                  lat={lat}
-                  lon={lon}
                   preCachedGraph={preCachedGraph}
                   onShowWelcome={onShowWelcome}
                   onFavoriteChange={onFavoriteChange}
