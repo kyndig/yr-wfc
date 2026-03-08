@@ -150,256 +150,256 @@ export default function Command() {
           </ActionPanel>
         }
       >
-      {/* Welcome message - shown when manually triggered, regardless of favorites/search state */}
-      {showWelcomeMessage && !search.searchText.trim() && <WelcomeMessage showActions={false} />}
+        {/* Welcome message - shown when manually triggered, regardless of favorites/search state */}
+        {showWelcomeMessage && !search.searchText.trim() && <WelcomeMessage showActions={false} />}
 
-      {showEmpty ? (
-        <>
-          {/* Regular empty state */}
-          <List.EmptyView
-            title={
-              search.searchText && search.searchText.trim().length >= UI_THRESHOLDS.SEARCH_MIN_CHARS
-                ? `Searching for "${search.searchText}"`
-                : search.searchText
-                  ? `"${search.searchText}"`
-                  : "Search for a location"
-            }
-            description={
-              search.searchText && search.searchText.trim().length < UI_THRESHOLDS.SEARCH_MIN_CHARS
-                ? `Enter at least ${UI_THRESHOLDS.SEARCH_MIN_CHARS} characters to search`
-                : "Enter a city name or coordinates to get weather information"
-            }
-          />
-        </>
-      ) : (
-        <>
-          {/* Show feedback when no results and insufficient characters */}
-          {search.safeLocations.length === 0 &&
-            search.searchText &&
-            search.searchText.trim().length > 0 &&
-            search.searchText.trim().length < UI_THRESHOLDS.SEARCH_MIN_CHARS && (
-              <List.Item
-                key="min-chars-feedback"
-                title={`"${search.searchText}" - More characters needed`}
-                subtitle={`Type ${UI_THRESHOLDS.SEARCH_MIN_CHARS - search.searchText.trim().length} more character${UI_THRESHOLDS.SEARCH_MIN_CHARS - search.searchText.trim().length === 1 ? "" : "s"} to search`}
-                icon="💡"
-                accessories={[
-                  {
-                    text: `${search.searchText.trim().length}/${UI_THRESHOLDS.SEARCH_MIN_CHARS}`,
-                    tooltip: "Characters entered",
-                  },
-                  {
-                    text: `${UI_THRESHOLDS.SEARCH_MIN_CHARS - search.searchText.trim().length} more`,
-                    tooltip: "Characters needed",
-                  },
-                ]}
-                actions={ActionPanelBuilders.createWelcomeActions(() => setShowWelcomeMessage(true))}
-              />
-            )}
-
-          {/* Show special loading state for date queries */}
-          {isDateQueryLoading && search.safeLocations.length === 0 && (
-            <List.Section title="🔍 Processing Date Query">
-              <List.Item
-                key="date-query-loading"
-                title={`Searching for weather on ${search.queryIntent.targetDate?.toLocaleDateString()}`}
-                subtitle="Finding locations and preparing date-specific results..."
-                icon="⏳"
-                accessories={[
-                  {
-                    text: "Loading...",
-                    icon: Icon.ArrowClockwise,
-                  },
-                ]}
-                actions={ActionPanelBuilders.createWelcomeActions(() => setShowWelcomeMessage(true))}
-              />
-            </List.Section>
-          )}
-
-          {/* Show search results first when actively searching */}
-          {search.safeLocations.length > 0 && (
-            <List.Section
+        {showEmpty ? (
+          <>
+            {/* Regular empty state */}
+            <List.EmptyView
               title={
-                search.queryIntent.targetDate
-                  ? `📅 Search Results for ${search.queryIntent.targetDate.toLocaleDateString()} (${search.safeLocations.length})`
-                  : `Search Results (${search.safeLocations.length})`
+                search.searchText && search.searchText.trim().length >= UI_THRESHOLDS.SEARCH_MIN_CHARS
+                  ? `Searching for "${search.searchText}"`
+                  : search.searchText
+                    ? `"${search.searchText}"`
+                    : "Search for a location"
               }
-            >
-              {search.safeLocations.map((loc) => (
+              description={
+                search.searchText && search.searchText.trim().length < UI_THRESHOLDS.SEARCH_MIN_CHARS
+                  ? `Enter at least ${UI_THRESHOLDS.SEARCH_MIN_CHARS} characters to search`
+                  : "Enter a city name or coordinates to get weather information"
+              }
+            />
+          </>
+        ) : (
+          <>
+            {/* Show feedback when no results and insufficient characters */}
+            {search.safeLocations.length === 0 &&
+              search.searchText &&
+              search.searchText.trim().length > 0 &&
+              search.searchText.trim().length < UI_THRESHOLDS.SEARCH_MIN_CHARS && (
                 <List.Item
-                  key={LocationUtils.getLocationKey(loc.id, loc.lat, loc.lon)}
-                  title={LocationUtils.formatLocationName(loc)}
-                  subtitle={
-                    search.queryIntent.targetDate
-                      ? `Tap to view weather for ${search.queryIntent.targetDate.toLocaleDateString()}`
-                      : undefined
-                  }
-                  icon={search.queryIntent.targetDate ? "📅" : LocationUtils.getLocationEmoji(loc)}
+                  key="min-chars-feedback"
+                  title={`"${search.searchText}" - More characters needed`}
+                  subtitle={`Type ${UI_THRESHOLDS.SEARCH_MIN_CHARS - search.searchText.trim().length} more character${UI_THRESHOLDS.SEARCH_MIN_CHARS - search.searchText.trim().length === 1 ? "" : "s"} to search`}
+                  icon="💡"
                   accessories={[
                     {
-                      text: search.queryIntent.targetDate
-                        ? search.queryIntent.targetDate.toLocaleDateString()
-                        : `${loc.lat.toFixed(UI_THRESHOLDS.COORDINATE_PRECISION)}, ${loc.lon.toFixed(UI_THRESHOLDS.COORDINATE_PRECISION)}`,
-                      icon: search.queryIntent.targetDate ? Icon.Calendar : undefined,
+                      text: `${search.searchText.trim().length}/${UI_THRESHOLDS.SEARCH_MIN_CHARS}`,
+                      tooltip: "Characters entered",
+                    },
+                    {
+                      text: `${UI_THRESHOLDS.SEARCH_MIN_CHARS - search.searchText.trim().length} more`,
+                      tooltip: "Characters needed",
                     },
                   ]}
-                  actions={createLocationActions(
-                    loc,
-                    isLocationFavorite(loc),
-                    async () => {
-                      try {
-                        if (isLocationFavorite(loc)) {
-                          const fav = LocationUtils.createFavoriteFromSearchResult(
-                            loc.id,
-                            loc.displayName,
-                            loc.lat,
-                            loc.lon,
-                          );
-                          await favorites.removeFavoriteLocation(fav);
-                          await ToastMessages.favoriteRemoved(loc.displayName);
-                        } else {
-                          const fav = LocationUtils.createFavoriteFromSearchResult(
-                            loc.id,
-                            loc.displayName,
-                            loc.lat,
-                            loc.lon,
-                          );
-                          await favorites.addFavoriteLocation(fav);
-                          await ToastMessages.favoriteAdded(loc.displayName);
-                        }
-                      } catch (error) {
-                        DebugLogger.error("Error handling favorite toggle:", error);
-                        showToast({
-                          style: Toast.Style.Failure,
-                          title: "Error",
-                          message: "Failed to update favorite. Please try again.",
-                        });
-                      }
-                    },
-                    () => setShowWelcomeMessage(true),
-                    search.queryIntent.targetDate,
-                    undefined, // onFavoriteChange - not needed for search results
-                    undefined, // preCachedGraph - not available for search results
-                  )}
+                  actions={ActionPanelBuilders.createWelcomeActions(() => setShowWelcomeMessage(true))}
                 />
-              ))}
-            </List.Section>
-          )}
+              )}
 
-          {/* Show "no results" message only when search has completed and returned no results */}
-          {!search.isLoading &&
-            search.searchText.trim().length >= UI_THRESHOLDS.SEARCH_MIN_CHARS &&
-            search.safeLocations.length === 0 && (
-              <List.EmptyView
-                title={`No results found for "${search.searchText}"`}
-                description="Try a different location name or check your spelling"
-              />
+            {/* Show special loading state for date queries */}
+            {isDateQueryLoading && search.safeLocations.length === 0 && (
+              <List.Section title="🔍 Processing Date Query">
+                <List.Item
+                  key="date-query-loading"
+                  title={`Searching for weather on ${search.queryIntent.targetDate?.toLocaleDateString()}`}
+                  subtitle="Finding locations and preparing date-specific results..."
+                  icon="⏳"
+                  accessories={[
+                    {
+                      text: "Loading...",
+                      icon: Icon.ArrowClockwise,
+                    },
+                  ]}
+                  actions={ActionPanelBuilders.createWelcomeActions(() => setShowWelcomeMessage(true))}
+                />
+              </List.Section>
             )}
 
-          {/* Show favorites only when not actively searching or when no search results */}
-          {shouldShowFavorites && (
-            <List.Section title={showBackgroundLoading ? "Favorites (Loading weather data...)" : "Favorites"}>
-              {favorites.favorites.map((fav) => {
-                const key = LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon);
-                const favoriteId = fav.id;
-                const state: FavoriteRenderState = {
-                  favorite: fav,
-                  weather: favoriteId ? favorites.getFavoriteWeather(favoriteId, fav.lat, fav.lon) : undefined,
-                  error: favoriteId ? favorites.hasFavoriteError(favoriteId, fav.lat, fav.lon) : false,
-                  loading: favoriteId ? favorites.isFavoriteLoading(favoriteId, fav.lat, fav.lon) : false,
-                  sunTimes: favoriteId ? favorites.getFavoriteSunTimes(favoriteId, fav.lat, fav.lon) : undefined,
-                };
-
-                return (
+            {/* Show search results first when actively searching */}
+            {search.safeLocations.length > 0 && (
+              <List.Section
+                title={
+                  search.queryIntent.targetDate
+                    ? `📅 Search Results for ${search.queryIntent.targetDate.toLocaleDateString()} (${search.safeLocations.length})`
+                    : `Search Results (${search.safeLocations.length})`
+                }
+              >
+                {search.safeLocations.map((loc) => (
                   <List.Item
-                    key={key}
-                    title={fav.name}
-                    subtitle={favoriteSubtitle(state)}
-                    icon={favoriteIcon(state)}
-                    accessories={favoriteAccessories(state)}
-                    actions={
-                      <ActionPanel>
-                        <Action.Push
-                          title="Open Forecast"
-                          icon={Icon.Clock}
-                          target={
-                            <LazyForecastView
-                              locationId={fav.id}
-                              name={fav.name}
-                              lat={fav.lat}
-                              lon={fav.lon}
-                              preCachedGraph={favorites.preWarmedGraphs[key]}
-                              onFavoriteChange={favorites.refreshFavorites}
-                              onShowWelcome={() => setShowWelcomeMessage(true)}
-                            />
-                          }
-                        />
-                        <Action
-                          title="Show Current Weather"
-                          icon={Icon.Wind}
-                          onAction={async () => {
-                            try {
-                              const ts: TimeseriesEntry = await getWeather(fav.lat, fav.lon);
-                              await showToast({
-                                style: Toast.Style.Success,
-                                title: `Now at ${fav.name}`,
-                                message: WeatherFormatters.formatWeatherToast(ts),
-                              });
-                            } catch (error) {
-                              await ToastMessages.weatherLoadFailed(error);
-                            }
-                          }}
-                        />
-                        <Action
-                          title="Remove from Favorites"
-                          icon={Icon.StarDisabled}
-                          shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
-                          onAction={async () => {
-                            try {
-                              await favorites.removeFavoriteLocation(fav);
-                              await ToastMessages.favoriteRemoved(fav.name);
-                            } catch (error) {
-                              DebugLogger.error("Error removing favorite:", error);
-                              showToast({
-                                style: Toast.Style.Failure,
-                                title: "Error",
-                                message: "Failed to remove favorite. Please try again.",
-                              });
-                            }
-                          }}
-                        />
-                        <Action
-                          title="Move up"
-                          icon={Icon.ArrowUp}
-                          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
-                          onAction={async () => {
-                            await favorites.moveFavoriteUp(fav);
-                          }}
-                        />
-                        <Action
-                          title="Move Down"
-                          icon={Icon.ArrowDown}
-                          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
-                          onAction={async () => {
-                            await favorites.moveFavoriteDown(fav);
-                          }}
-                        />
-
-                        <Action
-                          title="Show Welcome Message"
-                          icon={Icon.Info}
-                          onAction={() => setShowWelcomeMessage(true)}
-                          shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
-                        />
-                      </ActionPanel>
+                    key={LocationUtils.getLocationKey(loc.id, loc.lat, loc.lon)}
+                    title={LocationUtils.formatLocationName(loc)}
+                    subtitle={
+                      search.queryIntent.targetDate
+                        ? `Tap to view weather for ${search.queryIntent.targetDate.toLocaleDateString()}`
+                        : undefined
                     }
+                    icon={search.queryIntent.targetDate ? "📅" : LocationUtils.getLocationEmoji(loc)}
+                    accessories={[
+                      {
+                        text: search.queryIntent.targetDate
+                          ? search.queryIntent.targetDate.toLocaleDateString()
+                          : `${loc.lat.toFixed(UI_THRESHOLDS.COORDINATE_PRECISION)}, ${loc.lon.toFixed(UI_THRESHOLDS.COORDINATE_PRECISION)}`,
+                        icon: search.queryIntent.targetDate ? Icon.Calendar : undefined,
+                      },
+                    ]}
+                    actions={createLocationActions(
+                      loc,
+                      isLocationFavorite(loc),
+                      async () => {
+                        try {
+                          if (isLocationFavorite(loc)) {
+                            const fav = LocationUtils.createFavoriteFromSearchResult(
+                              loc.id,
+                              loc.displayName,
+                              loc.lat,
+                              loc.lon,
+                            );
+                            await favorites.removeFavoriteLocation(fav);
+                            await ToastMessages.favoriteRemoved(loc.displayName);
+                          } else {
+                            const fav = LocationUtils.createFavoriteFromSearchResult(
+                              loc.id,
+                              loc.displayName,
+                              loc.lat,
+                              loc.lon,
+                            );
+                            await favorites.addFavoriteLocation(fav);
+                            await ToastMessages.favoriteAdded(loc.displayName);
+                          }
+                        } catch (error) {
+                          DebugLogger.error("Error handling favorite toggle:", error);
+                          showToast({
+                            style: Toast.Style.Failure,
+                            title: "Error",
+                            message: "Failed to update favorite. Please try again.",
+                          });
+                        }
+                      },
+                      () => setShowWelcomeMessage(true),
+                      search.queryIntent.targetDate,
+                      undefined, // onFavoriteChange - not needed for search results
+                      undefined, // preCachedGraph - not available for search results
+                    )}
                   />
-                );
-              })}
-            </List.Section>
-          )}
-        </>
-      )}
+                ))}
+              </List.Section>
+            )}
+
+            {/* Show "no results" message only when search has completed and returned no results */}
+            {!search.isLoading &&
+              search.searchText.trim().length >= UI_THRESHOLDS.SEARCH_MIN_CHARS &&
+              search.safeLocations.length === 0 && (
+                <List.EmptyView
+                  title={`No results found for "${search.searchText}"`}
+                  description="Try a different location name or check your spelling"
+                />
+              )}
+
+            {/* Show favorites only when not actively searching or when no search results */}
+            {shouldShowFavorites && (
+              <List.Section title={showBackgroundLoading ? "Favorites (Loading weather data...)" : "Favorites"}>
+                {favorites.favorites.map((fav) => {
+                  const key = LocationUtils.getLocationKey(fav.id, fav.lat, fav.lon);
+                  const favoriteId = fav.id;
+                  const state: FavoriteRenderState = {
+                    favorite: fav,
+                    weather: favoriteId ? favorites.getFavoriteWeather(favoriteId, fav.lat, fav.lon) : undefined,
+                    error: favoriteId ? favorites.hasFavoriteError(favoriteId, fav.lat, fav.lon) : false,
+                    loading: favoriteId ? favorites.isFavoriteLoading(favoriteId, fav.lat, fav.lon) : false,
+                    sunTimes: favoriteId ? favorites.getFavoriteSunTimes(favoriteId, fav.lat, fav.lon) : undefined,
+                  };
+
+                  return (
+                    <List.Item
+                      key={key}
+                      title={fav.name}
+                      subtitle={favoriteSubtitle(state)}
+                      icon={favoriteIcon(state)}
+                      accessories={favoriteAccessories(state)}
+                      actions={
+                        <ActionPanel>
+                          <Action.Push
+                            title="Open Forecast"
+                            icon={Icon.Clock}
+                            target={
+                              <LazyForecastView
+                                locationId={fav.id}
+                                name={fav.name}
+                                lat={fav.lat}
+                                lon={fav.lon}
+                                preCachedGraph={favorites.preWarmedGraphs[key]}
+                                onFavoriteChange={favorites.refreshFavorites}
+                                onShowWelcome={() => setShowWelcomeMessage(true)}
+                              />
+                            }
+                          />
+                          <Action
+                            title="Show Current Weather"
+                            icon={Icon.Wind}
+                            onAction={async () => {
+                              try {
+                                const ts: TimeseriesEntry = await getWeather(fav.lat, fav.lon);
+                                await showToast({
+                                  style: Toast.Style.Success,
+                                  title: `Now at ${fav.name}`,
+                                  message: WeatherFormatters.formatWeatherToast(ts),
+                                });
+                              } catch (error) {
+                                await ToastMessages.weatherLoadFailed(error);
+                              }
+                            }}
+                          />
+                          <Action
+                            title="Remove from Favorites"
+                            icon={Icon.StarDisabled}
+                            shortcut={{ modifiers: ["cmd", "shift"], key: "f" }}
+                            onAction={async () => {
+                              try {
+                                await favorites.removeFavoriteLocation(fav);
+                                await ToastMessages.favoriteRemoved(fav.name);
+                              } catch (error) {
+                                DebugLogger.error("Error removing favorite:", error);
+                                showToast({
+                                  style: Toast.Style.Failure,
+                                  title: "Error",
+                                  message: "Failed to remove favorite. Please try again.",
+                                });
+                              }
+                            }}
+                          />
+                          <Action
+                            title="Move up"
+                            icon={Icon.ArrowUp}
+                            shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
+                            onAction={async () => {
+                              await favorites.moveFavoriteUp(fav);
+                            }}
+                          />
+                          <Action
+                            title="Move Down"
+                            icon={Icon.ArrowDown}
+                            shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
+                            onAction={async () => {
+                              await favorites.moveFavoriteDown(fav);
+                            }}
+                          />
+
+                          <Action
+                            title="Show Welcome Message"
+                            icon={Icon.Info}
+                            onAction={() => setShowWelcomeMessage(true)}
+                            shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
+                          />
+                        </ActionPanel>
+                      }
+                    />
+                  );
+                })}
+              </List.Section>
+            )}
+          </>
+        )}
       </List>
     </ErrorBoundary>
   );

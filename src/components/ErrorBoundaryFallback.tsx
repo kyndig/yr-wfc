@@ -2,12 +2,12 @@ import { Detail, List } from "@raycast/api";
 import type { FallbackProps } from "react-error-boundary";
 import { ActionPanelBuilders } from "../utils/action-panel-builders";
 
-function describeError(error: Error): string {
-  const message = error.message?.trim();
-  if (!message) {
-    return "An unexpected error occurred. Try again.";
+function describeError(error: unknown): string {
+  if (error instanceof Error) {
+    const message = error.message?.trim();
+    if (message) return message;
   }
-  return message;
+  return "An unexpected error occurred. Try again.";
 }
 
 export function ListErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
