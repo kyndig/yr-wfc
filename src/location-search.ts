@@ -23,23 +23,27 @@ export async function searchLocations(query: string, options?: { signal?: AbortS
     `search:${encodeURIComponent(trimmed.toLowerCase())}`,
     (raw: unknown) => {
       const list = NominatimRawSearchResponseSchema.parse(raw);
-      return list.map((p) =>
-        LocationResultSchema.parse({
-          id: String(p.place_id),
-          displayName: p.display_name,
-          lat: Number(p.lat),
-          lon: Number(p.lon),
-          address: p.address,
-          osm_type: p.osm_type,
-          type: p.type,
-          class: p.class,
-          addresstype: p.addresstype,
-        }),
-      );
+      return list.flatMap((p) => {
+        const lat = Number(p.lat);
+        const lon = Number(p.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return [];
+        return [
+          LocationResultSchema.parse({
+            id: String(p.place_id),
+            displayName: p.display_name,
+            lat,
+            lon,
+            address: p.address,
+            osm_type: p.osm_type,
+            type: p.type,
+            class: p.class,
+            addresstype: p.addresstype,
+          }),
+        ];
+      });
     },
     { signal: options?.signal, timeoutMs: 10000, retries: 1 },
   );
 
-  // Nominatim may return partial/invalid coordinate rows; filter those out.
-  return data.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon));
+  return data;
 }
