@@ -139,10 +139,7 @@ function ForecastView(props: ForecastViewProps) {
     };
 
     async function fetchSun() {
-      if (items.length === 0) {
-        setSunDataReady(true);
-        return;
-      }
+      if (items.length === 0) return;
 
       // For target date (1-day view), fetch sunrise/sunset for that specific date
       // For detailed mode (48h), fetch for the first 48 hours
