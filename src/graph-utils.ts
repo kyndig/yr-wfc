@@ -8,7 +8,7 @@ import { precipitationAmount, symbolCode } from "./utils-forecast";
 import { symbolToEmoji } from "./utils/weather-symbols";
 import { directionFromDegrees } from "./weather-utils";
 import { formatDate, formatTime } from "./utils/date-utils";
-import { convertTemperature, convertPrecipitation } from "./config/weather-config";
+import { convertTemperature, convertPrecipitation, getGraphColors } from "./config/weather-config";
 import { DebugLogger } from "./utils/debug-utils";
 import { environment } from "@raycast/api";
 // Utility functions for graph generation
@@ -34,18 +34,7 @@ export function buildGraphMarkdown(
 ): { markdown: string } {
   const subset = series.slice(0, hours);
   const graphConfig = GRAPH_THRESHOLDS;
-  const isDark = environment.appearance === "dark";
-  const colors = isDark
-    ? {
-        ...graphConfig.COLORS,
-        BACKGROUND: "#0b0f14",
-        GRID: "#1f2a33",
-        PRECIPITATION_GRID: "#102533",
-        DAY_BOUNDARY: "#2a3a45",
-        LABEL: "#c7d1db",
-        AXIS: "#aab8c2",
-      }
-    : graphConfig.COLORS;
+  const colors = getGraphColors(environment.appearance);
   const { WIDTH: width, HEIGHT: height, MARGIN: margin } = graphConfig;
   const innerWidth = width - margin.LEFT - margin.RIGHT;
   const innerHeight = height - margin.TOP - margin.BOTTOM;
