@@ -31,6 +31,23 @@ describe("TimeseriesEntrySchema", () => {
     expect(parsed.data.instant.details.cloud_area_fraction).toBe(87);
   });
 
+  it("accepts non-numeric additive fields in instant.details", () => {
+    const parsed = TimeseriesEntrySchema.parse({
+      time: "2026-03-08T10:00:00Z",
+      data: {
+        instant: {
+          details: {
+            air_temperature: 12.5,
+            some_future_string: "description",
+            some_future_object: { nested: true },
+          },
+        },
+      },
+    });
+
+    expect(parsed.data.instant.details.air_temperature).toBe(12.5);
+  });
+
   it("rejects entries missing required root fields", () => {
     expect(() =>
       TimeseriesEntrySchema.parse({

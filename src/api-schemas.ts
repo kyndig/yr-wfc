@@ -13,13 +13,11 @@ const ForecastPeriodSchema = z.looseObject({
   details: ForecastDetailsSchema.optional(),
 });
 
-const InstantDetailsSchema = z
-  .object({
-    air_temperature: z.number().optional(),
-    wind_speed: z.number().optional(),
-    wind_from_direction: z.number().optional(),
-  })
-  .catchall(z.number());
+const InstantDetailsSchema = z.looseObject({
+  air_temperature: z.number().optional(),
+  wind_speed: z.number().optional(),
+  wind_from_direction: z.number().optional(),
+});
 
 export const TimeseriesEntrySchema = z.looseObject({
   time: z.string(),
