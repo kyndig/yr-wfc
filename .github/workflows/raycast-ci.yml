@@ -140,3 +140,5 @@ jobs:
 
       - name: Unit tests
         run: npm run test:unit
+        env:
+          TZ: Europe/Oslo
