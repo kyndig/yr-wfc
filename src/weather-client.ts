@@ -1,30 +1,8 @@
 import { weatherApiClient } from "./utils/api-client";
 import { coordSuffix } from "./cache-keys";
+import { LocationForecastResponseSchema, type TimeseriesEntry as ApiTimeseriesEntry } from "./api-schemas";
 
-export type TimeseriesEntry = {
-  time: string;
-  data: {
-    instant: {
-      details: Record<string, number> & {
-        air_temperature?: number;
-        wind_speed?: number;
-        wind_from_direction?: number; // degrees
-      };
-    };
-    next_1_hours?: {
-      summary?: { symbol_code?: string };
-      details?: { precipitation_amount?: number };
-    };
-    next_6_hours?: {
-      summary?: { symbol_code?: string };
-      details?: { precipitation_amount?: number };
-    };
-    next_12_hours?: {
-      summary?: { symbol_code?: string };
-      details?: { precipitation_amount?: number };
-    };
-  };
-};
+export type TimeseriesEntry = ApiTimeseriesEntry;
 
 export type WeatherDataWithMetadata = {
   data: TimeseriesEntry | TimeseriesEntry[];
@@ -32,15 +10,6 @@ export type WeatherDataWithMetadata = {
     updated_at?: string;
     last_modified?: string;
     expires?: string;
-  };
-};
-
-type LocationForecastResponse = {
-  properties?: {
-    timeseries?: unknown[];
-  };
-  meta?: {
-    updated_at?: string;
   };
 };
 
@@ -54,10 +23,10 @@ export async function getWeather(
     { lat, lon },
     cacheKeySuffix,
     (raw: unknown) => {
-      const data = raw as LocationForecastResponse;
-      const first = data.properties?.timeseries?.[0] as unknown;
+      const data = LocationForecastResponseSchema.parse(raw);
+      const first = data.properties?.timeseries?.[0];
       if (!first) throw new Error("Unexpected response shape: missing timeseries[0]");
-      return first as TimeseriesEntry;
+      return first;
     },
     { signal: options?.signal, timeoutMs: options?.timeoutMs ?? 10000, retries: 1 },
   );
@@ -73,12 +42,11 @@ export async function getWeatherWithMetadata(
     { lat, lon },
     cacheKeySuffix,
     (raw: unknown, response: Response) => {
-      const data = raw as LocationForecastResponse;
-      const first = data.properties?.timeseries?.[0] as unknown;
+      const data = LocationForecastResponseSchema.parse(raw);
+      const first = data.properties?.timeseries?.[0];
       if (!first) throw new Error("Unexpected response shape: missing timeseries[0]");
-      const ts = first as TimeseriesEntry;
       return {
-        data: ts,
+        data: first,
         metadata: {
           updated_at: data.meta?.updated_at,
           last_modified: response.headers.get("Last-Modified") || undefined,
@@ -100,10 +68,10 @@ export async function getForecast(
     { lat, lon },
     cacheKeySuffix,
     (raw: unknown) => {
-      const data = raw as LocationForecastResponse;
-      const series = data.properties?.timeseries as unknown;
+      const data = LocationForecastResponseSchema.parse(raw);
+      const series = data.properties?.timeseries;
       if (!Array.isArray(series)) throw new Error("Unexpected response shape: missing timeseries array");
-      return series as TimeseriesEntry[];
+      return series;
     },
     { signal: options?.signal, timeoutMs: options?.timeoutMs ?? 10000, retries: 1 },
   );
@@ -119,12 +87,11 @@ export async function getForecastWithMetadata(
     { lat, lon },
     cacheKeySuffix,
     (raw: unknown, response: Response) => {
-      const data = raw as LocationForecastResponse;
-      const series = data.properties?.timeseries as unknown;
+      const data = LocationForecastResponseSchema.parse(raw);
+      const series = data.properties?.timeseries;
       if (!Array.isArray(series)) throw new Error("Unexpected response shape: missing timeseries array");
-      const list = series as TimeseriesEntry[];
       return {
-        data: list,
+        data: series,
         metadata: {
           updated_at: data.meta?.updated_at,
           last_modified: response.headers.get("Last-Modified") || undefined,
