@@ -1,4 +1,5 @@
 import { DebugLogger } from "./utils/debug-utils";
+import { stripDiacritics } from "./utils/string-utils";
 
 export type QueryIntent = {
   locationQuery?: string;
@@ -82,11 +83,6 @@ const monthTokenToIndex: Record<string, number> = {
   dec: 11,
   desember: 11,
 };
-
-function stripDiacritics(value: string): string {
-  // Normalize and strip combining marks without relying on Unicode properties
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
 
 function normalizeToken(token: string): string {
   return stripDiacritics(token.toLowerCase());

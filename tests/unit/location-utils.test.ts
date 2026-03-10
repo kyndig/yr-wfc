@@ -75,3 +75,53 @@ describe("LocationUtils canonical identity helpers", () => {
     expect(LocationUtils.getLocationKey(undefined, 59.9139, 10.7522)).toBe("coord:59.914,10.752");
   });
 });
+
+describe("LocationUtils.sortLocationsByPrecision with query relevance", () => {
+  it("prioritizes exact diacritic-insensitive name matches", () => {
+    const bodoe = location({
+      id: "1",
+      displayName: "Bodø Municipality, Nordland, Norge",
+      addresstype: "municipality",
+    });
+    const bordeaux = location({
+      id: "2",
+      displayName: "Bordeaux Municipality, Gironde, France",
+      addresstype: "municipality",
+    });
+
+    const sorted = LocationUtils.sortLocationsByPrecision([bordeaux, bodoe], "bodo");
+    expect(sorted[0].displayName).toContain("Bodø");
+  });
+
+  it("prioritizes prefix matches over unrelated higher-precision types", () => {
+    const bod = location({
+      id: "1",
+      displayName: "Bod Municipality, Brașov, Romania",
+      addresstype: "municipality",
+    });
+    const guingamp = location({
+      id: "2",
+      displayName: "Guingamp, Côtes-d'Armor, France",
+      addresstype: "city",
+    });
+
+    const sorted = LocationUtils.sortLocationsByPrecision([guingamp, bod], "bod");
+    expect(sorted[0].displayName).toContain("Bod Municipality");
+  });
+
+  it("falls back to precision sorting when query is not provided", () => {
+    const municipality = location({
+      id: "1",
+      displayName: "Municipality Match",
+      addresstype: "municipality",
+    });
+    const city = location({
+      id: "2",
+      displayName: "City Match",
+      addresstype: "city",
+    });
+
+    const sorted = LocationUtils.sortLocationsByPrecision([municipality, city]);
+    expect(sorted[0].displayName).toBe("City Match");
+  });
+});
