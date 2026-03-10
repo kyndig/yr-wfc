@@ -39,6 +39,7 @@ export function useSearch(): UseSearchReturn {
   const [queryIntent, setQueryIntent] = useState<QueryIntent>({});
   const [searchError, setSearchError] = useState<string | null>(null);
   const activeSearchControllerRef = useRef<AbortController | null>(null);
+  const lastToastedDateRef = useRef<string | null>(null);
 
   // Search function with query intent parsing (no debouncing here)
   const performSearch = useCallback(async (...args: unknown[]): Promise<void> => {
@@ -48,6 +49,7 @@ export function useSearch(): UseSearchReturn {
       activeSearchControllerRef.current?.abort();
       setLocations([]);
       setQueryIntent({});
+      lastToastedDateRef.current = null;
       setSearchError(null);
       setIsLoading(false);
       return;
@@ -65,6 +67,7 @@ export function useSearch(): UseSearchReturn {
       activeSearchControllerRef.current?.abort();
       setLocations([]);
       setQueryIntent({});
+      lastToastedDateRef.current = null;
       setSearchError(null);
       setIsLoading(false);
       return;
@@ -74,21 +77,25 @@ export function useSearch(): UseSearchReturn {
 
     // Show toast notification if a date query was successfully parsed
     if (intent.targetDate) {
-      const dateStr = intent.targetDate.toLocaleDateString();
-      const isToday = intent.targetDate.toDateString() === new Date().toDateString();
-      const isTomorrow =
-        intent.targetDate.toDateString() ===
-        new Date(Date.now() + GRAPH_THRESHOLDS.STYLING.MILLISECONDS_PER_DAY).toDateString();
+      const dateKey = intent.targetDate.toISOString();
+      if (dateKey !== lastToastedDateRef.current) {
+        lastToastedDateRef.current = dateKey;
+        const dateStr = intent.targetDate.toLocaleDateString();
+        const isToday = intent.targetDate.toDateString() === new Date().toDateString();
+        const isTomorrow =
+          intent.targetDate.toDateString() ===
+          new Date(Date.now() + GRAPH_THRESHOLDS.STYLING.MILLISECONDS_PER_DAY).toDateString();
 
-      let dateLabel = dateStr;
-      if (isToday) dateLabel = "today";
-      else if (isTomorrow) dateLabel = "tomorrow";
+        let dateLabel = dateStr;
+        if (isToday) dateLabel = "today";
+        else if (isTomorrow) dateLabel = "tomorrow";
 
-      showToast({
-        style: Toast.Style.Success,
-        title: `📅 ${dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} weather query detected!`,
-        message: `Search results will show weather for ${dateLabel} - tap any location to view detailed forecast`,
-      });
+        showToast({
+          style: Toast.Style.Success,
+          title: `📅 ${dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} weather query detected!`,
+          message: `Search results will show weather for ${dateLabel} - tap any location to view detailed forecast`,
+        });
+      }
     }
 
     setIsLoading(true);
@@ -125,15 +132,13 @@ export function useSearch(): UseSearchReturn {
     setQueryIntent({});
     setSearchError(null);
     setIsLoading(false);
+    lastToastedDateRef.current = null;
   }, []);
 
   // Trigger search when search text changes with debouncing
   useEffect(() => {
     const q = searchText.trim();
-    const intent = parseQueryIntent(q);
-    const locationQuery = intent.locationQuery || q;
-
-    if (locationQuery.length >= UI_THRESHOLDS.SEARCH_MIN_CHARS) {
+    if (q.length > 0) {
       debouncedSearch(q);
     } else {
       activeSearchControllerRef.current?.abort();
@@ -141,6 +146,7 @@ export function useSearch(): UseSearchReturn {
       setQueryIntent({});
       setIsLoading(false);
       setSearchError(null);
+      lastToastedDateRef.current = null;
     }
   }, [searchText, debouncedSearch]);
 

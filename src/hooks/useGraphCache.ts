@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   clearAllGraphCache,
   cleanupOldGraphCache,
@@ -94,12 +94,15 @@ export function useGraphCache() {
     }
   }, []);
 
-  return {
-    clearAllCache,
-    cleanupCache,
-    invalidateLocation,
-    invalidateMode,
-    invalidateDate,
-    getStats,
-  };
+  return useMemo(
+    () => ({
+      clearAllCache,
+      cleanupCache,
+      invalidateLocation,
+      invalidateMode,
+      invalidateDate,
+      getStats,
+    }),
+    [clearAllCache, cleanupCache, invalidateLocation, invalidateMode, invalidateDate, getStats],
+  );
 }

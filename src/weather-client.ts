@@ -18,18 +18,8 @@ export async function getWeather(
   lon: number,
   options?: { signal?: AbortSignal; timeoutMs?: number },
 ): Promise<TimeseriesEntry> {
-  const cacheKeySuffix = `current:${coordSuffix(lat, lon)}`;
-  return weatherApiClient.request(
-    { lat, lon },
-    cacheKeySuffix,
-    (raw: unknown) => {
-      const data = LocationForecastResponseSchema.parse(raw);
-      const first = data.properties?.timeseries?.[0];
-      if (!first) throw new Error("Unexpected response shape: missing timeseries[0]");
-      return first;
-    },
-    { signal: options?.signal, timeoutMs: options?.timeoutMs ?? 10000, retries: 1 },
-  );
+  const result = await getWeatherWithMetadata(lat, lon, options);
+  return result.data as TimeseriesEntry;
 }
 
 export async function getWeatherWithMetadata(
@@ -63,18 +53,8 @@ export async function getForecast(
   lon: number,
   options?: { signal?: AbortSignal; timeoutMs?: number },
 ): Promise<TimeseriesEntry[]> {
-  const cacheKeySuffix = `forecast:${coordSuffix(lat, lon)}`;
-  return weatherApiClient.request(
-    { lat, lon },
-    cacheKeySuffix,
-    (raw: unknown) => {
-      const data = LocationForecastResponseSchema.parse(raw);
-      const series = data.properties?.timeseries;
-      if (!Array.isArray(series)) throw new Error("Unexpected response shape: missing timeseries array");
-      return series;
-    },
-    { signal: options?.signal, timeoutMs: options?.timeoutMs ?? 10000, retries: 1 },
-  );
+  const result = await getForecastWithMetadata(lat, lon, options);
+  return result.data as TimeseriesEntry[];
 }
 
 export async function getForecastWithMetadata(
