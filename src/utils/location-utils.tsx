@@ -8,6 +8,7 @@ import { FavoriteToggleAction } from "../components/FavoriteToggleAction";
 import { LocationResult } from "../location-search";
 import { locationKeyFromIdOrCoords } from "./location-key";
 import { toLocalDateString } from "./date-utils";
+import { stripDiacritics } from "./string-utils";
 
 /**
  * Location utility functions to eliminate duplication
@@ -195,15 +196,46 @@ export class LocationUtils {
     return score;
   }
 
+  static calculateQueryRelevance(location: LocationResult, normalizedQuery: string): number {
+    if (!normalizedQuery) {
+      return 0;
+    }
+
+    const primaryName = location.displayName.split(",")[0]?.trim() ?? "";
+    const normalizedPrimaryName = stripDiacritics(primaryName.toLowerCase());
+
+    if (normalizedPrimaryName === normalizedQuery) {
+      return 200;
+    }
+    if (
+      normalizedPrimaryName.startsWith(`${normalizedQuery} `) ||
+      normalizedPrimaryName.startsWith(`${normalizedQuery}-`) ||
+      normalizedPrimaryName.startsWith(`${normalizedQuery},`)
+    ) {
+      return 180;
+    }
+    if (normalizedPrimaryName.startsWith(normalizedQuery)) {
+      return 100;
+    }
+    if (normalizedPrimaryName.includes(normalizedQuery)) {
+      return 50;
+    }
+    return 0;
+  }
+
   /**
    * Sort locations by precision (most specific first)
    */
-  static sortLocationsByPrecision(locations: LocationResult[]): LocationResult[] {
-    return [...locations].sort((a, b) => {
-      const scoreA = LocationUtils.calculateLocationPrecision(a);
-      const scoreB = LocationUtils.calculateLocationPrecision(b);
+  static sortLocationsByPrecision(locations: LocationResult[], query?: string): LocationResult[] {
+    const normalizedQuery = query ? stripDiacritics(query.toLowerCase().trim()) : "";
 
-      // Higher score first (more precise)
+    return [...locations].sort((a, b) => {
+      const scoreA =
+        LocationUtils.calculateLocationPrecision(a) + LocationUtils.calculateQueryRelevance(a, normalizedQuery);
+      const scoreB =
+        LocationUtils.calculateLocationPrecision(b) + LocationUtils.calculateQueryRelevance(b, normalizedQuery);
+
+      // Higher score first (more precise + more query-relevant)
       return scoreB - scoreA;
     });
   }

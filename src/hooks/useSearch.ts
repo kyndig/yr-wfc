@@ -107,7 +107,7 @@ export function useSearch(): UseSearchReturn {
       activeSearchControllerRef.current = controller;
 
       const results = await searchLocations(locationQuery, { signal: controller.signal });
-      const sortedResults = LocationUtils.sortLocationsByPrecision(results);
+      const sortedResults = LocationUtils.sortLocationsByPrecision(results, locationQuery);
       setLocations(sortedResults);
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
