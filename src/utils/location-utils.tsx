@@ -209,8 +209,7 @@ export class LocationUtils {
     }
     if (
       normalizedPrimaryName.startsWith(`${normalizedQuery} `) ||
-      normalizedPrimaryName.startsWith(`${normalizedQuery}-`) ||
-      normalizedPrimaryName.startsWith(`${normalizedQuery},`)
+      normalizedPrimaryName.startsWith(`${normalizedQuery}-`)
     ) {
       return 180;
     }
