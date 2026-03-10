@@ -18,6 +18,7 @@ Uses OpenStreetMap Nominatim. Understands date tokens mixed with location names:
 - **Relative** — "Paris tomorrow", "Paris i morgen"
 
 English and Norwegian (Bokmål). Diacritics normalized ("søndag" = "sondag").
+For date-specific forecasts, graphs include context padding (last point before the selected day and first point after) to avoid abrupt edges.
 
 ## Keyboard Shortcuts
 
