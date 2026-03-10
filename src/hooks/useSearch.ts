@@ -132,6 +132,7 @@ export function useSearch(): UseSearchReturn {
     setQueryIntent({});
     setSearchError(null);
     setIsLoading(false);
+    lastToastedDateRef.current = null;
   }, []);
 
   // Trigger search when search text changes with debouncing
@@ -145,6 +146,7 @@ export function useSearch(): UseSearchReturn {
       setQueryIntent({});
       setIsLoading(false);
       setSearchError(null);
+      lastToastedDateRef.current = null;
     }
   }, [searchText, debouncedSearch]);
 
