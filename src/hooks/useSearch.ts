@@ -130,10 +130,7 @@ export function useSearch(): UseSearchReturn {
   // Trigger search when search text changes with debouncing
   useEffect(() => {
     const q = searchText.trim();
-    const intent = parseQueryIntent(q);
-    const locationQuery = intent.locationQuery || q;
-
-    if (locationQuery.length >= UI_THRESHOLDS.SEARCH_MIN_CHARS) {
+    if (q.length > 0) {
       debouncedSearch(q);
     } else {
       activeSearchControllerRef.current?.abort();
