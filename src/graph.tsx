@@ -197,5 +197,3 @@ export default withErrorBoundary(GraphView, {
   componentName: "Graph View",
   fallback: <GraphErrorFallback componentName="Graph View" />,
 });
-
-export { buildGraphMarkdown } from "./graph-utils";
