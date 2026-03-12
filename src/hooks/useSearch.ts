@@ -110,15 +110,19 @@ export function useSearch(): UseSearchReturn {
 
       const results = await searchLocations(locationQuery, { signal: controller.signal });
       const sortedResults = LocationUtils.sortLocationsByPrecision(results, locationQuery);
-      setLocations(sortedResults);
+      if (invocationId === searchInvocationCountRef.current) {
+        setLocations(sortedResults);
+      }
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         return;
       }
       DebugLogger.error("Search failed:", error);
       void ToastMessages.locationApiUnavailable();
-      setLocations([]);
-      setSearchError(error instanceof Error ? error.message : "Search failed");
+      if (invocationId === searchInvocationCountRef.current) {
+        setLocations([]);
+        setSearchError(error instanceof Error ? error.message : "Search failed");
+      }
     } finally {
       if (invocationId === searchInvocationCountRef.current) {
         setIsLoading(false);

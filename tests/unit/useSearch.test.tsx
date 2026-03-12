@@ -119,4 +119,53 @@ describe("useSearch", () => {
       expect.objectContaining({ signal: expect.any(Object) }),
     );
   });
+
+  it("ignores stale non-abort errors from superseded requests", async () => {
+    const mockedSearchLocations = searchLocations as jest.MockedFunction<typeof searchLocations>;
+    let rejectFirstSearch: ((reason?: unknown) => void) | null = null;
+    let resolveSecondSearch: ((value: LocationResult[]) => void) | null = null;
+
+    mockedSearchLocations.mockImplementationOnce(
+      () =>
+        new Promise<LocationResult[]>((_resolve, reject) => {
+          rejectFirstSearch = reject;
+        }),
+    );
+    mockedSearchLocations.mockImplementationOnce(
+      () =>
+        new Promise<LocationResult[]>((resolve) => {
+          resolveSecondSearch = resolve;
+        }),
+    );
+
+    const { result } = renderHook(() => useSearch());
+
+    act(() => {
+      void result.current.performSearch("oslo");
+    });
+    act(() => {
+      void result.current.performSearch("bergen");
+    });
+
+    await act(async () => {
+      rejectFirstSearch?.(new Error("masked abort failure"));
+      await Promise.resolve();
+    });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.searchError).toBeNull();
+    expect(result.current.locations).toEqual([]);
+
+    const bergenResult: LocationResult = { id: "2", displayName: "Bergen", lat: 60.39, lon: 5.32 };
+    await act(async () => {
+      resolveSecondSearch?.([bergenResult]);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.locations).toEqual([bergenResult]);
+      expect(result.current.searchError).toBeNull();
+    });
+  });
 });
