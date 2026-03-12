@@ -39,6 +39,7 @@ export function useSearch(): UseSearchReturn {
   const [queryIntent, setQueryIntent] = useState<QueryIntent>({});
   const [searchError, setSearchError] = useState<string | null>(null);
   const activeSearchControllerRef = useRef<AbortController | null>(null);
+  const searchInvocationCountRef = useRef(0);
   const lastToastedDateRef = useRef<string | null>(null);
 
   // Search function with query intent parsing (no debouncing here)
@@ -98,6 +99,7 @@ export function useSearch(): UseSearchReturn {
       }
     }
 
+    const invocationId = ++searchInvocationCountRef.current;
     setIsLoading(true);
     setSearchError(null);
 
@@ -118,7 +120,9 @@ export function useSearch(): UseSearchReturn {
       setLocations([]);
       setSearchError(error instanceof Error ? error.message : "Search failed");
     } finally {
-      setIsLoading(false);
+      if (invocationId === searchInvocationCountRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
