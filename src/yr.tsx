@@ -335,7 +335,6 @@ function CommandContent() {
                               name={fav.name}
                               lat={fav.lat}
                               lon={fav.lon}
-                              preCachedGraph={favorites.preWarmedGraphs[key]}
                               onFavoriteChange={favorites.refreshFavorites}
                               onShowWelcome={() => setShowWelcomeMessage(true)}
                             />

@@ -21,6 +21,7 @@ import { LocationUtils } from "./utils/location-utils";
 import { clearAllCached } from "./cache";
 import { DebugLogger } from "./utils/debug-utils";
 import { LocationResult } from "./location-search";
+import { getFeatureFlags } from "./units";
 
 type ForecastLocationInput =
   | {
@@ -98,14 +99,14 @@ function ForecastView(props: ForecastViewProps) {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [sunByDate, setSunByDate] = useState<Record<string, SunTimes>>({});
   const [sunDataReady, setSunDataReady] = useState<boolean>(false);
+  const featureFlags = getFeatureFlags();
   const {
     series: items,
     loading,
     showNoData,
-    preRenderedGraph,
     metadata,
     refresh: refreshWeatherData,
-  } = useWeatherData(lat, lon, true);
+  } = useWeatherData(lat, lon);
 
   // Check if current location is in favorites using canonical identity.
   useEffect(() => {
@@ -316,7 +317,6 @@ function ForecastView(props: ForecastViewProps) {
     reduced,
     originalName,
     preCachedGraph,
-    preRenderedGraph,
     sunByDate,
     sunDataReady,
     displaySeries,
@@ -343,8 +343,8 @@ function ForecastView(props: ForecastViewProps) {
     }
 
     // For data view, show table with filtered data (respects target date)
-    return buildWeatherTable(displaySeries, { showDirection: true, showPeriod: false });
-  }, [displaySeries, showNoData, originalName]);
+    return buildWeatherTable(displaySeries, { showDirection: featureFlags.showWindDirection, showPeriod: false });
+  }, [displaySeries, showNoData, originalName, featureFlags.showWindDirection]);
 
   // Only show content when not loading and we have data or know there's no data
   const shouldShowContent = !loading && (displaySeries.length > 0 || showNoData);
@@ -369,7 +369,13 @@ function ForecastView(props: ForecastViewProps) {
         let summaryInfo = "";
         if (mode === "detailed" || mode === "summary") {
           // Build compact weather summary using the reusable utility (includes data coverage)
-          const compactSummary = buildCompactWeatherSummary(displaySeries, sunByDate, metadata, {}, targetDate);
+          const compactSummary = buildCompactWeatherSummary(
+            displaySeries,
+            sunByDate,
+            metadata,
+            { showSunTimes: featureFlags.showSunTimes },
+            targetDate,
+          );
           if (compactSummary) {
             summaryInfo = `\n\n${compactSummary}`;
           }
