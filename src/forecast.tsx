@@ -100,13 +100,7 @@ function ForecastView(props: ForecastViewProps) {
   const [sunByDate, setSunByDate] = useState<Record<string, SunTimes>>({});
   const [sunDataReady, setSunDataReady] = useState<boolean>(false);
   const featureFlags = getFeatureFlags();
-  const {
-    series: items,
-    loading,
-    showNoData,
-    metadata,
-    refresh: refreshWeatherData,
-  } = useWeatherData(lat, lon);
+  const { series: items, loading, showNoData, metadata, refresh: refreshWeatherData } = useWeatherData(lat, lon);
 
   // Check if current location is in favorites using canonical identity.
   useEffect(() => {
