@@ -38,6 +38,9 @@ export function graphCacheKey(params: {
   firstTime?: string;
   lastTime?: string;
   units: string;
+  clockFormat: string;
+  showSunTimes: boolean;
+  showWindDirection: boolean;
   dataHash: string;
   sunHash?: string;
   targetDate?: string;
@@ -52,6 +55,9 @@ export function graphCacheKey(params: {
     `first=${encodePart(params.firstTime ?? GRAPH_NO_TIME_TOKEN)}`,
     `last=${encodePart(params.lastTime ?? GRAPH_NO_TIME_TOKEN)}`,
     `units=${encodePart(params.units)}`,
+    `clock=${encodePart(params.clockFormat)}`,
+    `sunTimes=${params.showSunTimes ? "1" : "0"}`,
+    `windDir=${params.showWindDirection ? "1" : "0"}`,
     `data=${encodePart(params.dataHash)}`,
     `sun=${encodePart(params.sunHash ?? GRAPH_NO_SUN_DATES_TOKEN)}`,
     `targetDate=${encodePart(params.targetDate ?? GRAPH_ALL_DATES_TOKEN)}`,

@@ -20,6 +20,9 @@ describe("graphCacheKey", () => {
     firstTime: "2026-03-07T00:00:00Z",
     lastTime: "2026-03-08T00:00:00Z",
     units: "metric",
+    clockFormat: "24h",
+    showSunTimes: true,
+    showWindDirection: true,
     dataHash: "weather-a",
   };
 
@@ -46,17 +49,20 @@ describe("graphCacheKey", () => {
     expect(key).toContain("targetDate=2026-03-07%2Bspecial%2Fvalue");
   });
 
-  it("includes unit and weather data identity", () => {
+  it("includes render preferences and weather data identity", () => {
     const key = graphCacheKey({
       ...base,
       sunDates: [],
     });
 
     expect(key).toContain("units=metric");
+    expect(key).toContain("clock=24h");
+    expect(key).toContain("sunTimes=1");
+    expect(key).toContain("windDir=1");
     expect(key).toContain("data=weather-a");
   });
 
-  it("changes when graph units or data identity change", () => {
+  it("changes when render preferences or data identity change", () => {
     const metricKey = graphCacheKey({
       ...base,
       sunDates: [],
@@ -71,8 +77,26 @@ describe("graphCacheKey", () => {
       dataHash: "weather-b",
       sunDates: [],
     });
+    const twelveHourKey = graphCacheKey({
+      ...base,
+      clockFormat: "12h",
+      sunDates: [],
+    });
+    const hiddenSunTimesKey = graphCacheKey({
+      ...base,
+      showSunTimes: false,
+      sunDates: [],
+    });
+    const hiddenWindDirectionKey = graphCacheKey({
+      ...base,
+      showWindDirection: false,
+      sunDates: [],
+    });
 
     expect(metricKey).not.toBe(imperialKey);
     expect(metricKey).not.toBe(changedDataKey);
+    expect(metricKey).not.toBe(twelveHourKey);
+    expect(metricKey).not.toBe(hiddenSunTimesKey);
+    expect(metricKey).not.toBe(hiddenWindDirectionKey);
   });
 });

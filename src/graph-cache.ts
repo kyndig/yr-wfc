@@ -6,7 +6,8 @@ import { buildGraphMarkdown } from "./graph-utils";
 import { graphCacheKey, graphCachePrefix, graphModeToken, graphTargetDateToken } from "./cache-keys";
 import { DebugLogger } from "./utils/debug-utils";
 import { environment, LocalStorage } from "@raycast/api";
-import { getUnits } from "./units";
+import { getClockFormat } from "./clock";
+import { getFeatureFlags, getUnits } from "./units";
 import { precipitationAmount, symbolCode } from "./utils-forecast";
 
 /**
@@ -65,6 +66,7 @@ function generateGraphCacheKey(
   targetDate?: string,
 ): string {
   const paletteId = environment.appearance === "dark" ? "dark" : "light";
+  const featureFlags = getFeatureFlags();
   return graphCacheKey({
     locationKey,
     mode,
@@ -73,6 +75,9 @@ function generateGraphCacheKey(
     firstTime: series[0]?.time,
     lastTime: series[series.length - 1]?.time,
     units: getUnits(),
+    clockFormat: getClockFormat(),
+    showSunTimes: featureFlags.showSunTimes,
+    showWindDirection: featureFlags.showWindDirection,
     dataHash: graphSeriesHash(series),
     sunHash: graphSunHash(sunByDate),
     targetDate,
