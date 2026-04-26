@@ -37,6 +37,9 @@ export function graphCacheKey(params: {
   seriesLength: number;
   firstTime?: string;
   lastTime?: string;
+  units: string;
+  dataHash: string;
+  sunHash?: string;
   targetDate?: string;
   sunDates: string[];
 }): string {
@@ -48,6 +51,9 @@ export function graphCacheKey(params: {
     `series=${params.seriesLength}`,
     `first=${encodePart(params.firstTime ?? GRAPH_NO_TIME_TOKEN)}`,
     `last=${encodePart(params.lastTime ?? GRAPH_NO_TIME_TOKEN)}`,
+    `units=${encodePart(params.units)}`,
+    `data=${encodePart(params.dataHash)}`,
+    `sun=${encodePart(params.sunHash ?? GRAPH_NO_SUN_DATES_TOKEN)}`,
     `targetDate=${encodePart(params.targetDate ?? GRAPH_ALL_DATES_TOKEN)}`,
     `sunDates=${encodePart(normalizedSunDates || GRAPH_NO_SUN_DATES_TOKEN)}`,
   ].join(":");

@@ -19,6 +19,8 @@ describe("graphCacheKey", () => {
     seriesLength: 12,
     firstTime: "2026-03-07T00:00:00Z",
     lastTime: "2026-03-08T00:00:00Z",
+    units: "metric",
+    dataHash: "weather-a",
   };
 
   it("is deterministic regardless of sunDates order/duplicates", () => {
@@ -42,5 +44,35 @@ describe("graphCacheKey", () => {
     });
 
     expect(key).toContain("targetDate=2026-03-07%2Bspecial%2Fvalue");
+  });
+
+  it("includes unit and weather data identity", () => {
+    const key = graphCacheKey({
+      ...base,
+      sunDates: [],
+    });
+
+    expect(key).toContain("units=metric");
+    expect(key).toContain("data=weather-a");
+  });
+
+  it("changes when graph units or data identity change", () => {
+    const metricKey = graphCacheKey({
+      ...base,
+      sunDates: [],
+    });
+    const imperialKey = graphCacheKey({
+      ...base,
+      units: "imperial",
+      sunDates: [],
+    });
+    const changedDataKey = graphCacheKey({
+      ...base,
+      dataHash: "weather-b",
+      sunDates: [],
+    });
+
+    expect(metricKey).not.toBe(imperialKey);
+    expect(metricKey).not.toBe(changedDataKey);
   });
 });
