@@ -286,7 +286,6 @@ function CommandContent() {
                     () => setShowWelcomeMessage(true),
                     search.queryIntent.targetDate,
                     undefined, // onFavoriteChange - not needed for search results
-                    undefined, // preCachedGraph - not available for search results
                   )}
                 />
               ))}

@@ -40,7 +40,6 @@ type ForecastLocationInput =
     };
 
 export type ForecastViewProps = ForecastLocationInput & {
-  preCachedGraph?: string;
   onShowWelcome?: () => void;
   targetDate?: string; // ISO date string for specific day view
   onFavoriteChange?: () => void; // Callback when favorites are added/removed
@@ -88,7 +87,7 @@ function resolveForecastLocation(input: ForecastLocationInput): ResolvedForecast
 }
 
 function ForecastView(props: ForecastViewProps) {
-  const { preCachedGraph, onShowWelcome, targetDate, onFavoriteChange, initialMode } = props;
+  const { onShowWelcome, targetDate, onFavoriteChange, initialMode } = props;
   const resolvedLocation = resolveForecastLocation(props);
   const canonicalKey = resolvedLocation.key;
   const originalName = resolvedLocation.displayName;
@@ -310,7 +309,6 @@ function ForecastView(props: ForecastViewProps) {
     items,
     reduced,
     originalName,
-    preCachedGraph,
     sunByDate,
     sunDataReady,
     displaySeries,
@@ -319,17 +317,12 @@ function ForecastView(props: ForecastViewProps) {
     lon,
   ]);
 
-  // Get cached graph based on current mode, with preCachedGraph as fallback
+  // Get cached graph based on current mode.
   const graph = useMemo(() => {
     if (displaySeries.length === 0 && showNoData) return "";
 
-    // Use preCachedGraph if available and we don't have a cached version yet
-    if (preCachedGraph && !graphCache[mode]) {
-      return preCachedGraph;
-    }
-
     return mode === "detailed" ? graphCache.detailed : graphCache.summary;
-  }, [mode, graphCache, displaySeries.length, showNoData, preCachedGraph]);
+  }, [mode, graphCache, displaySeries.length, showNoData]);
 
   const listMarkdown = useMemo(() => {
     if (displaySeries.length === 0 && showNoData) {
