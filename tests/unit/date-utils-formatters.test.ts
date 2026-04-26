@@ -55,11 +55,12 @@ describe("date/time formatter utilities", () => {
       expect(spy).toHaveBeenCalledWith(undefined, { ...TIME_FORMATS.MILITARY, hour12: false });
     });
 
-    it("keeps HOUR_ONLY format options", () => {
+    it("uses clock preference for HOUR_ONLY", () => {
+      mockedGetClockFormat.mockReturnValue("12h");
       const spy = jest.spyOn(Date.prototype, "toLocaleTimeString").mockReturnValue("12");
 
       expect(formatTime("2026-03-08T12:00:00Z", "HOUR_ONLY")).toBe("12");
-      expect(spy).toHaveBeenCalledWith(undefined, TIME_FORMATS.HOUR_ONLY);
+      expect(spy).toHaveBeenCalledWith(undefined, { ...TIME_FORMATS.HOUR_ONLY, hour12: true });
     });
   });
 
