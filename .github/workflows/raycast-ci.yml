@@ -13,6 +13,8 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 15
     env:
+      # Opt in now to GitHub's Node 24 JavaScript action runtime.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       NODE_VERSION: "22"
       # Keep npm cache inside the workspace (avoids permission issues).
       NPM_CONFIG_CACHE: .npm-cache
@@ -23,17 +25,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Restore npm cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.NPM_CONFIG_CACHE }}
           key: ${{ runner.os }}-npm-cache-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
