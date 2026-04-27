@@ -132,14 +132,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Raycast build export (Store requirement)
+        run: npm run build:ci
+
       - name: Type check
         run: npm run type-check
 
       - name: Raycast lint (Store requirement)
         run: npx ray lint
-
-      - name: Raycast build export (Store requirement)
-        run: npx ray build -e dist
 
       - name: Unit tests
         run: npm run test:unit
