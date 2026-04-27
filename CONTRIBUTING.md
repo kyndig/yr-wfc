@@ -6,6 +6,7 @@
 npm install
 npm run dev        # start Raycast dev server
 npm run check      # full verify: build + type-check + lint + format
+npm run verify:pr  # mirrors GitHub PR checks order (build -> type-check -> lint -> unit tests)
 ```
 
 ## Raycast Extensions Monorepo Sync
