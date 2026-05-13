@@ -10,6 +10,20 @@ export const Toast = {
 
 export const showToast = jest.fn(async () => undefined);
 
+type ActionLike = ((props: unknown) => null) & {
+  Push?: (props: unknown) => null;
+};
+
+export const Action: ActionLike = (() => null) as ActionLike;
+Action.Push = () => null;
+
+export const ActionPanel = () => null;
+
+export const Icon = {
+  Clock: "clock",
+  Calendar: "calendar",
+};
+
 export const getPreferenceValues = jest.fn(() => ({
   units: "metric",
   clockFormat: "24h",

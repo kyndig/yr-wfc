@@ -125,3 +125,90 @@ describe("LocationUtils.sortLocationsByPrecision with query relevance", () => {
     expect(sorted[0].displayName).toBe("City Match");
   });
 });
+
+describe("LocationUtils.createLocationActions", () => {
+  const sampleLocation: LocationResult = {
+    id: "1",
+    displayName: "Oslo, Norway",
+    lat: 59.9139,
+    lon: 10.7522,
+  };
+
+  function collectActionTitles(node: unknown): string[] {
+    const titles: string[] = [];
+
+    const walk = (value: unknown) => {
+      if (!value) return;
+      if (Array.isArray(value)) {
+        for (const item of value) walk(item);
+        return;
+      }
+      if (typeof value !== "object") return;
+
+      const candidate = value as { props?: Record<string, unknown> };
+      const props = candidate.props;
+      if (!props) return;
+
+      if (typeof props.title === "string") {
+        titles.push(props.title);
+      }
+      walk(props.children);
+    };
+
+    walk(node);
+    return titles;
+  }
+
+  function getOpenForecastTargetDate(node: unknown): string | undefined {
+    const walk = (value: unknown): string | undefined => {
+      if (!value) return undefined;
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const found = walk(item);
+          if (found) return found;
+        }
+        return undefined;
+      }
+      if (typeof value !== "object") return undefined;
+
+      const candidate = value as {
+        props?: {
+          title?: unknown;
+          target?: { props?: { targetDate?: string } };
+          children?: unknown;
+        };
+      };
+      const props = candidate.props;
+      if (!props) return undefined;
+
+      if (props.title === "Open Forecast") {
+        return props.target?.props?.targetDate;
+      }
+      return walk(props.children);
+    };
+
+    return walk(node);
+  }
+
+  it("shows one default open action for non-date searches", () => {
+    const actions = LocationUtils.createLocationActions(sampleLocation, false, jest.fn());
+    const titles = collectActionTitles(actions);
+
+    expect(titles).toContain("Open Forecast");
+    expect(titles).toContain("Show Current Weather");
+    expect(titles).not.toContain("View Full Forecast");
+    expect(titles.some((title) => /^View .* Weather$/.test(title))).toBe(false);
+    expect(getOpenForecastTargetDate(actions)).toBeUndefined();
+  });
+
+  it("uses Open Forecast as the only date-specific open action", () => {
+    const actions = LocationUtils.createLocationActions(sampleLocation, false, jest.fn(), undefined, new Date("2026-03-08"));
+    const titles = collectActionTitles(actions);
+
+    expect(titles).toContain("Open Forecast");
+    expect(titles).toContain("View Full Forecast");
+    expect(titles).toContain("Show Current Weather");
+    expect(titles.some((title) => /^View .* Weather$/.test(title))).toBe(false);
+    expect(getOpenForecastTargetDate(actions)).toBe("2026-03-08");
+  });
+});
