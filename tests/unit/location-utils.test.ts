@@ -1,4 +1,5 @@
 import type { LocationResult } from "../../src/location-search";
+import { parseLocalDateString } from "../../src/utils/date-utils";
 import { LocationUtils } from "../../src/utils/location-utils";
 
 function location(overrides: Partial<LocationResult>): LocationResult {
@@ -202,7 +203,13 @@ describe("LocationUtils.createLocationActions", () => {
   });
 
   it("uses Open Forecast as the only date-specific open action", () => {
-    const actions = LocationUtils.createLocationActions(sampleLocation, false, jest.fn(), undefined, new Date("2026-03-08"));
+    const actions = LocationUtils.createLocationActions(
+      sampleLocation,
+      false,
+      jest.fn(),
+      undefined,
+      parseLocalDateString("2026-03-08"),
+    );
     const titles = collectActionTitles(actions);
 
     expect(titles).toContain("Open Forecast");
