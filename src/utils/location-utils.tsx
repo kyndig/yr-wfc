@@ -42,19 +42,17 @@ export class LocationUtils {
 
         {/* Date-specific fallback action */}
         {targetDate && (
-          <>
-            <Action.Push
-              title="View Full Forecast"
-              icon={Icon.Calendar}
-              target={
-                <LazyForecastView
-                  location={location}
-                  onShowWelcome={onShowWelcome}
-                  onFavoriteChange={onFavoriteChange}
-                />
-              }
-            />
-          </>
+          <Action.Push
+            title="View Full Forecast"
+            icon={Icon.Calendar}
+            target={
+              <LazyForecastView
+                location={location}
+                onShowWelcome={onShowWelcome}
+                onFavoriteChange={onFavoriteChange}
+              />
+            }
+          />
         )}
 
         <Action
