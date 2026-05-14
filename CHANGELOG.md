@@ -1,5 +1,9 @@
 # Yr Weather Forecast Changelog
 
+## [Date query action bugfix] - 2026-05-13
+
+- Fix duplicated date forecast actions in search results: `Open Forecast` is now the single date-specific entry point, while `View Full Forecast` stays as the explicit fallback.
+
 ## [Reliability, dark mode, and quality overhaul] - {PR_MERGE_DATE}
 
 - Add 12/24-hour clock format preference (defaults to 24h)

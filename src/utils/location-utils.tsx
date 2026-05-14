@@ -40,33 +40,15 @@ export class LocationUtils {
           }
         />
 
-        {/* Date-specific forecast actions - single day view for specific dates */}
+        {/* Date-specific fallback action */}
         {targetDate && (
-          <>
-            <Action.Push
-              title={`View ${targetDate.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })} Weather`}
-              icon={Icon.Clock}
-              target={
-                <LazyForecastView
-                  location={location}
-                  onShowWelcome={onShowWelcome}
-                  targetDate={toLocalDateString(targetDate)}
-                  onFavoriteChange={onFavoriteChange}
-                />
-              }
-            />
-            <Action.Push
-              title="View Full Forecast"
-              icon={Icon.Calendar}
-              target={
-                <LazyForecastView
-                  location={location}
-                  onShowWelcome={onShowWelcome}
-                  onFavoriteChange={onFavoriteChange}
-                />
-              }
-            />
-          </>
+          <Action.Push
+            title="View Full Forecast"
+            icon={Icon.Calendar}
+            target={
+              <LazyForecastView location={location} onShowWelcome={onShowWelcome} onFavoriteChange={onFavoriteChange} />
+            }
+          />
         )}
 
         <Action
