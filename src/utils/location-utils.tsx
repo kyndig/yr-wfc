@@ -46,11 +46,7 @@ export class LocationUtils {
             title="View Full Forecast"
             icon={Icon.Calendar}
             target={
-              <LazyForecastView
-                location={location}
-                onShowWelcome={onShowWelcome}
-                onFavoriteChange={onFavoriteChange}
-              />
+              <LazyForecastView location={location} onShowWelcome={onShowWelcome} onFavoriteChange={onFavoriteChange} />
             }
           />
         )}
